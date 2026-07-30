@@ -79,3 +79,15 @@ Unlike traditional AI IDEs that route every user action through an LLM, the Agen
 
 ### 5. Provider-Agnostic Model Layer (BYOK)
 - Supports OpenAI (GPT-4o), Anthropic (Claude 3.5 Sonnet), Google Gemini (Gemini 1.5 Pro / Flash), and local LLMs via Ollama.
+
+---
+
+## Programming Language Choices & Rationale (Where & Why)
+
+| Subsystem / Layer | Language Chosen | Where It Is Used | Technical Rationale (Why) |
+|---|---|---|---|
+| **Editor Shell & UI** | **TypeScript** (`.ts`, `.tsx`) | React/Next.js UI, Code-OSS Activity Bar, File Explorer, Tabbed Editor, Status Bar | Code-OSS (VS Code core) is 100% TypeScript natively. Using TypeScript eliminates IPC protocol translation friction and provides direct access to VS Code APIs, LSP/DAP clients, and OpenVSX extension host. |
+| **Agent Orchestrator** | **TypeScript** (Node.js) | Electron main process, Confidence-Scored Router, Tool Dispatcher, Shadow Workspace Verification | Executes directly inside Node.js/Electron with full OS file system access, subagent child process management, and seamless JSON-RPC communication with the editor UI. |
+| **Codebase Indexing Sidecar** | **Rust** (`.rs`) | Tree-sitter AST Parser, LanceDB / sqlite-vec vector store, ONNX local embeddings | Parsing 100k+ lines of code into symbol graphs and executing vector similarity searches is compute-heavy. Rust provides zero-cost abstractions, sub-10ms latency without Garbage Collection (GC) pauses, and compiles to a lightweight native binary (`agentic-indexer`). |
+| **Browser Automation Agent** | **TypeScript** / Node.js | Playwright / Chrome DevTools Protocol (CDP) | Standard, battle-tested web frontend visual verification and screenshot feedback loops for web development tasks. |
+
