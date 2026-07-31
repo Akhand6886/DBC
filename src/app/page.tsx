@@ -14,6 +14,7 @@ import { SearchModal } from '../components/SearchModal';
 import { SettingsModal } from '../components/SettingsModal';
 import { ShadowVerificationDrawer } from '../components/ShadowVerificationDrawer';
 import { SidecarInspectorModal } from '../components/SidecarInspectorModal';
+import { BrowserPreviewModal } from '../components/BrowserPreviewModal';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('explorer');
@@ -29,6 +30,7 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSidecarOpen, setIsSidecarOpen] = useState(false);
+  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
@@ -48,6 +50,8 @@ export default function Home() {
       setIsSettingsOpen(true);
     } else if (view === 'verification') {
       setIsVerificationOpen(true);
+    } else if (view === 'browser') {
+      setIsBrowserOpen(true);
     } else {
       setActiveView(view);
     }
@@ -61,7 +65,6 @@ export default function Home() {
   };
 
   const handleJumpToSymbol = (filePath: string, line: number) => {
-    // Find file in workspace
     const findFileByPath = (nodes: FileNode[]): FileNode | null => {
       for (const n of nodes) {
         if (!n.isFolder && n.path === filePath) return n;
@@ -261,6 +264,14 @@ export default function Home() {
         <SidecarInspectorModal
           onJumpToSymbol={handleJumpToSymbol}
           onClose={() => setIsSidecarOpen(false)}
+        />
+      )}
+
+      {/* Browser-in-the-Loop & Visual Verification Modal */}
+      {isBrowserOpen && (
+        <BrowserPreviewModal
+          onClose={() => setIsBrowserOpen(false)}
+          onLogTerminal={handleLogTerminal}
         />
       )}
     </div>
