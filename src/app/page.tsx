@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FileNode, ShadowDiffCheck } from '../lib/types';
 import { INITIAL_WORKSPACE } from '../lib/initialWorkspace';
 import { ActivityBar, ActivityView } from '../components/ActivityBar';
@@ -16,12 +16,17 @@ import { ShadowVerificationDrawer } from '../components/ShadowVerificationDrawer
 import { SidecarInspectorModal } from '../components/SidecarInspectorModal';
 import { BrowserPreviewModal } from '../components/BrowserPreviewModal';
 import { GitPanel } from '../components/GitPanel';
+import { CommandPalette, PaletteAction } from '../components/CommandPalette';
+import { WelcomeTab } from '../components/WelcomeTab';
+import { useToast } from '../components/ToastProvider';
+
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('explorer');
   const [workspaceFiles, setWorkspaceFiles] = useState<FileNode[]>(INITIAL_WORKSPACE);
+  const { addToast } = useToast();
   
-  // Find initial file: src/index.ts
   const initialFile = INITIAL_WORKSPACE[0].children?.[0] || null;
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
   const [openFiles, setOpenFiles] = useState<FileNode[]>(initialFile ? [initialFile] : []);
@@ -33,6 +38,10 @@ export default function Home() {
   const [isSidecarOpen, setIsSidecarOpen] = useState(false);
   const [isBrowserOpen, setIsBrowserOpen] = useState(false);
   const [isGitOpen, setIsGitOpen] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
@@ -45,23 +54,88 @@ export default function Home() {
   const [lastLatencyMs, setLastLatencyMs] = useState<number | undefined>(3);
   const [lastRoutePath, setLastRoutePath] = useState<string | undefined>('DETERMINISTIC_FAST_PATH');
 
+  // ─── Global Keyboard Shortcuts ─────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey;
+
+      // Cmd+Shift+P → Command Palette
+      if (mod && e.shiftKey && e.key === 'p') {
+        e.preventDefault();
+        setIsPaletteOpen(prev => !prev);
+      }
+      // Cmd+Shift+F → Global Search
+      if (mod && e.shiftKey && e.key === 'f') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+      // Cmd+Shift+G → Git Panel
+      if (mod && e.shiftKey && e.key === 'g') {
+        e.preventDefault();
+        setIsGitOpen(true);
+      }
+      // Cmd+, → Settings
+      if (mod && e.key === ',') {
+        e.preventDefault();
+        setIsSettingsOpen(true);
+      }
+      // Cmd+B → Toggle Sidebar
+      if (mod && e.key === 'b') {
+        e.preventDefault();
+        setShowSidebar(prev => !prev);
+      }
+      // Cmd+J → Toggle Terminal
+      if (mod && e.key === 'j') {
+        e.preventDefault();
+        setShowTerminal(prev => !prev);
+      }
+      // Cmd+S → Save File
+      if (mod && e.key === 's') {
+        e.preventDefault();
+        if (activeFile) {
+          addToast('success', `Saved ${activeFile.name}`);
+        }
+      }
+      // Cmd+W → Close Tab
+      if (mod && e.key === 'w') {
+        e.preventDefault();
+        if (activeFile) {
+          handleCloseTab(activeFile.id);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [activeFile]);
+
+  // ─── Command Palette Actions ───────────────────────────────────────
+  const paletteActions: PaletteAction[] = [
+    { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
+    { id: 'settings', label: 'Open Settings & BYOK Keys', category: 'settings', shortcut: '⌘,', icon: <Settings className="h-4 w-4" />, handler: () => setIsSettingsOpen(true) },
+    { id: 'git', label: 'Git Source Control', category: 'git', shortcut: '⌘⇧G', icon: <GitBranch className="h-4 w-4" />, handler: () => setIsGitOpen(true) },
+    { id: 'browser', label: 'Browser-in-the-Loop Preview', category: 'action', icon: <Globe className="h-4 w-4" />, handler: () => setIsBrowserOpen(true) },
+    { id: 'verification', label: 'Shadow Verification & Rollback Hub', category: 'action', icon: <ShieldCheck className="h-4 w-4" />, handler: () => setIsVerificationOpen(true) },
+    { id: 'sidecar', label: 'Rust Sidecar & LanceDB Inspector', category: 'action', icon: <Zap className="h-4 w-4" />, handler: () => setIsSidecarOpen(true) },
+    { id: 'analytics', label: 'Router Analytics Dashboard', category: 'router', icon: <BarChart2 className="h-4 w-4" />, handler: () => setActiveView('analytics') },
+    { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
+    { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <Terminal className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
+    { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
+    { id: 'welcome', label: 'Show Welcome Tab', category: 'navigation', icon: <Command className="h-4 w-4" />, handler: () => setShowWelcome(true) },
+  ];
+
+  // ─── Handlers ──────────────────────────────────────────────────────
   const handleViewChange = (view: ActivityView) => {
-    if (view === 'search') {
-      setIsSearchOpen(true);
-    } else if (view === 'settings') {
-      setIsSettingsOpen(true);
-    } else if (view === 'verification') {
-      setIsVerificationOpen(true);
-    } else if (view === 'browser') {
-      setIsBrowserOpen(true);
-    } else if (view === 'git') {
-      setIsGitOpen(true);
-    } else {
-      setActiveView(view);
-    }
+    if (view === 'search') setIsSearchOpen(true);
+    else if (view === 'settings') setIsSettingsOpen(true);
+    else if (view === 'verification') setIsVerificationOpen(true);
+    else if (view === 'browser') setIsBrowserOpen(true);
+    else if (view === 'git') setIsGitOpen(true);
+    else setActiveView(view);
   };
 
   const handleSelectFile = (file: FileNode) => {
+    setShowWelcome(false);
     setActiveFile(file);
     if (!openFiles.some((f) => f.id === file.id)) {
       setOpenFiles((prev) => [...prev, file]);
@@ -79,7 +153,6 @@ export default function Home() {
       }
       return null;
     };
-
     const target = findFileByPath(workspaceFiles);
     if (target) {
       handleSelectFile(target);
@@ -92,6 +165,7 @@ export default function Home() {
     setOpenFiles(updated);
     if (activeFile?.id === fileId) {
       setActiveFile(updated.length > 0 ? updated[updated.length - 1] : null);
+      if (updated.length === 0) setShowWelcome(true);
     }
   };
 
@@ -102,7 +176,7 @@ export default function Home() {
     setOpenFiles((prev) => prev.map((f) => (f.id === activeFile.id ? updatedFile : f)));
   };
 
-  const handleAddFile = (fileName: string, isFolder: boolean) => {
+  const handleAddFile = (fileName: string) => {
     const newFile: FileNode = {
       id: `file-${Date.now()}`,
       name: fileName,
@@ -110,41 +184,30 @@ export default function Home() {
       language: fileName.endsWith('.rs') ? 'rust' : fileName.endsWith('.json') ? 'json' : 'typescript',
       content: `// ${fileName}\n`
     };
-
     setWorkspaceFiles((prev) => [...prev, newFile]);
     handleSelectFile(newFile);
-    handleLogTerminal(`Added new file ${fileName} to workspace.`);
+    addToast('success', `Created ${fileName}`);
   };
 
   const handleDeleteFile = (fileId: string) => {
-    const filterTree = (nodes: FileNode[]): FileNode[] => {
-      return nodes
-        .filter((n) => n.id !== fileId)
-        .map((n) => (n.children ? { ...n, children: filterTree(n.children) } : n));
-    };
-
+    const filterTree = (nodes: FileNode[]): FileNode[] =>
+      nodes.filter((n) => n.id !== fileId).map((n) => (n.children ? { ...n, children: filterTree(n.children) } : n));
     setWorkspaceFiles((prev) => filterTree(prev));
     handleCloseTab(fileId);
-    handleLogTerminal(`Deleted file ${fileId} from workspace.`);
+    addToast('info', 'File deleted from workspace.');
   };
 
   const handleReplaceAll = (searchTerm: string, replaceTerm: string) => {
-    const replaceInTree = (nodes: FileNode[]): FileNode[] => {
-      return nodes.map((node) => {
-        if (node.isFolder && node.children) {
-          return { ...node, children: replaceInTree(node.children) };
-        }
+    const replaceInTree = (nodes: FileNode[]): FileNode[] =>
+      nodes.map((node) => {
+        if (node.isFolder && node.children) return { ...node, children: replaceInTree(node.children) };
         if (!node.isFolder && node.content) {
-          const reg = new RegExp(searchTerm, 'g');
-          return { ...node, content: node.content.replace(reg, replaceTerm), isModified: true };
+          return { ...node, content: node.content.replace(new RegExp(searchTerm, 'g'), replaceTerm), isModified: true };
         }
         return node;
       });
-    };
-
-    const updated = replaceInTree(workspaceFiles);
-    setWorkspaceFiles(updated);
-    handleLogTerminal(`Replaced '${searchTerm}' with '${replaceTerm}' across workspace.`);
+    setWorkspaceFiles((prev) => replaceInTree(prev));
+    addToast('success', `Replaced all occurrences of "${searchTerm}".`);
   };
 
   const handleLogTerminal = (msg: string) => {
@@ -158,36 +221,30 @@ export default function Home() {
     setFastPathCount((prev) => prev + 1);
     setLastLatencyMs(3);
     setLastRoutePath('DETERMINISTIC_FAST_PATH');
+    addToast('success', `Patch ${diffCheck.id} applied via Shadow Workspace.`);
   };
 
   const handleRollbackSnapshot = (diffCheck: ShadowDiffCheck) => {
     handleContentChange(diffCheck.originalContent);
-    setShadowHistory((prev) =>
-      prev.map((s) => (s.id === diffCheck.id ? { ...s, status: 'ROLLED_BACK' } : s))
-    );
-    handleLogTerminal(`[Rollback]: Restored file ${diffCheck.targetFile} to snapshot ${diffCheck.id}.`);
+    setShadowHistory((prev) => prev.map((s) => (s.id === diffCheck.id ? { ...s, status: 'ROLLED_BACK' } : s)));
+    addToast('warning', `Rolled back to snapshot ${diffCheck.id}.`);
   };
 
-  const handleRunTestSuite = () => {
+  function handleRunTestSuite() {
     handleLogTerminal('Running Test Suite via CLI runner...');
+    addToast('info', 'Running test suite...');
     setTimeout(() => {
       handleLogTerminal('✓ src/index.test.ts (100% PASSING in 12ms)');
+      addToast('success', 'All tests passed! (12ms)');
     }, 200);
-  };
+  }
 
   return (
     <div className="h-screen w-screen flex flex-col bg-ide-bg text-slate-100 overflow-hidden">
-      {/* Upper Main Editor Layout */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Leftmost Activity Bar */}
-        <ActivityBar
-          activeView={activeView}
-          onViewChange={handleViewChange}
-          fastPathCount={fastPathCount}
-        />
+        <ActivityBar activeView={activeView} onViewChange={handleViewChange} fastPathCount={fastPathCount} />
 
-        {/* Primary Sidebar Content */}
-        {activeView === 'explorer' && (
+        {showSidebar && activeView === 'explorer' && (
           <FileExplorer
             files={workspaceFiles}
             activeFileId={activeFile?.id || ''}
@@ -197,30 +254,37 @@ export default function Home() {
           />
         )}
 
-        {/* Center Code Editor & Bottom Terminal Column */}
         {activeView === 'analytics' ? (
           <AnalyticsPanel />
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <CodeEditor
-              activeFile={activeFile}
-              openFiles={openFiles}
-              onSelectTab={setActiveFile}
-              onCloseTab={handleCloseTab}
-              onContentChange={handleContentChange}
-              activeDiff={activeDiff}
-              onAcceptDiff={() => setActiveDiff(null)}
-              onRejectDiff={() => setActiveDiff(null)}
-            />
+            {showWelcome && openFiles.length === 0 ? (
+              <WelcomeTab
+                onOpenSettings={() => setIsSettingsOpen(true)}
+                onOpenSearch={() => setIsSearchOpen(true)}
+                onOpenGit={() => setIsGitOpen(true)}
+                onOpenBrowser={() => setIsBrowserOpen(true)}
+                onDismiss={() => setShowWelcome(false)}
+              />
+            ) : (
+              <CodeEditor
+                activeFile={activeFile}
+                openFiles={openFiles}
+                onSelectTab={setActiveFile}
+                onCloseTab={handleCloseTab}
+                onContentChange={handleContentChange}
+                activeDiff={activeDiff}
+                onAcceptDiff={() => setActiveDiff(null)}
+                onRejectDiff={() => setActiveDiff(null)}
+              />
+            )}
 
-            <TerminalPanel
-              logs={terminalLogs}
-              onRunTests={handleRunTestSuite}
-            />
+            {showTerminal && (
+              <TerminalPanel logs={terminalLogs} onRunTests={handleRunTestSuite} />
+            )}
           </div>
         )}
 
-        {/* Rightmost AI Agent Composer Sidebar (Mission Control) */}
         <MissionControl
           activeFilePath={activeFile?.path}
           activeFileContent={activeFile?.content || ''}
@@ -229,63 +293,15 @@ export default function Home() {
         />
       </div>
 
-      {/* Bottom Status Bar */}
-      <StatusBar
-        lastLatencyMs={lastLatencyMs}
-        lastRoutePath={lastRoutePath}
-        onOpenSidecar={() => setIsSidecarOpen(true)}
-      />
+      <StatusBar lastLatencyMs={lastLatencyMs} lastRoutePath={lastRoutePath} onOpenSidecar={() => setIsSidecarOpen(true)} />
 
-      {/* Global Search Modal */}
-      {isSearchOpen && (
-        <SearchModal
-          files={workspaceFiles}
-          onSelectFile={handleSelectFile}
-          onClose={() => setIsSearchOpen(false)}
-          onReplaceAll={handleReplaceAll}
-        />
-      )}
-
-      {/* Settings & BYOK Modal */}
-      {isSettingsOpen && (
-        <SettingsModal
-          onClose={() => setIsSettingsOpen(false)}
-          onSaveSettings={(cfg) => handleLogTerminal(`Saved IDE Settings & BYOK keys.`)}
-        />
-      )}
-
-      {/* Shadow Workspace Verification & Rollback Drawer */}
-      {isVerificationOpen && (
-        <ShadowVerificationDrawer
-          history={shadowHistory}
-          onRollback={handleRollbackSnapshot}
-          onClose={() => setIsVerificationOpen(false)}
-        />
-      )}
-
-      {/* Rust Sidecar Indexer & LanceDB Vector Store Modal */}
-      {isSidecarOpen && (
-        <SidecarInspectorModal
-          onJumpToSymbol={handleJumpToSymbol}
-          onClose={() => setIsSidecarOpen(false)}
-        />
-      )}
-
-      {/* Browser-in-the-Loop & Visual Verification Modal */}
-      {isBrowserOpen && (
-        <BrowserPreviewModal
-          onClose={() => setIsBrowserOpen(false)}
-          onLogTerminal={handleLogTerminal}
-        />
-      )}
-
-      {/* Git Source Control Panel */}
-      {isGitOpen && (
-        <GitPanel
-          onClose={() => setIsGitOpen(false)}
-          onLogTerminal={handleLogTerminal}
-        />
-      )}
+      {isSearchOpen && <SearchModal files={workspaceFiles} onSelectFile={handleSelectFile} onClose={() => setIsSearchOpen(false)} onReplaceAll={handleReplaceAll} />}
+      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} onSaveSettings={() => addToast('success', 'Settings & BYOK keys saved.')} />}
+      {isVerificationOpen && <ShadowVerificationDrawer history={shadowHistory} onRollback={handleRollbackSnapshot} onClose={() => setIsVerificationOpen(false)} />}
+      {isSidecarOpen && <SidecarInspectorModal onJumpToSymbol={handleJumpToSymbol} onClose={() => setIsSidecarOpen(false)} />}
+      {isBrowserOpen && <BrowserPreviewModal onClose={() => setIsBrowserOpen(false)} onLogTerminal={handleLogTerminal} />}
+      {isGitOpen && <GitPanel onClose={() => setIsGitOpen(false)} onLogTerminal={handleLogTerminal} />}
+      {isPaletteOpen && <CommandPalette actions={paletteActions} onClose={() => setIsPaletteOpen(false)} />}
     </div>
   );
 }
