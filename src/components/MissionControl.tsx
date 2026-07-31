@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LLMProvider, AgentExecutionPlan, ShadowDiffCheck } from '../lib/types';
-import { classifyDeveloperIntent } from '../lib/router/intentClassifier';
+import { LLMProvider, AgentExecutionPlan, ShadowDiffCheck, RouterConfig } from '../lib/types';
+import { classifyDeveloperIntent, DEFAULT_ROUTER_CONFIG } from '../lib/router/intentClassifier';
 import { runDeterministicAction } from '../lib/router/deterministicEngine';
 import { runLLMReasoning } from '../lib/router/llmEngine';
 import { verifyAndCreateShadowDiff } from '../lib/verification/shadowBuffer';
+import { RouterConfigModal } from './RouterConfigModal';
+import { RouterTraceModal } from './RouterTraceModal';
 
-import { Bot, Zap, Cpu, Send, ShieldCheck, Check, X, Sparkles, RefreshCw } from 'lucide-react';
+import { Bot, Zap, Cpu, Send, ShieldCheck, Check, X, Sparkles, RefreshCw, FileCode, Sliders } from 'lucide-react';
 
 interface MissionControlProps {
   activeFilePath?: string;
@@ -27,6 +29,11 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [activePlan, setActivePlan] = useState<AgentExecutionPlan | null>(null);
 
+  // Router Config & Trace Modal states
+  const [routerConfig, setRouterConfig] = useState<RouterConfig>(DEFAULT_ROUTER_CONFIG);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [isTraceOpen, setIsTraceOpen] = useState(false);
+
   const presetTriggers = [
     { label: 'Rename function', query: 'Rename function main to executeApp', badge: 'Fast-Path ~3ms', path: 'green' },
     { label: 'Format code', query: 'Format code', badge: 'Fast-Path ~2ms', path: 'green' },
@@ -42,9 +49,9 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     setActivePlan(null);
 
     setTimeout(() => {
-      // 1. Intent Classification
-      const intent = classifyDeveloperIntent(query, activeFilePath);
-      const isFastPath = intent.confidenceScore >= 80;
+      // 1. Intent Classification with Router Config
+      const intent = classifyDeveloperIntent(query, activeFilePath, routerConfig);
+      const isFastPath = intent.confidenceScore >= routerConfig.confidenceThreshold;
       const routerPath = isFastPath ? 'DETERMINISTIC_FAST_PATH' : 'AGENTIC_LLM_PATH';
 
       let proposedContent = activeFileContent;
@@ -83,7 +90,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
       setIsLoading(false);
       setActivePlan(plan);
-      onLogTerminal(`[Router]: ${intent.explanation}`);
+      onLogTerminal(`[Router Score]: ${intent.confidenceScore}% (${intent.explanation})`);
       onLogTerminal(`[Action]: ${logMsg}`);
     }, 350);
   };
@@ -105,28 +112,42 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           <span className="font-bold uppercase tracking-wider text-xs">Mission Control</span>
         </div>
 
-        {/* Model Provider Selector */}
-        <select
-          value={modelProvider}
-          onChange={(e) => setModelProvider(e.target.value as LLMProvider)}
-          aria-label="Select Model Provider"
-          className="bg-ide-bg text-[10px] text-slate-300 border border-ide-border rounded px-2 py-0.5 font-mono cursor-pointer"
-        >
-          <option value="openai">BYOK: OpenAI GPT-4o</option>
-          <option value="anthropic">BYOK: Claude 3.5 Sonnet</option>
-          <option value="gemini">BYOK: Gemini 1.5 Pro</option>
-          <option value="ollama">BYOK: Local Ollama</option>
-        </select>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={() => setIsConfigOpen(true)}
+            title="Router Threshold Settings"
+            className="p-1 text-slate-400 hover:text-white hover:bg-ide-card rounded"
+          >
+            <Sliders className="h-3.5 w-3.5" />
+          </button>
+          <select
+            value={modelProvider}
+            onChange={(e) => setModelProvider(e.target.value as LLMProvider)}
+            aria-label="Select Model Provider"
+            className="bg-ide-bg text-[10px] text-slate-300 border border-ide-border rounded px-1.5 py-0.5 font-mono cursor-pointer"
+          >
+            <option value="openai">OpenAI GPT-4o</option>
+            <option value="anthropic">Claude 3.5 Sonnet</option>
+            <option value="gemini">Gemini 1.5 Pro</option>
+            <option value="ollama">Local Ollama</option>
+          </select>
+        </div>
       </div>
 
       {/* Main Body */}
       <div className="flex-1 p-4 overflow-y-auto space-y-4">
         {/* Prompt Input Box */}
         <div className="space-y-2">
-          <label className="text-[11px] text-slate-400 font-semibold flex items-center space-x-1">
-            <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Agent Prompt:</span>
-          </label>
+          <div className="flex items-center justify-between text-[11px]">
+            <label className="text-slate-400 font-semibold flex items-center space-x-1">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+              <span>Agent Prompt:</span>
+            </label>
+            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+              Threshold: {routerConfig.confidenceThreshold}%
+            </span>
+          </div>
+
           <div className="relative">
             <textarea
               value={prompt}
@@ -189,7 +210,13 @@ export const MissionControl: React.FC<MissionControlProps> = ({
                   <span>LLM Escalation ({activePlan.executionTimeMs}ms)</span>
                 </span>
               )}
-              <span className="text-[10px] text-slate-400">Conf: {activePlan.confidenceScore}%</span>
+              <button
+                onClick={() => setIsTraceOpen(true)}
+                className="text-[10px] text-cyan-400 hover:underline flex items-center space-x-1"
+              >
+                <FileCode className="h-3 w-3" />
+                <span>View Trace</span>
+              </button>
             </div>
 
             {/* Explanation */}
@@ -228,6 +255,23 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           </div>
         ) : null}
       </div>
+
+      {/* Router Config Modal */}
+      {isConfigOpen && (
+        <RouterConfigModal
+          config={routerConfig}
+          onSaveConfig={setRouterConfig}
+          onClose={() => setIsConfigOpen(false)}
+        />
+      )}
+
+      {/* Execution Trace Inspector Modal */}
+      {isTraceOpen && (
+        <RouterTraceModal
+          plan={activePlan}
+          onClose={() => setIsTraceOpen(false)}
+        />
+      )}
     </div>
   );
 };
