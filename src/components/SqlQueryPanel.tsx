@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, PlayCircle, Database, CheckCircle2, ChevronRight, FileJson, AlertCircle } from 'lucide-react';
+import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download } from 'lucide-react';
+import { TableCreatorModal } from './TableCreatorModal';
+import { DataExportWizard } from './DataExportWizard';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
   ssr: false,
@@ -12,18 +14,25 @@ const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.defa
 interface SqlQueryPanelProps {
   activeConnectionName: string;
   onLogTerminal?: (msg: string) => void;
+  onRefreshSchema?: () => void;
 }
 
 export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   activeConnectionName,
   onLogTerminal,
+  onRefreshSchema,
 }) => {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState<{ columns: string[]; rows: Record<string, any>[] } | null>(null);
   const [latency, setLatency] = useState<number | null>(null);
 
-  const handleExecuteQuery = () => {
+  // Modals state
+  const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
+  const handleExecuteQuery = (customQuery?: string) => {
+    const qStr = customQuery || query;
     setIsRunning(true);
     setResults(null);
     const startTime = Date.now();
@@ -32,7 +41,6 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       setIsRunning(false);
       setLatency(Date.now() - startTime);
 
-      // Mock database results
       const mockColumns = ['id', 'username', 'email', 'role', 'created_at'];
       const mockRows = [
         { id: 1, username: 'admin', email: 'admin@dbc.org', role: 'Administrator', created_at: '2026-01-12' },
@@ -44,9 +52,24 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       setResults({ columns: mockColumns, rows: mockRows });
 
       if (onLogTerminal) {
-        onLogTerminal(`[DBC SQL Runner]: Executed query against [${activeConnectionName}] successfully.`);
+        onLogTerminal(`[DBC SQL Runner]: Executed SQL statement successfully.`);
       }
     }, 450);
+  };
+
+  const handleExecuteDDL = (ddl: string) => {
+    setIsTableCreatorOpen(false);
+    setQuery(ddl);
+    handleExecuteQuery(ddl);
+    if (onLogTerminal) onLogTerminal(`[DBC SQL Runner]: Executed DDL table creation transaction.`);
+    if (onRefreshSchema) onRefreshSchema();
+  };
+
+  const handleExportData = (format: string, delimiter: string) => {
+    setIsExportOpen(false);
+    if (onLogTerminal) {
+      onLogTerminal(`[DBC Export Wizard]: Generated transaction results dataset export in ${format.toUpperCase()} format.`);
+    }
   };
 
   return (
@@ -63,14 +86,37 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           </span>
         </div>
 
-        <button
-          onClick={handleExecuteQuery}
-          disabled={isRunning || !activeConnectionName}
-          className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white px-3.5 py-1 rounded-lg font-bold flex items-center space-x-1.5 shadow"
-        >
-          <Play className="h-3.5 w-3.5" />
-          <span>{isRunning ? 'Running...' : 'Run Query'}</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {/* Create Table Button */}
+          <button
+            onClick={() => setIsTableCreatorOpen(true)}
+            disabled={!activeConnectionName}
+            className="text-slate-400 hover:text-white px-2.5 py-1 rounded hover:bg-ide-card border border-ide-border flex items-center space-x-1"
+          >
+            <PlusSquare className="h-3.5 w-3.5" />
+            <span>Create Table</span>
+          </button>
+
+          {/* Export Button */}
+          <button
+            onClick={() => setIsExportOpen(true)}
+            disabled={!results}
+            className="text-slate-400 hover:text-white px-2.5 py-1 rounded hover:bg-ide-card border border-ide-border flex items-center space-x-1"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Export Data</span>
+          </button>
+
+          {/* Run Button */}
+          <button
+            onClick={() => handleExecuteQuery()}
+            disabled={isRunning || !activeConnectionName}
+            className="bg-cyan-600 hover:bg-cyan-500 disabled:opacity-40 text-white px-3.5 py-1 rounded-lg font-bold flex items-center space-x-1.5 shadow"
+          >
+            <Play className="h-3.5 w-3.5" />
+            <span>{isRunning ? 'Running...' : 'Run Query'}</span>
+          </button>
+        </div>
       </div>
 
       {/* SQL Editor Area */}
@@ -142,6 +188,22 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           )}
         </div>
       </div>
+
+      {/* Table Creator Modal */}
+      {isTableCreatorOpen && (
+        <TableCreatorModal
+          onClose={() => setIsTableCreatorOpen(false)}
+          onExecuteDDL={handleExecuteDDL}
+        />
+      )}
+
+      {/* Export Wizard Modal */}
+      {isExportOpen && (
+        <DataExportWizard
+          onClose={() => setIsExportOpen(false)}
+          onExport={handleExportData}
+        />
+      )}
     </div>
   );
 };

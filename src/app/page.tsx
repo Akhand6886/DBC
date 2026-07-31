@@ -24,6 +24,7 @@ import { useToast } from '../components/ToastProvider';
 import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
 import { SqlQueryPanel } from '../components/SqlQueryPanel';
 import { SchemaVisualizer } from '../components/SchemaVisualizer';
+import { DbPerformanceMonitor } from '../components/DbPerformanceMonitor';
 
 import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command } from 'lucide-react';
 
@@ -304,10 +305,17 @@ export default function Home() {
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
             {activeView === 'database' ? (
-              <SqlQueryPanel
-                activeConnectionName={activeConnection?.name || ''}
-                onLogTerminal={handleLogTerminal}
-              />
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <SqlQueryPanel
+                  activeConnectionName={activeConnection?.name || ''}
+                  onLogTerminal={handleLogTerminal}
+                />
+                {activeConnection && (
+                  <div className="p-3 border-t border-ide-border bg-ide-sidebar">
+                    <DbPerformanceMonitor />
+                  </div>
+                )}
+              </div>
             ) : showWelcome && openFiles.length === 0 ? (
               <WelcomeTab
                 onOpenSettings={() => setIsSettingsOpen(true)}
