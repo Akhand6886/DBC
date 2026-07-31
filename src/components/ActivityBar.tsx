@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Files, Search, Bot, BarChart2, Settings, ShieldCheck, Globe, GitBranch } from 'lucide-react';
+import { Files, Search, Bot, BarChart2, Settings, ShieldCheck, Globe, GitBranch, Database } from 'lucide-react';
 
-export type ActivityView = 'explorer' | 'search' | 'composer' | 'analytics' | 'settings' | 'verification' | 'browser' | 'git';
+export type ActivityView = 'explorer' | 'search' | 'composer' | 'analytics' | 'settings' | 'verification' | 'browser' | 'git' | 'database';
 
 interface ActivityBarProps {
   activeView: ActivityView;
@@ -20,6 +20,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     { id: 'explorer', label: 'Explorer', icon: Files },
     { id: 'search', label: 'Search', icon: Search },
     { id: 'git', label: 'Git Source Control', icon: GitBranch },
+    { id: 'database', label: 'Database Console', icon: Database },
     { id: 'composer', label: 'Agent Composer (Mission Control)', icon: Bot, badge: 'AI' },
     { id: 'browser', label: 'Browser-in-the-Loop & Visual Verification', icon: Globe },
     { id: 'verification', label: 'Shadow Verification & Rollback Hub', icon: ShieldCheck },
