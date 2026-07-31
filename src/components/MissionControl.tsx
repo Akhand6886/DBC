@@ -6,10 +6,11 @@ import { classifyDeveloperIntent, DEFAULT_ROUTER_CONFIG } from '../lib/router/in
 import { runDeterministicAction } from '../lib/router/deterministicEngine';
 import { runLLMReasoning } from '../lib/router/llmEngine';
 import { verifyAndCreateShadowDiff } from '../lib/verification/shadowBuffer';
+import { byokClient } from '../lib/agent/byokClient';
 import { RouterConfigModal } from './RouterConfigModal';
 import { RouterTraceModal } from './RouterTraceModal';
 
-import { Bot, Zap, Cpu, Send, ShieldCheck, Check, X, Sparkles, RefreshCw, FileCode, Sliders } from 'lucide-react';
+import { Bot, Zap, Cpu, Send, ShieldCheck, Check, X, Sparkles, RefreshCw, FileCode, Sliders, Key, Lock } from 'lucide-react';
 
 interface MissionControlProps {
   activeFilePath?: string;
@@ -34,12 +35,32 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [isTraceOpen, setIsTraceOpen] = useState(false);
 
+  // Quick API Key Modal state
+  const [isKeyModalOpen, setIsKeyModalOpen] = useState(false);
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({
+    openai: '',
+    anthropic: '',
+    gemini: '',
+    ollama: 'http://localhost:11434'
+  });
+  const [keySavedBadge, setKeySavedBadge] = useState(false);
+
   const presetTriggers = [
     { label: 'Rename function', query: 'Rename function main to executeApp', badge: 'Fast-Path ~3ms', path: 'green' },
     { label: 'Format code', query: 'Format code', badge: 'Fast-Path ~2ms', path: 'green' },
     { label: 'Find references', query: 'Find all callers of main', badge: 'Fast-Path ~1ms', path: 'green' },
     { label: 'Fix null bug', query: 'Fix null pointer bug in main handler', badge: 'LLM Escalation', path: 'amber' }
   ];
+
+  const handleSaveKeys = () => {
+    byokClient.setApiKey(modelProvider, apiKeys[modelProvider] || '');
+    setKeySavedBadge(true);
+    setTimeout(() => {
+      setKeySavedBadge(false);
+      setIsKeyModalOpen(false);
+    }, 600);
+    onLogTerminal(`[BYOK]: Configured custom API key for ${modelProvider.toUpperCase()}.`);
+  };
 
   const handleExecutePrompt = (textToRun?: string) => {
     const query = textToRun || prompt;
@@ -103,6 +124,8 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     setActivePlan(null);
   };
 
+  const hasConfiguredKey = !!apiKeys[modelProvider];
+
   return (
     <div className="w-80 bg-ide-sidebar border-l border-ide-border flex flex-col h-full font-mono text-xs select-none">
       {/* Panel Header */}
@@ -113,6 +136,20 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         </div>
 
         <div className="flex items-center space-x-1">
+          {/* Quick API Key Button */}
+          <button
+            onClick={() => setIsKeyModalOpen(true)}
+            title="Configure BYOK API Key"
+            className={`p-1 rounded flex items-center space-x-1 ${
+              hasConfiguredKey
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                : 'text-slate-400 hover:text-white hover:bg-ide-card'
+            }`}
+          >
+            <Key className="h-3.5 w-3.5" />
+          </button>
+
+          {/* Router Settings Button */}
           <button
             onClick={() => setIsConfigOpen(true)}
             title="Router Threshold Settings"
@@ -120,6 +157,8 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           >
             <Sliders className="h-3.5 w-3.5" />
           </button>
+
+          {/* Model Provider Selector */}
           <select
             value={modelProvider}
             onChange={(e) => setModelProvider(e.target.value as LLMProvider)}
@@ -143,9 +182,25 @@ export const MissionControl: React.FC<MissionControlProps> = ({
               <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
               <span>Agent Prompt:</span>
             </label>
-            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-              Threshold: {routerConfig.confidenceThreshold}%
-            </span>
+            <div className="flex items-center space-x-1.5">
+              {hasConfiguredKey ? (
+                <span className="text-[10px] text-emerald-400 font-bold flex items-center space-x-0.5">
+                  <Lock className="h-2.5 w-2.5" />
+                  <span>Key Set</span>
+                </span>
+              ) : (
+                <button
+                  onClick={() => setIsKeyModalOpen(true)}
+                  className="text-[10px] text-amber-400 hover:underline flex items-center space-x-0.5"
+                >
+                  <Key className="h-2.5 w-2.5" />
+                  <span>Add Key</span>
+                </button>
+              )}
+              <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                Thresh: {routerConfig.confidenceThreshold}%
+              </span>
+            </div>
           </div>
 
           <div className="relative">
@@ -255,6 +310,55 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           </div>
         ) : null}
       </div>
+
+      {/* Quick Model API Key Modal */}
+      {isKeyModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-ide-border pb-3">
+              <div className="flex items-center space-x-2 text-white">
+                <Key className="h-4 w-4 text-cyan-400" />
+                <span className="font-bold uppercase tracking-wider text-xs">Model API Key ({modelProvider.toUpperCase()})</span>
+              </div>
+              <button onClick={() => setIsKeyModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] text-slate-300 font-bold">
+                Enter API Key for <span className="text-cyan-300 uppercase">{modelProvider}</span>:
+              </label>
+              <input
+                type="password"
+                value={apiKeys[modelProvider] || ''}
+                onChange={(e) => setApiKeys({ ...apiKeys, [modelProvider]: e.target.value })}
+                placeholder={modelProvider === 'openai' ? 'sk-proj-...' : modelProvider === 'anthropic' ? 'sk-ant-...' : 'API Key / URL...'}
+                className="w-full bg-ide-bg border border-ide-border rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
+              />
+              <p className="text-[10px] text-slate-400">
+                API keys are stored securely in local browser memory and never transmitted to external servers.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-ide-border">
+              <button onClick={() => setIsKeyModalOpen(false)} className="px-3 py-1.5 bg-ide-card hover:bg-ide-border text-slate-300 rounded font-semibold">
+                Cancel
+              </button>
+              <button onClick={handleSaveKeys} className="px-3 py-1.5 bg-ide-accent hover:bg-cyan-600 text-white rounded font-bold flex items-center space-x-1 shadow">
+                {keySavedBadge ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-300" />
+                    <span>Saved!</span>
+                  </>
+                ) : (
+                  <span>Save Key</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Router Config Modal */}
       {isConfigOpen && (
