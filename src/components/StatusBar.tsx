@@ -1,14 +1,19 @@
 'use client';
 
 import React from 'react';
-import { GitBranch, CheckCircle2, Cpu, Zap, Activity } from 'lucide-react';
+import { GitBranch, CheckCircle2, Cpu, Zap } from 'lucide-react';
 
 interface StatusBarProps {
   lastLatencyMs?: number;
   lastRoutePath?: string;
+  onOpenSidecar?: () => void;
 }
 
-export const StatusBar: React.FC<StatusBarProps> = ({ lastLatencyMs, lastRoutePath }) => {
+export const StatusBar: React.FC<StatusBarProps> = ({
+  lastLatencyMs,
+  lastRoutePath,
+  onOpenSidecar,
+}) => {
   return (
     <footer className="h-6 bg-ide-status text-white text-[11px] font-mono px-3 flex items-center justify-between border-t border-ide-border select-none z-30">
       {/* Left Indicators */}
@@ -23,8 +28,12 @@ export const StatusBar: React.FC<StatusBarProps> = ({ lastLatencyMs, lastRoutePa
           <span>LSP: TS/Rust Active</span>
         </div>
 
-        <div className="flex items-center space-x-1 hover:bg-white/10 px-1.5 py-0.5 rounded cursor-pointer">
-          <Cpu className="h-3 w-3 text-orange-300" />
+        <div
+          onClick={onOpenSidecar}
+          className="flex items-center space-x-1 hover:bg-white/20 px-1.5 py-0.5 rounded cursor-pointer text-orange-300 font-bold"
+          title="Open Rust Sidecar Indexer & LanceDB Vector Inspector"
+        >
+          <Cpu className="h-3 w-3" />
           <span>Rust Sidecar Index: Ready</span>
         </div>
       </div>
