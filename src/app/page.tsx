@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileNode, ShadowDiffCheck } from '../lib/types';
 import { INITIAL_WORKSPACE } from '../lib/initialWorkspace';
 import { ActivityBar, ActivityView } from '../components/ActivityBar';
@@ -20,10 +20,15 @@ import { CommandPalette, PaletteAction } from '../components/CommandPalette';
 import { WelcomeTab } from '../components/WelcomeTab';
 import { useToast } from '../components/ToastProvider';
 
+// Database Panel Imports
+import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
+import { SqlQueryPanel } from '../components/SqlQueryPanel';
+import { SchemaVisualizer } from '../components/SchemaVisualizer';
+
 import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command } from 'lucide-react';
 
 export default function Home() {
-  const [activeView, setActiveView] = useState<ActivityView>('explorer');
+  const [activeView, setActiveView] = useState<ActivityView>('database');
   const [workspaceFiles, setWorkspaceFiles] = useState<FileNode[]>(INITIAL_WORKSPACE);
   const { addToast } = useToast();
   
@@ -44,10 +49,17 @@ export default function Home() {
   const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
+  // Database State
+  const [connections, setConnections] = useState<DbConnection[]>([
+    { id: 'conn-1', name: 'Local SQLite Metadata', type: 'sqlite', connectionString: 'sqlite://metadata.db', status: 'connected' },
+    { id: 'conn-2', name: 'Postgres Prod Registry', type: 'postgres', connectionString: 'postgresql://postgres@prod-db:5432/dbc', status: 'disconnected' }
+  ]);
+  const [activeConnectionId, setActiveConnectionId] = useState<string>('conn-1');
+
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    'Agentic AI IDE Orchestrator initialized.',
-    'Language Server Protocol (LSP) TS/Rust active.',
-    'Rust Sidecar AST Indexer ready (14 files indexed).'
+    'Agentic AI IDE Database controller active.',
+    'SQLite connection to metadata.db established successfully.',
+    'Ready for SQL transactions.'
   ]);
   const [activeDiff, setActiveDiff] = useState<ShadowDiffCheck | null>(null);
   const [fastPathCount, setFastPathCount] = useState(14);
@@ -59,44 +71,36 @@ export default function Home() {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
 
-      // Cmd+Shift+P → Command Palette
       if (mod && e.shiftKey && e.key === 'p') {
         e.preventDefault();
         setIsPaletteOpen(prev => !prev);
       }
-      // Cmd+Shift+F → Global Search
       if (mod && e.shiftKey && e.key === 'f') {
         e.preventDefault();
         setIsSearchOpen(true);
       }
-      // Cmd+Shift+G → Git Panel
       if (mod && e.shiftKey && e.key === 'g') {
         e.preventDefault();
         setIsGitOpen(true);
       }
-      // Cmd+, → Settings
       if (mod && e.key === ',') {
         e.preventDefault();
         setIsSettingsOpen(true);
       }
-      // Cmd+B → Toggle Sidebar
       if (mod && e.key === 'b') {
         e.preventDefault();
         setShowSidebar(prev => !prev);
       }
-      // Cmd+J → Toggle Terminal
       if (mod && e.key === 'j') {
         e.preventDefault();
         setShowTerminal(prev => !prev);
       }
-      // Cmd+S → Save File
       if (mod && e.key === 's') {
         e.preventDefault();
         if (activeFile) {
           addToast('success', `Saved ${activeFile.name}`);
         }
       }
-      // Cmd+W → Close Tab
       if (mod && e.key === 'w') {
         e.preventDefault();
         if (activeFile) {
@@ -111,6 +115,7 @@ export default function Home() {
 
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
+    { id: 'database', label: 'Open Database Console', category: 'action', icon: <FileCode className="h-4 w-4" />, handler: () => setActiveView('database') },
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
     { id: 'settings', label: 'Open Settings & BYOK Keys', category: 'settings', shortcut: '⌘,', icon: <Settings className="h-4 w-4" />, handler: () => setIsSettingsOpen(true) },
     { id: 'git', label: 'Git Source Control', category: 'git', shortcut: '⌘⇧G', icon: <GitBranch className="h-4 w-4" />, handler: () => setIsGitOpen(true) },
@@ -210,6 +215,27 @@ export default function Home() {
     addToast('success', `Replaced all occurrences of "${searchTerm}".`);
   };
 
+  // Database Handlers
+  const handleAddConnection = (conn: Omit<DbConnection, 'id' | 'status'>) => {
+    const newConn: DbConnection = {
+      ...conn,
+      id: `conn-${Date.now()}`,
+      status: 'connected'
+    };
+    setConnections((prev) => [...prev, newConn]);
+    setActiveConnectionId(newConn.id);
+    addToast('success', `Connected to database: ${conn.name}`);
+    handleLogTerminal(`[DBC Connection Manager]: Established connection to [${conn.name}].`);
+  };
+
+  const handleDeleteConnection = (id: string) => {
+    setConnections((prev) => prev.filter((c) => c.id !== id));
+    if (activeConnectionId === id) {
+      setActiveConnectionId('');
+    }
+    addToast('info', 'Connection removed.');
+  };
+
   const handleLogTerminal = (msg: string) => {
     setTerminalLogs((prev) => [...prev, msg]);
   };
@@ -239,11 +265,14 @@ export default function Home() {
     }, 200);
   }
 
+  const activeConnection = connections.find((c) => c.id === activeConnectionId);
+
   return (
     <div className="h-screen w-screen flex flex-col bg-ide-bg text-slate-100 overflow-hidden">
       <div className="flex-1 flex overflow-hidden">
         <ActivityBar activeView={activeView} onViewChange={handleViewChange} fastPathCount={fastPathCount} />
 
+        {/* Sidebar views */}
         {showSidebar && activeView === 'explorer' && (
           <FileExplorer
             files={workspaceFiles}
@@ -254,11 +283,32 @@ export default function Home() {
           />
         )}
 
+        {showSidebar && activeView === 'database' && (
+          <div className="flex border-r border-ide-border h-full">
+            <DbConnectionPanel
+              connections={connections}
+              activeConnectionId={activeConnectionId}
+              onSelectConnection={setActiveConnectionId}
+              onAddConnection={handleAddConnection}
+              onDeleteConnection={handleDeleteConnection}
+            />
+            {activeConnection && (
+              <SchemaVisualizer connectionType={activeConnection.type} />
+            )}
+          </div>
+        )}
+
+        {/* Main panels */}
         {activeView === 'analytics' ? (
           <AnalyticsPanel />
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {showWelcome && openFiles.length === 0 ? (
+            {activeView === 'database' ? (
+              <SqlQueryPanel
+                activeConnectionName={activeConnection?.name || ''}
+                onLogTerminal={handleLogTerminal}
+              />
+            ) : showWelcome && openFiles.length === 0 ? (
               <WelcomeTab
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onOpenSearch={() => setIsSearchOpen(true)}
