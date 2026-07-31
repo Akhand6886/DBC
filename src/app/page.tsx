@@ -12,6 +12,7 @@ import { AnalyticsPanel } from '../components/AnalyticsPanel';
 import { StatusBar } from '../components/StatusBar';
 import { SearchModal } from '../components/SearchModal';
 import { SettingsModal } from '../components/SettingsModal';
+import { ShadowVerificationDrawer } from '../components/ShadowVerificationDrawer';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('explorer');
@@ -22,9 +23,11 @@ export default function Home() {
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
   const [openFiles, setOpenFiles] = useState<FileNode[]>(initialFile ? [initialFile] : []);
   
-  // Modal states
+  // Modal & Drawer states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
     'Agentic AI IDE Orchestrator initialized.',
@@ -41,6 +44,8 @@ export default function Home() {
       setIsSearchOpen(true);
     } else if (view === 'settings') {
       setIsSettingsOpen(true);
+    } else if (view === 'verification') {
+      setIsVerificationOpen(true);
     } else {
       setActiveView(view);
     }
@@ -120,9 +125,18 @@ export default function Home() {
   const handleApplyPatch = (newContent: string, diffCheck: ShadowDiffCheck) => {
     handleContentChange(newContent);
     setActiveDiff(diffCheck);
+    setShadowHistory((prev) => [...prev, diffCheck]);
     setFastPathCount((prev) => prev + 1);
     setLastLatencyMs(3);
     setLastRoutePath('DETERMINISTIC_FAST_PATH');
+  };
+
+  const handleRollbackSnapshot = (diffCheck: ShadowDiffCheck) => {
+    handleContentChange(diffCheck.originalContent);
+    setShadowHistory((prev) =>
+      prev.map((s) => (s.id === diffCheck.id ? { ...s, status: 'ROLLED_BACK' } : s))
+    );
+    handleLogTerminal(`[Rollback]: Restored file ${diffCheck.targetFile} to snapshot ${diffCheck.id}.`);
   };
 
   const handleRunTestSuite = () => {
@@ -207,6 +221,15 @@ export default function Home() {
         <SettingsModal
           onClose={() => setIsSettingsOpen(false)}
           onSaveSettings={(cfg) => handleLogTerminal(`Saved IDE Settings & BYOK keys.`)}
+        />
+      )}
+
+      {/* Shadow Workspace Verification & Rollback Drawer */}
+      {isVerificationOpen && (
+        <ShadowVerificationDrawer
+          history={shadowHistory}
+          onRollback={handleRollbackSnapshot}
+          onClose={() => setIsVerificationOpen(false)}
         />
       )}
     </div>
