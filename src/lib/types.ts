@@ -21,12 +21,29 @@ export interface FileNode {
   isModified?: boolean;
 }
 
+export interface ScoreBreakdown {
+  patternScore: number;
+  lspAvailabilityScore: number;
+  ambiguityPenalty: number;
+  finalScore: number;
+}
+
+export interface RouterConfig {
+  confidenceThreshold: number; // default 80
+  enableLspRename: boolean;
+  enableLspReferences: boolean;
+  enableFormatter: boolean;
+  enableTestRunner: boolean;
+  enableTreeSitterRefactor: boolean;
+}
+
 export interface CodeIntent {
   rawPrompt: string;
   actionType: FastPathAction | 'COMPLEX_REASONING' | 'MULTI_FILE_FEATURE' | 'DEEP_BUG_FIX';
   targetSymbol?: string;
   targetFilePath?: string;
   confidenceScore: number; // 0 - 100
+  scoreBreakdown?: ScoreBreakdown;
   explanation: string;
 }
 
