@@ -13,6 +13,7 @@ import { StatusBar } from '../components/StatusBar';
 import { SearchModal } from '../components/SearchModal';
 import { SettingsModal } from '../components/SettingsModal';
 import { ShadowVerificationDrawer } from '../components/ShadowVerificationDrawer';
+import { SidecarInspectorModal } from '../components/SidecarInspectorModal';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('explorer');
@@ -27,6 +28,7 @@ export default function Home() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isSidecarOpen, setIsSidecarOpen] = useState(false);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
@@ -55,6 +57,26 @@ export default function Home() {
     setActiveFile(file);
     if (!openFiles.some((f) => f.id === file.id)) {
       setOpenFiles((prev) => [...prev, file]);
+    }
+  };
+
+  const handleJumpToSymbol = (filePath: string, line: number) => {
+    // Find file in workspace
+    const findFileByPath = (nodes: FileNode[]): FileNode | null => {
+      for (const n of nodes) {
+        if (!n.isFolder && n.path === filePath) return n;
+        if (n.isFolder && n.children) {
+          const res = findFileByPath(n.children);
+          if (res) return res;
+        }
+      }
+      return null;
+    };
+
+    const target = findFileByPath(workspaceFiles);
+    if (target) {
+      handleSelectFile(target);
+      handleLogTerminal(`[Rust Sidecar]: Jumped to definition at ${filePath}:${line}`);
     }
   };
 
@@ -204,6 +226,7 @@ export default function Home() {
       <StatusBar
         lastLatencyMs={lastLatencyMs}
         lastRoutePath={lastRoutePath}
+        onOpenSidecar={() => setIsSidecarOpen(true)}
       />
 
       {/* Global Search Modal */}
@@ -230,6 +253,14 @@ export default function Home() {
           history={shadowHistory}
           onRollback={handleRollbackSnapshot}
           onClose={() => setIsVerificationOpen(false)}
+        />
+      )}
+
+      {/* Rust Sidecar Indexer & LanceDB Vector Store Modal */}
+      {isSidecarOpen && (
+        <SidecarInspectorModal
+          onJumpToSymbol={handleJumpToSymbol}
+          onClose={() => setIsSidecarOpen(false)}
         />
       )}
     </div>
