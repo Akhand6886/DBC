@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Files, Search, Bot, BarChart2, Settings, ShieldCheck } from 'lucide-react';
+import { Files, Search, Bot, BarChart2, Settings, ShieldCheck, Globe } from 'lucide-react';
 
-export type ActivityView = 'explorer' | 'search' | 'composer' | 'analytics' | 'settings' | 'verification';
+export type ActivityView = 'explorer' | 'search' | 'composer' | 'analytics' | 'settings' | 'verification' | 'browser';
 
 interface ActivityBarProps {
   activeView: ActivityView;
@@ -20,6 +20,7 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
     { id: 'explorer', label: 'Explorer', icon: Files },
     { id: 'search', label: 'Search', icon: Search },
     { id: 'composer', label: 'Agent Composer (Mission Control)', icon: Bot, badge: 'AI' },
+    { id: 'browser', label: 'Browser-in-the-Loop & Visual Verification', icon: Globe },
     { id: 'verification', label: 'Shadow Verification & Rollback Hub', icon: ShieldCheck },
     { id: 'analytics', label: 'Router Analytics', icon: BarChart2 },
   ];
