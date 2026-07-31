@@ -8,21 +8,37 @@
   }
 }
 
-/* Custom VS Code Scrollbars */
+/* Glassmorphism & Cyberpunk Accents */
+.glass-panel {
+  background: rgba(22, 27, 48, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(31, 38, 66, 0.5);
+}
+
+.glow-cyan {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+}
+
+.glow-border:focus-within {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.2);
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e1e1e;
+  background: #0a0d16;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #333333;
+  background: #1f2642;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #444444;
+  background: #06b6d4;
 }
