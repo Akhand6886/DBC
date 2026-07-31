@@ -15,6 +15,7 @@ import { SettingsModal } from '../components/SettingsModal';
 import { ShadowVerificationDrawer } from '../components/ShadowVerificationDrawer';
 import { SidecarInspectorModal } from '../components/SidecarInspectorModal';
 import { BrowserPreviewModal } from '../components/BrowserPreviewModal';
+import { GitPanel } from '../components/GitPanel';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('explorer');
@@ -31,6 +32,7 @@ export default function Home() {
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSidecarOpen, setIsSidecarOpen] = useState(false);
   const [isBrowserOpen, setIsBrowserOpen] = useState(false);
+  const [isGitOpen, setIsGitOpen] = useState(false);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
@@ -52,6 +54,8 @@ export default function Home() {
       setIsVerificationOpen(true);
     } else if (view === 'browser') {
       setIsBrowserOpen(true);
+    } else if (view === 'git') {
+      setIsGitOpen(true);
     } else {
       setActiveView(view);
     }
@@ -271,6 +275,14 @@ export default function Home() {
       {isBrowserOpen && (
         <BrowserPreviewModal
           onClose={() => setIsBrowserOpen(false)}
+          onLogTerminal={handleLogTerminal}
+        />
+      )}
+
+      {/* Git Source Control Panel */}
+      {isGitOpen && (
+        <GitPanel
+          onClose={() => setIsGitOpen(false)}
           onLogTerminal={handleLogTerminal}
         />
       )}
