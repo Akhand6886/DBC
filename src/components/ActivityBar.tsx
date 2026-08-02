@@ -30,8 +30,8 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
   return (
     <aside className="w-12 bg-ide-activity border-r border-ide-border flex flex-col justify-between items-center py-3 select-none z-20">
       {/* Top Activity Icons */}
-      <div className="flex flex-col space-y-4 items-center w-full">
-        <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-cyan-600 to-blue-600 flex items-center justify-center text-white shadow-md mb-2">
+      <div className="flex flex-col space-y-3.5 items-center w-full">
+        <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 mb-2 transition-transform hover:scale-105">
           <Bot className="h-4 w-4" />
         </div>
 
@@ -43,15 +43,15 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
               key={item.id}
               onClick={() => onViewChange(item.id as ActivityView)}
               title={item.label}
-              className={`relative p-2.5 rounded-lg transition-all ${
+              className={`relative p-2.5 rounded-xl transition-all duration-150 active:scale-95 flex items-center justify-center ${
                 isActive
-                  ? 'text-white bg-ide-card border border-ide-border shadow'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-ide-card/50'
+                  ? 'text-cyan-300 bg-ide-card border border-ide-border shadow-lg shadow-cyan-500/10 before:absolute before:left-0 before:w-1 before:h-6 before:bg-cyan-400 before:rounded-r-full'
+                  : 'text-slate-400 hover:text-slate-100 hover:bg-ide-card/50'
               }`}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-4 w-4" />
               {item.badge && (
-                <span className="absolute -top-1 -right-1 bg-cyan-500 text-[9px] text-white font-bold px-1 rounded-full">
+                <span className="absolute -top-1 -right-1 bg-cyan-500 text-[8px] text-white font-bold px-1 rounded-full shadow">
                   {item.badge}
                 </span>
               )}
@@ -62,15 +62,16 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
 
       {/* Bottom Activity Controls */}
       <div className="flex flex-col space-y-3 items-center">
-        <div className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30" title="Fast-Path Executions">
-          ⚡{fastPathCount}
+        <div className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center space-x-1" title="Fast-Path Executions">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>⚡{fastPathCount}</span>
         </div>
         <button
           onClick={() => onViewChange('settings')}
           title="Settings"
-          className={`p-2 rounded-lg text-slate-400 hover:text-slate-200 ${activeView === 'settings' ? 'text-white bg-ide-card' : ''}`}
+          className={`p-2.5 rounded-xl text-slate-400 hover:text-slate-100 transition-all active:scale-95 ${activeView === 'settings' ? 'text-cyan-300 bg-ide-card border border-ide-border' : ''}`}
         >
-          <Settings className="h-5 w-5" />
+          <Settings className="h-4 w-4" />
         </button>
       </div>
     </aside>
