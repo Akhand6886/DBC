@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download } from 'lucide-react';
+import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, Edit3, Save, RotateCcw } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 
@@ -27,6 +27,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   const [results, setResults] = useState<{ columns: string[]; rows: Record<string, any>[] } | null>(null);
   const [latency, setLatency] = useState<number | null>(null);
 
+  // Inline Cell Editing state
+  const [editingCell, setEditingCell] = useState<{ rowIdx: number; colName: string } | null>(null);
+  const [pendingEdits, setPendingEdits] = useState<Record<string, any>>({});
+
   // Modals state
   const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -35,6 +39,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     const qStr = customQuery || query;
     setIsRunning(true);
     setResults(null);
+    setPendingEdits({});
     const startTime = Date.now();
 
     setTimeout(() => {
@@ -57,6 +62,39 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     }, 450);
   };
 
+  const handleCellDoubleClick = (rowIdx: number, colName: string) => {
+    setEditingCell({ rowIdx, colName });
+  };
+
+  const handleCellChange = (rowIdx: number, colName: string, newValue: any) => {
+    if (!results) return;
+    const key = `${rowIdx}:${colName}`;
+    setPendingEdits(prev => ({ ...prev, [key]: newValue }));
+  };
+
+  const handleCommitEdits = () => {
+    if (!results || Object.keys(pendingEdits).length === 0) return;
+
+    // Apply pending edits to result rows
+    const updatedRows = [...results.rows];
+    Object.entries(pendingEdits).forEach(([key, val]) => {
+      const [rIdxStr, colName] = key.split(':');
+      const rIdx = parseInt(rIdxStr, 10);
+      if (updatedRows[rIdx]) {
+        updatedRows[rIdx] = { ...updatedRows[rIdx], [colName]: val };
+      }
+    });
+
+    const editCount = Object.keys(pendingEdits).length;
+    setResults({ ...results, rows: updatedRows });
+    setPendingEdits({});
+    setEditingCell(null);
+
+    if (onLogTerminal) {
+      onLogTerminal(`[DBC Data Editor]: Auto-generated & executed UPDATE statements for ${editCount} cell modification(s).`);
+    }
+  };
+
   const handleExecuteDDL = (ddl: string) => {
     setIsTableCreatorOpen(false);
     setQuery(ddl);
@@ -72,13 +110,15 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     }
   };
 
+  const pendingEditCount = Object.keys(pendingEdits).length;
+
   return (
     <div className="flex-1 flex flex-col bg-ide-bg font-mono text-xs overflow-hidden h-full">
       {/* Action Toolbar */}
       <div className="h-11 border-b border-ide-border px-4 flex items-center justify-between select-none bg-ide-sidebar/80 backdrop-blur-md">
         <div className="flex items-center space-x-2 text-white">
           <Database className="h-4 w-4 text-cyan-400" />
-          <span className="font-bold tracking-tight text-xs">SQL Console</span>
+          <span className="font-bold tracking-tight text-xs">DBMS SQL Studio</span>
           <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
           <span className="text-slate-400 text-[11px]">Connection:</span>
           <span className="text-cyan-300 font-bold bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/30 shadow-sm">
@@ -87,6 +127,17 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
+          {/* Commit Pending Edits Badge */}
+          {pendingEditCount > 0 && (
+            <button
+              onClick={handleCommitEdits}
+              className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded-lg font-bold flex items-center space-x-1.5 shadow animate-pulse text-[11px]"
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>Commit {pendingEditCount} Edits</span>
+            </button>
+          )}
+
           {/* Create Table Button */}
           <button
             onClick={() => setIsTableCreatorOpen(true)}
@@ -143,7 +194,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Results Header */}
         <div className="h-8 border-b border-ide-border px-4 bg-ide-sidebar/90 flex items-center justify-between text-slate-400 select-none text-[11px]">
-          <span className="font-semibold">Query Output Results</span>
+          <span className="font-semibold flex items-center space-x-1.5">
+            <span>Query Results</span>
+            <span className="text-[10px] text-slate-500 font-normal">(Double-click cell to edit value inline)</span>
+          </span>
           {latency !== null && (
             <div className="flex items-center space-x-1.5 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -172,11 +226,36 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
               <tbody className="divide-y divide-ide-border/50 text-slate-200">
                 {results.rows.map((row, rIdx) => (
                   <tr key={rIdx} className="hover:bg-cyan-500/10 even:bg-ide-card/30 transition-colors">
-                    {results.columns.map((col, cIdx) => (
-                      <td key={cIdx} className="px-4 py-2 border-r border-ide-border/50">
-                        {String(row[col])}
-                      </td>
-                    ))}
+                    {results.columns.map((col, cIdx) => {
+                      const editKey = `${rIdx}:${col}`;
+                      const isEdited = pendingEdits.hasOwnProperty(editKey);
+                      const displayVal = isEdited ? pendingEdits[editKey] : row[col];
+                      const isEditing = editingCell?.rowIdx === rIdx && editingCell?.colName === col;
+
+                      return (
+                        <td
+                          key={cIdx}
+                          onDoubleClick={() => handleCellDoubleClick(rIdx, col)}
+                          className={`px-4 py-2 border-r border-ide-border/50 cursor-pointer ${
+                            isEdited ? 'bg-amber-500/20 text-amber-300 font-bold' : ''
+                          }`}
+                        >
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              autoFocus
+                              value={displayVal}
+                              onChange={(e) => handleCellChange(rIdx, col, e.target.value)}
+                              onBlur={() => setEditingCell(null)}
+                              onKeyDown={(e) => e.key === 'Enter' && setEditingCell(null)}
+                              className="bg-ide-bg border border-cyan-500 text-cyan-300 px-1 py-0.5 rounded text-[11px] font-mono focus:outline-none w-full"
+                            />
+                          ) : (
+                            <span>{String(displayVal)}</span>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 ))}
               </tbody>
