@@ -10,7 +10,7 @@ import { byokClient } from '../lib/agent/byokClient';
 import { RouterConfigModal } from './RouterConfigModal';
 import { RouterTraceModal } from './RouterTraceModal';
 
-import { Bot, Zap, Cpu, Send, ShieldCheck, Check, X, Sparkles, RefreshCw, FileCode, Sliders, Key, Lock } from 'lucide-react';
+import { Bot, Zap, Cpu, Send, ShieldCheck, Check, X, Sparkles, RefreshCw, FileCode, Sliders, Key, Lock, Database } from 'lucide-react';
 
 interface MissionControlProps {
   activeFilePath?: string;
@@ -46,10 +46,10 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   const [keySavedBadge, setKeySavedBadge] = useState(false);
 
   const presetTriggers = [
-    { label: 'Rename function', query: 'Rename function main to executeApp', badge: 'Fast-Path ~3ms', path: 'green' },
-    { label: 'Format code', query: 'Format code', badge: 'Fast-Path ~2ms', path: 'green' },
-    { label: 'Find references', query: 'Find all callers of main', badge: 'Fast-Path ~1ms', path: 'green' },
-    { label: 'Fix null bug', query: 'Fix null pointer bug in main handler', badge: 'LLM Escalation', path: 'amber' }
+    { label: 'Generate JOIN query', query: 'Generate SELECT JOIN query between users and roles tables', badge: 'Fast-Path ~3ms', path: 'green' },
+    { label: 'Optimize slow query', query: 'Optimize query SELECT * FROM users WHERE email LIKE %test%', badge: 'Fast-Path ~2ms', path: 'green' },
+    { label: 'Create audit trigger', query: 'Create audit log trigger on users table for UPDATE transactions', badge: 'LLM Escalation', path: 'amber' },
+    { label: 'Generate DB migration', query: 'Generate database schema migration script adding age column to users', badge: 'LLM Escalation', path: 'amber' }
   ];
 
   const handleSaveKeys = () => {
@@ -111,7 +111,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
       setIsLoading(false);
       setActivePlan(plan);
-      onLogTerminal(`[Router Score]: ${intent.confidenceScore}% (${intent.explanation})`);
+      onLogTerminal(`[DBMS Router Score]: ${intent.confidenceScore}% (${intent.explanation})`);
       onLogTerminal(`[Action]: ${logMsg}`);
     }, 350);
   };
@@ -131,8 +131,8 @@ export const MissionControl: React.FC<MissionControlProps> = ({
       {/* Panel Header */}
       <div className="px-4 py-3 border-b border-ide-border flex items-center justify-between">
         <div className="flex items-center space-x-2 text-white">
-          <Bot className="h-4 w-4 text-cyan-400" />
-          <span className="font-bold uppercase tracking-wider text-xs">Mission Control</span>
+          <Database className="h-4 w-4 text-cyan-400" />
+          <span className="font-bold uppercase tracking-wider text-xs">DBMS AI Assistant</span>
         </div>
 
         <div className="flex items-center space-x-1">
@@ -180,7 +180,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           <div className="flex items-center justify-between text-[11px]">
             <label className="text-slate-400 font-semibold flex items-center space-x-1">
               <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Agent Prompt:</span>
+              <span>SQL Agent Prompt:</span>
             </label>
             <div className="flex items-center space-x-1.5">
               {hasConfiguredKey ? (
@@ -208,7 +208,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleExecutePrompt())}
-              placeholder="e.g. 'Rename function main to executeApp' or 'Fix null bug'"
+              placeholder="e.g. 'Generate SELECT JOIN query for users & roles' or 'Create index on email'"
               className="w-full bg-ide-bg border border-ide-border rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 resize-none h-20"
             />
             <button
@@ -223,7 +223,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
         {/* Preset Prompt Triggers */}
         <div className="space-y-1.5">
-          <div className="text-[10px] text-slate-400 uppercase font-bold">Preset Router Triggers:</div>
+          <div className="text-[10px] text-slate-400 uppercase font-bold">DBMS SQL AI Triggers:</div>
           <div className="flex flex-wrap gap-1.5">
             {presetTriggers.map((item, idx) => (
               <button
@@ -248,7 +248,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         {isLoading ? (
           <div className="bg-ide-card border border-ide-border rounded-lg p-3 text-center space-y-2 animate-pulse">
             <RefreshCw className="h-4 w-4 text-cyan-400 animate-spin mx-auto" />
-            <div className="text-xs text-cyan-300">Classifying intent & evaluating confidence...</div>
+            <div className="text-xs text-cyan-300">Classifying DBMS intent & evaluating confidence...</div>
           </div>
         ) : activePlan ? (
           <div className="bg-ide-card border border-ide-border rounded-lg p-3 space-y-3">
@@ -336,9 +336,6 @@ export const MissionControl: React.FC<MissionControlProps> = ({
                 placeholder={modelProvider === 'openai' ? 'sk-proj-...' : modelProvider === 'anthropic' ? 'sk-ant-...' : 'API Key / URL...'}
                 className="w-full bg-ide-bg border border-ide-border rounded-lg p-2.5 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
               />
-              <p className="text-[10px] text-slate-400">
-                API keys are stored securely in local browser memory and never transmitted to external servers.
-              </p>
             </div>
 
             <div className="flex items-center justify-end space-x-2 pt-2 border-t border-ide-border">
