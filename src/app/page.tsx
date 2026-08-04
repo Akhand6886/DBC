@@ -33,11 +33,11 @@ export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
   const [workspaceFiles, setWorkspaceFiles] = useState<FileNode[]>(INITIAL_WORKSPACE);
   const { addToast } = useToast();
-  
+
   const initialFile = INITIAL_WORKSPACE[0].children?.[0] || null;
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
   const [openFiles, setOpenFiles] = useState<FileNode[]>(initialFile ? [initialFile] : []);
-  
+
   // Modal & Drawer states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -178,6 +178,8 @@ export default function Home() {
       setActiveFile(updated.length > 0 ? updated[updated.length - 1] : null);
     }
   };
+
+
 
   const handleContentChange = (newContent: string) => {
     if (!activeFile) return;
