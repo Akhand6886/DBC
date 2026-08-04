@@ -188,6 +188,8 @@ export default function Home() {
     setOpenFiles((prev) => prev.map((f) => (f.id === activeFile.id ? updatedFile : f)));
   };
 
+
+
   const handleAddFile = (fileName: string) => {
     const newFile: FileNode = {
       id: `file-${Date.now()}`,
