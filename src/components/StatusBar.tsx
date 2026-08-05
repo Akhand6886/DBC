@@ -7,12 +7,14 @@ interface StatusBarProps {
   lastLatencyMs?: number;
   lastRoutePath?: string;
   onOpenSidecar: () => void;
+  onOpenGit?: () => void;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
   lastLatencyMs = 3,
   lastRoutePath = 'DETERMINISTIC_FAST_PATH',
   onOpenSidecar,
+  onOpenGit,
 }) => {
   return (
     <div className="h-6 bg-[#007acc] text-white px-3 flex items-center justify-between text-[11px] font-sans select-none border-t border-[#005a9e]">
@@ -24,11 +26,15 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span>DBC: Local Engine</span>
         </div>
 
-        {/* Git Branch */}
-        <div className="flex items-center space-x-1 hover:bg-[#005a9e] px-1.5 py-0.5 rounded cursor-pointer">
+        {/* Git Branch Click Trigger */}
+        <button
+          onClick={onOpenGit}
+          className="flex items-center space-x-1 hover:bg-[#005a9e] px-1.5 py-0.5 rounded cursor-pointer transition-colors"
+          title="Open Source Control Panel"
+        >
           <GitBranch className="h-3 w-3" />
           <span>main*</span>
-        </div>
+        </button>
 
         {/* Diagnostics Errors / Warnings */}
         <div className="flex items-center space-x-2">
@@ -61,7 +67,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <ShieldCheck className="h-3 w-3 text-emerald-200" />
           <span>LanceDB Active</span>
         </button>
-        <Bell className="h-3 w-3" />
+        <Bell className="h-3 w-3 cursor-pointer hover:opacity-80" />
       </div>
     </div>
   );
