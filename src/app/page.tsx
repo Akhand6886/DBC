@@ -20,24 +20,26 @@ import { CommandPalette, PaletteAction } from '../components/CommandPalette';
 import { WelcomeTab } from '../components/WelcomeTab';
 import { useToast } from '../components/ToastProvider';
 
-// Database Panel Imports
+// DBMS Studio & Editor Imports
 import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
 import { SqlQueryPanel } from '../components/SqlQueryPanel';
 import { SchemaVisualizer } from '../components/SchemaVisualizer';
 import { DbPerformanceMonitor } from '../components/DbPerformanceMonitor';
 import { TableInspectorModal } from '../components/TableInspectorModal';
+import { DbObjectExplorer } from '../components/DbObjectExplorer';
+import { TableDataEditor } from '../components/TableDataEditor';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command, Database } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command, Database, Table } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
   const [workspaceFiles, setWorkspaceFiles] = useState<FileNode[]>(INITIAL_WORKSPACE);
   const { addToast } = useToast();
-
+  
   const initialFile = INITIAL_WORKSPACE[0].children?.[0] || null;
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
   const [openFiles, setOpenFiles] = useState<FileNode[]>(initialFile ? [initialFile] : []);
-
+  
   // Modal & Drawer states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -51,8 +53,9 @@ export default function Home() {
   const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
 
-  // Table Inspector state
+  // Table Inspector & Data Editor state
   const [inspectTable, setInspectTable] = useState<string | null>(null);
+  const [editingTable, setEditingTable] = useState<string | null>(null);
 
   // Database State
   const [connections, setConnections] = useState<DbConnection[]>([
@@ -62,9 +65,9 @@ export default function Home() {
   const [activeConnectionId, setActiveConnectionId] = useState<string>('conn-1');
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    'Agentic AI IDE DBMS Controller initialized.',
+    'Agentic AI IDE DBMS Editor Engine active.',
     'SQLite connection to metadata.db established successfully.',
-    'Ready for SQL transactions & schema operations.'
+    'Ready for SQL transactions & interactive data grid editing.'
   ]);
   const [activeDiff, setActiveDiff] = useState<ShadowDiffCheck | null>(null);
   const [fastPathCount, setFastPathCount] = useState(14);
@@ -121,7 +124,8 @@ export default function Home() {
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
     { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4" />, handler: () => setActiveView('database') },
-    { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Database className="h-4 w-4" />, handler: () => setInspectTable('users') },
+    { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setInspectTable('users') },
+    { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setEditingTable('users') },
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
     { id: 'settings', label: 'Open Settings & BYOK Keys', category: 'settings', shortcut: '⌘,', icon: <Settings className="h-4 w-4" />, handler: () => setIsSettingsOpen(true) },
     { id: 'git', label: 'Git Source Control', category: 'git', shortcut: '⌘⇧G', icon: <GitBranch className="h-4 w-4" />, handler: () => setIsGitOpen(true) },
@@ -179,16 +183,12 @@ export default function Home() {
     }
   };
 
-
-
   const handleContentChange = (newContent: string) => {
     if (!activeFile) return;
     const updatedFile = { ...activeFile, content: newContent, isModified: true };
     setActiveFile(updatedFile);
     setOpenFiles((prev) => prev.map((f) => (f.id === activeFile.id ? updatedFile : f)));
   };
-
-
 
   const handleAddFile = (fileName: string) => {
     const newFile: FileNode = {
@@ -302,7 +302,14 @@ export default function Home() {
               onDeleteConnection={handleDeleteConnection}
             />
             {activeConnection && (
-              <SchemaVisualizer connectionType={activeConnection.type} />
+              <DbObjectExplorer
+                onOpenDataEditor={(tableName) => setEditingTable(tableName)}
+                onInspectDDL={(tableName) => setInspectTable(tableName)}
+                onRunSelectTop={(tableName) => {
+                  setActiveView('database');
+                  handleLogTerminal(`[DBMS Editor]: Executed SELECT * FROM ${tableName} LIMIT 100;`);
+                }}
+              />
             )}
           </div>
         )}
@@ -313,18 +320,26 @@ export default function Home() {
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden">
             {activeView === 'database' ? (
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <SqlQueryPanel
-                  activeConnectionName={activeConnection?.name || ''}
+              editingTable ? (
+                <TableDataEditor
+                  tableName={editingTable}
+                  onClose={() => setEditingTable(null)}
                   onLogTerminal={handleLogTerminal}
-                  onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
                 />
-                {activeConnection && (
-                  <div className="p-3 border-t border-ide-border bg-ide-sidebar">
-                    <DbPerformanceMonitor />
-                  </div>
-                )}
-              </div>
+              ) : (
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  <SqlQueryPanel
+                    activeConnectionName={activeConnection?.name || ''}
+                    onLogTerminal={handleLogTerminal}
+                    onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
+                  />
+                  {activeConnection && (
+                    <div className="p-3 border-t border-ide-border bg-ide-sidebar">
+                      <DbPerformanceMonitor />
+                    </div>
+                  )}
+                </div>
+              )
             ) : showWelcome && openFiles.length === 0 ? (
               <WelcomeTab
                 onOpenSettings={() => setIsSettingsOpen(true)}
