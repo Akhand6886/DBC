@@ -1,54 +1,68 @@
 'use client';
 
 import React from 'react';
-import { GitBranch, CheckCircle2, Cpu, Zap } from 'lucide-react';
+import { GitBranch, Zap, CheckCircle2, AlertCircle, ShieldCheck, Database, Bell } from 'lucide-react';
 
 interface StatusBarProps {
   lastLatencyMs?: number;
   lastRoutePath?: string;
-  onOpenSidecar?: () => void;
+  onOpenSidecar: () => void;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
-  lastLatencyMs,
-  lastRoutePath,
+  lastLatencyMs = 3,
+  lastRoutePath = 'DETERMINISTIC_FAST_PATH',
   onOpenSidecar,
 }) => {
   return (
-    <footer className="h-6 bg-ide-status text-white text-[11px] font-mono px-3 flex items-center justify-between border-t border-ide-border select-none z-30">
-      {/* Left Indicators */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-1.5 hover:bg-white/10 px-1.5 py-0.5 rounded cursor-pointer">
+    <div className="h-6 bg-[#007acc] text-white px-3 flex items-center justify-between text-[11px] font-sans select-none border-t border-[#005a9e]">
+      {/* Left Status Section */}
+      <div className="flex items-center space-x-3">
+        {/* Remote Host Badge */}
+        <div className="bg-[#005a9e] px-2 py-0.5 font-bold flex items-center space-x-1">
+          <Database className="h-3 w-3" />
+          <span>DBC: Local Engine</span>
+        </div>
+
+        {/* Git Branch */}
+        <div className="flex items-center space-x-1 hover:bg-[#005a9e] px-1.5 py-0.5 rounded cursor-pointer">
           <GitBranch className="h-3 w-3" />
-          <span>main</span>
+          <span>main*</span>
         </div>
 
-        <div className="flex items-center space-x-1 hover:bg-white/10 px-1.5 py-0.5 rounded cursor-pointer">
-          <CheckCircle2 className="h-3 w-3 text-emerald-300" />
-          <span>LSP: TS/Rust Active</span>
+        {/* Diagnostics Errors / Warnings */}
+        <div className="flex items-center space-x-2">
+          <span className="flex items-center space-x-0.5">
+            <AlertCircle className="h-3 w-3 text-amber-200" />
+            <span>0</span>
+          </span>
+          <span className="flex items-center space-x-0.5">
+            <CheckCircle2 className="h-3 w-3 text-emerald-200" />
+            <span>0</span>
+          </span>
         </div>
 
-        <div
-          onClick={onOpenSidecar}
-          className="flex items-center space-x-1 hover:bg-white/20 px-1.5 py-0.5 rounded cursor-pointer text-orange-300 font-bold"
-          title="Open Rust Sidecar Indexer & LanceDB Vector Inspector"
-        >
-          <Cpu className="h-3 w-3" />
-          <span>Rust Sidecar Index: Ready</span>
+        {/* Router Mode */}
+        <div className="flex items-center space-x-1 font-mono text-[10px] bg-[#005a9e] px-2 py-0.5 rounded">
+          <Zap className="h-3 w-3 text-yellow-300 fill-current" />
+          <span>Fast-Path ({lastLatencyMs}ms)</span>
         </div>
       </div>
 
-      {/* Right Indicators */}
-      <div className="flex items-center space-x-4">
-        {lastLatencyMs !== undefined && (
-          <div className="flex items-center space-x-1 bg-black/20 px-2 py-0.5 rounded">
-            <Zap className="h-3 w-3 text-yellow-300" />
-            <span>{lastRoutePath === 'DETERMINISTIC_FAST_PATH' ? 'Fast-Path' : 'LLM'}: {lastLatencyMs}ms</span>
-          </div>
-        )}
+      {/* Right Status Section */}
+      <div className="flex items-center space-x-3 text-[10px]">
         <span>UTF-8</span>
-        <span>TypeScript 5.6</span>
+        <span>LF</span>
+        <span>TypeScript</span>
+        <button
+          onClick={onOpenSidecar}
+          className="hover:bg-[#005a9e] px-1.5 py-0.5 rounded flex items-center space-x-1"
+        >
+          <ShieldCheck className="h-3 w-3 text-emerald-200" />
+          <span>LanceDB Active</span>
+        </button>
+        <Bell className="h-3 w-3" />
       </div>
-    </footer>
+    </div>
   );
 };

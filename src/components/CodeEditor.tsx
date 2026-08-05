@@ -1,18 +1,13 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React from 'react';
 import dynamic from 'next/dynamic';
 import { FileNode, ShadowDiffCheck } from '../lib/types';
-import { X, Check, RotateCcw, FileCode } from 'lucide-react';
+import { X, Check, FileCode, ShieldAlert, Sparkles } from 'lucide-react';
 
-// Dynamic import to avoid SSR issues with Monaco
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
   ssr: false,
-  loading: () => (
-    <div className="flex-1 flex items-center justify-center bg-ide-bg text-slate-500 text-xs font-mono">
-      Loading Monaco Editor Engine...
-    </div>
-  ),
+  loading: () => <div className="h-full flex items-center justify-center bg-[#1e1e1e] text-slate-400 font-mono text-xs">Loading Monaco Editor Engine...</div>,
 });
 
 interface CodeEditorProps {
@@ -20,30 +15,11 @@ interface CodeEditorProps {
   openFiles: FileNode[];
   onSelectTab: (file: FileNode) => void;
   onCloseTab: (fileId: string) => void;
-  onContentChange: (content: string) => void;
-  activeDiff: ShadowDiffCheck | null;
-  onAcceptDiff: () => void;
-  onRejectDiff: () => void;
+  onContentChange: (newContent: string) => void;
+  activeDiff?: ShadowDiffCheck | null;
+  onAcceptDiff?: () => void;
+  onRejectDiff?: () => void;
 }
-
-const getMonacoLanguage = (lang: string, fileName?: string): string => {
-  if (fileName?.endsWith('.tsx') || fileName?.endsWith('.jsx')) return 'typescript';
-  if (fileName?.endsWith('.json')) return 'json';
-  if (fileName?.endsWith('.md')) return 'markdown';
-  if (fileName?.endsWith('.css')) return 'css';
-  if (fileName?.endsWith('.html')) return 'html';
-  if (fileName?.endsWith('.rs')) return 'rust';
-  if (fileName?.endsWith('.py')) return 'python';
-  if (fileName?.endsWith('.go')) return 'go';
-
-  switch (lang) {
-    case 'typescript': return 'typescript';
-    case 'rust': return 'rust';
-    case 'json': return 'json';
-    case 'python': return 'python';
-    default: return 'typescript';
-  }
-};
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
   activeFile,
@@ -55,37 +31,47 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onAcceptDiff,
   onRejectDiff,
 }) => {
-  const handleEditorChange = useCallback((value: string | undefined) => {
+  const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       onContentChange(value);
     }
-  }, [onContentChange]);
+  };
+
+  const getMonacoLanguage = (lang: string, fileName: string) => {
+    if (fileName.endsWith('.sql')) return 'sql';
+    if (fileName.endsWith('.json')) return 'json';
+    if (fileName.endsWith('.rs')) return 'rust';
+    if (fileName.endsWith('.ts') || fileName.endsWith('.tsx')) return 'typescript';
+    if (fileName.endsWith('.js') || fileName.endsWith('.jsx')) return 'javascript';
+    if (fileName.endsWith('.md')) return 'markdown';
+    return lang || 'plaintext';
+  };
 
   return (
-    <div className="flex-1 flex flex-col bg-ide-bg overflow-hidden">
-      {/* Tab Bar */}
-      <div className="h-9 bg-ide-sidebar border-b border-ide-border flex items-center overflow-x-auto select-none">
+    <div className="flex-1 flex flex-col bg-[#1e1e1e] h-full overflow-hidden select-none">
+      {/* VS Code Tab Bar */}
+      <div className="h-9 bg-[#252526] border-b border-[#3c3c3c] flex items-center overflow-x-auto text-xs scrollbar-none font-sans">
         {openFiles.map((file) => {
           const isActive = activeFile?.id === file.id;
           return (
             <div
               key={file.id}
               onClick={() => onSelectTab(file)}
-              className={`flex items-center space-x-2 px-3 h-full text-xs font-mono cursor-pointer border-r border-ide-border transition-colors ${
+              className={`group h-full px-3 flex items-center space-x-2 border-r border-[#3c3c3c] cursor-pointer transition-all ${
                 isActive
-                  ? 'bg-ide-bg text-white border-t-2 border-t-ide-accent'
-                  : 'bg-ide-sidebar text-slate-400 hover:text-slate-200'
+                  ? 'bg-[#1e1e1e] text-white font-medium border-t-2 border-t-[#007acc]'
+                  : 'bg-[#2d2d2d] text-[#969696] hover:bg-[#323233] hover:text-[#cccccc]'
               }`}
             >
-              <FileCode className="h-3 w-3 text-cyan-400" />
-              <span>{file.name}</span>
-              {file.isModified && <span className="h-1.5 w-1.5 rounded-full bg-cyan-400"></span>}
+              <FileCode className={`h-3.5 w-3.5 ${isActive ? 'text-[#007acc]' : 'text-slate-500'}`} />
+              <span className="text-[12px]">{file.name}</span>
+              {file.isModified && <span className="h-2 w-2 rounded-full bg-[#007acc]"></span>}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onCloseTab(file.id);
                 }}
-                className="ml-1 text-slate-500 hover:text-white"
+                className="opacity-0 group-hover:opacity-100 hover:text-white p-0.5 rounded"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -94,27 +80,30 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         })}
       </div>
 
-      {/* Active Diff Banner */}
+      {/* Shadow Buffer Diff Overlay Banner */}
       {activeDiff && (
-        <div className="bg-cyan-950/60 border-b border-cyan-500/30 px-4 py-2 flex items-center justify-between text-xs">
-          <div className="flex items-center space-x-2 text-cyan-300 font-semibold">
-            <FileCode className="h-3.5 w-3.5" />
-            <span>Shadow Workspace Patch Applied — {activeDiff.id}</span>
+        <div className="bg-[#143a22] border-b border-[#3c3c3c] px-4 py-2 flex items-center justify-between font-mono text-xs text-emerald-200">
+          <div className="flex items-center space-x-2">
+            <Sparkles className="h-4 w-4 text-emerald-400" />
+            <span className="font-bold">Shadow Workspace Patch Pending Verification</span>
+            <span className="text-[10px] text-emerald-300">({activeDiff.id})</span>
           </div>
+
           <div className="flex items-center space-x-2">
             <button
               onClick={onRejectDiff}
-              className="text-slate-400 hover:text-white text-[10px] flex items-center space-x-1 px-2 py-1 rounded border border-ide-border"
+              aria-label="Reject Diff Patch"
+              className="bg-rose-950/60 hover:bg-rose-900 text-rose-200 border border-rose-500/40 px-3 py-1 rounded font-semibold text-[11px]"
             >
-              <RotateCcw className="h-3 w-3" />
-              <span>Undo</span>
+              Reject Patch
             </button>
             <button
               onClick={onAcceptDiff}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] flex items-center space-x-1 px-2 py-1 rounded shadow"
+              aria-label="Accept Diff Patch"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded font-bold text-[11px] flex items-center space-x-1"
             >
-              <Check className="h-3 w-3" />
-              <span>Accept</span>
+              <Check className="h-3.5 w-3.5" />
+              <span>Accept Patch</span>
             </button>
           </div>
         </div>
@@ -133,34 +122,21 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
               fontSize: 13,
               fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
               fontLigatures: true,
-              minimap: { enabled: true, scale: 1 },
+              minimap: { enabled: true, scale: 0.75 },
               lineNumbers: 'on',
-              renderLineHighlight: 'all',
-              bracketPairColorization: { enabled: true },
-              smoothScrolling: true,
-              cursorBlinking: 'smooth',
-              cursorSmoothCaretAnimation: 'on',
               scrollBeyondLastLine: false,
               padding: { top: 12, bottom: 12 },
+              cursorBlinking: 'smooth',
+              cursorSmoothCaretAnimation: 'on',
+              renderLineHighlight: 'all',
               automaticLayout: true,
               tabSize: 2,
-              wordWrap: 'off',
-              guides: {
-                bracketPairs: true,
-                indentation: true,
-              },
-              suggest: {
-                showKeywords: true,
-                showSnippets: true,
-              },
             }}
           />
         ) : (
-          <div className="flex-1 h-full flex flex-col items-center justify-center text-slate-500 text-xs font-mono space-y-3">
-            <div className="h-16 w-16 rounded-2xl bg-ide-card border border-ide-border flex items-center justify-center">
-              <FileCode className="h-8 w-8 text-slate-600" />
-            </div>
-            <span>Select a file from the Explorer to begin editing.</span>
+          <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2 font-sans">
+            <FileCode className="h-10 w-10 text-slate-600" />
+            <span className="text-sm text-slate-400">Select a file from the explorer sidebar to begin editing</span>
           </div>
         )}
       </div>
