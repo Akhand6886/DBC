@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The **Agentic AI IDE** is an ultra-fast, developer-first coding and database environment combining **Code-OSS (VS Code core)** with a **Confidence-Scored Dual-Path Router**, **Shadow Workspace Verification Engine**, **Rust Codebase Indexing Sidecar**, and a dedicated **Agentic DBMS Studio**.
+The **Agentic AI IDE** is an ultra-fast, developer-first coding and database environment combining **Code-OSS (VS Code core)** with a **Confidence-Scored Dual-Path Router**, **Shadow Workspace Verification Engine**, **Rust Codebase Indexing Sidecar**, and a dedicated **Agentic DBMS Studio & Data Editor**.
 
 ---
 
@@ -11,23 +11,23 @@ The **Agentic AI IDE** is an ultra-fast, developer-first coding and database env
 ```
                                       AGENTIC AI IDE
                                              │
- ┌───────────────────┬───────────────────────┼───────────────────┬───────────────────┬───────────────────┐
- ▼                   ▼                       ▼                   ▼                   ▼                   ▼
-Editor Shell      Confidence Router       Verification Engine   Rust Indexing      Browser-in-the-Loop  Agentic DBMS Studio
-(VS Code Core)    (Fast-Path vs LLM)      (Shadow Diff Check)   (Tree-sitter/Lance) (Playwright CDP)   (SQL WASM/Explain/Diff)
+ ┌───────────────────┬───────────────────────┼───────────────────┬───────────────────┬───────────────────┬───────────────────┐
+ ▼                   ▼                       ▼                   ▼                   ▼                   ▼                   ▼
+VS Code Dark UI   Confidence Router       Verification Engine   Rust Indexing      Browser-in-the-Loop  Agentic DBMS Studio Multi-Format Exporter
+(Menu/Blue Status)(Fast-Path vs LLM)      (Shadow Diff Check)   (Tree-sitter/Lance) (Playwright CDP)   (Data Grid/Objects) (Excel/CSV/JSON/MD)
 ```
 
 ---
 
 ## Detailed Feature List
 
-### 1. Editor Shell & User Interface (`/editor`)
-- **VS Code Extension Compatibility:** Native compatibility with the OpenVSX marketplace for themes, linters, formatters, and language servers.
-- **Activity Bar Navigation:** One-click navigation between Workspace Explorer, Global Search, Git Source Control, Database Studio, Mission Control AI Composer, Router Analytics, and Settings.
-- **Workspace File Explorer:** Tree navigation with file language icons, folder toggles, inline file creation, and deletion.
-- **Tabbed Monaco Code Editor:** Multi-file tabbed Monaco editor with line numbers, syntax highlighting, bracket colorization, minimap, and smooth caret animations.
-- **Integrated Terminal Panel:** Embedded terminal output stream supporting bash/zsh command execution, LSP diagnostics, and Rust Sidecar status.
-- **IDE Status Bar:** Real-time indicators for Git branch (`main`), active LSP language servers, Rust Sidecar index status, and query latency stats.
+### 1. VS Code Dark Theme Shell & User Interface (`/editor`)
+- **VS Code Dark Theme Palette:** Official VS Code color scheme (`#1e1e1e` Editor background, `#252526` Primary Sidebar, `#333333` Activity Bar, `#007acc` VS Code Blue accent).
+- **VS Code Top Menu Bar (`TopMenuBar.tsx`):** Interactive menu bar (`File` | `Edit` | `Selection` | `View` | `Go` | `Run` | `Terminal` | `Help`) with dropdown command triggers (`New File`, `New Folder`, `Preferences`, `Toggle Terminal`).
+- **Signature VS Code Blue Status Bar (`StatusBar.tsx`):** Bright blue status bar (`bg-[#007acc] text-white`) with Git branch, diagnostic status indicators, and LanceDB index monitor.
+- **VS Code Flat Editor Tabs (`CodeEditor.tsx`):** Active tab in `#1e1e1e` with `#007acc` top border highlight indicator, and inactive tabs in `#2d2d2d`.
+- **Expanded Workspace File Explorer (`FileExplorer.tsx`):** Tree view supporting folder creation (`+ Folder`), file creation (`+ File`), inline file/folder renaming, and quick actions.
+- **VS Code Integrated Terminal Panel (`TerminalPanel.tsx`):** VS Code panel tabs (`PROBLEMS`, `OUTPUT`, `DEBUG CONSOLE`, `TERMINAL`) with log clear and CLI test runner.
 
 ---
 
@@ -66,21 +66,24 @@ Editor Shell      Confidence Router       Verification Engine   Rust Indexing   
 
 ---
 
-### 5. Rust Codebase Indexing Sidecar (`/sidecar`)
-- **Tree-sitter AST Parsing:** High-speed AST parsing across thousands of source files in Rust without Garbage Collection (GC) pauses.
-- **Local Vector Search Store:** Embedded **LanceDB** / **sqlite-vec** with ONNX local embeddings for instant zero-network semantic code search.
-- **Symbol Reference Graph:** Computes function relationships, type hierarchies, and import maps.
-
----
-
-### 6. Dedicated Agentic DBMS Studio & Database Engine (`/dbms`)
+### 5. Dedicated Agentic DBMS Studio & Data Editor (`/dbms`)
 - **Real SQL Driver Engine (`sqlDriver.ts`):** Embedded SQL engine executing real `CREATE TABLE`, `INSERT INTO`, and `SELECT` queries with live syntax error handling.
-- **Interactive Inline Cell Data Editing:** Double-click data cells in the query result grid to modify values directly, with pending edit tracking and auto-generated `UPDATE` queries.
+- **Interactive Table Data Grid (`TableDataEditor.tsx`):** Full-screen table data grid editor supporting double-click inline cell edits, `+ Add Row`, `Delete Row`, search filtering, and column header sorting (`ASC`/`DESC`).
+- **Database Object Explorer (`DbObjectExplorer.tsx`):** Tree navigation for Tables, Views, Triggers, and Functions with quick hover actions (Select Top 100, Edit Data Grid, Inspect DDL).
 - **AI Database Migration Generator & Schema Diffing (`schemaDiffer.ts`):** Compares environments (e.g. `Dev` vs `Prod`), generates `UP` and `DOWN` SQL migration scripts, and flags data-loss safety warnings (`DROP TABLE`, `DROP COLUMN`).
 - **Visual Query Execution Plan Analyzer (`explainAnalyzer.ts`):** Parses `EXPLAIN ANALYZE` outputs into visual node graph cards (`Seq Scan`, `Index Scan`, `Hash Join`), highlights cost bottlenecks in red, and provides an **AI Index Advisor** suggesting `CREATE INDEX` SQL statements with estimated speedups.
 - **Table DDL & Schema Inspector (`TableInspectorModal.tsx`):** Inspects raw table DDL, indexes, column data types, and key constraints.
 - **Visual Table Creator DDL Wizard (`TableCreatorModal.tsx`):** Graphical wizard to define fields, data types, and primary key constraints with real-time DDL preview.
 - **Live Database Performance Monitor (`DbPerformanceMonitor.tsx`):** Dashboard for CPU usage, memory allocation, cache hit ratio, and active process tracking.
+
+---
+
+### 6. Multi-Format Data Exporter Engine (`dataExporter.ts`)
+- **Excel Spreadsheet Export (`.xlsx` / `.xls`):** Generates native Excel spreadsheet XML files formatted with column data types and header styling.
+- **CSV Export (`.csv`):** Produces comma/semicolon/tab-separated files with quote escaping.
+- **JSON Export (`.json`):** Formatted array of row objects.
+- **Markdown & HTML Exports (`.md` / `.html`):** GitHub-flavored markdown tables and standalone HTML table documents.
+- **Native File Downloading:** Always-active export buttons using base64 data URIs and `Blob` object URLs for instant desktop downloads.
 
 ---
 

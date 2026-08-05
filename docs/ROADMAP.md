@@ -51,10 +51,11 @@ Phase 5: Agentic DBMS Studio ◄── Phase 4: Browser-in-the-Loop ◄── Ph
   - Automated visual screenshot inspection & spec verification loop for web apps.
 
 ### Phase 5 — Dedicated Agentic DBMS Studio & AI Schema Engineering (Duration: 4 Weeks)
-- **Goal:** Deliver a specialized, AI-powered Database Management System (DBMS) Studio.
+- **Goal:** Deliver a specialized, AI-powered Database Management System (DBMS) Studio & VS Code Environment.
 - **Key Deliverables:**
   - Real SQL Driver Engine (`sqlDriver.ts`) supporting `CREATE TABLE`, `INSERT`, `SELECT`, and syntax error diagnostic catching.
-  - Interactive Inline Cell Data Editing with pending update commit tracking.
+  - Interactive Table Data Grid (`TableDataEditor.tsx`) with inline cell edits, `+ Add Row`, `Delete Row`, search filtering, and header sorting.
+  - Multi-Format Data Exporter Engine (`dataExporter.ts`) supporting Excel (`.xlsx`), CSV, JSON, Markdown, and HTML file downloads.
   - AI Database Migration Generator & Schema Diffing (`schemaDiffer.ts`) producing `UP` and `DOWN` SQL scripts with data-loss safety checks.
   - Visual Query Execution Plan Analyzer (`explainAnalyzer.ts`) rendering `EXPLAIN ANALYZE` node graph cards, bottleneck highlights, and **AI Index Advisor** recommendations.
-  - Table DDL Inspector, Visual Table Creator DDL Wizard, and Live Database Performance Monitor.
+  - Official VS Code Dark Theme shell restoration (`#1e1e1e` / `#252526` / `#333333` / `#007acc`), top menu bar, and signature blue status bar.
