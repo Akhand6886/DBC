@@ -17,6 +17,7 @@ export interface FileNode {
   language: string;
   content: string;
   isFolder?: boolean;
+  isOpen?: boolean;
   children?: FileNode[];
   isModified?: boolean;
 }
