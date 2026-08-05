@@ -2,10 +2,11 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, GitCompare, Save } from 'lucide-react';
+import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, GitCompare, Save, Activity } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from './SchemaDiffModal';
+import { ExplainPlanModal } from './ExplainPlanModal';
 import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
@@ -36,6 +37,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(false);
+  const [isExplainOpen, setIsExplainOpen] = useState(false);
 
   const handleExecuteQuery = async (customQuery?: string) => {
     const qStr = customQuery || query;
@@ -103,6 +105,14 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     if (onRefreshSchema) onRefreshSchema();
   };
 
+  const handleApplyIndexSuggestion = async (indexSql: string) => {
+    setIsExplainOpen(false);
+    setQuery(indexSql);
+    await handleExecuteQuery(indexSql);
+    if (onLogTerminal) onLogTerminal('[AI Index Advisor]: Created B-Tree index to optimize query execution plan.');
+    if (onRefreshSchema) onRefreshSchema();
+  };
+
   const handleExportData = (format: string, delimiter: string) => {
     setIsExportOpen(false);
     if (onLogTerminal) {
@@ -137,6 +147,16 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
               <span>Commit {pendingEditCount} Edits</span>
             </button>
           )}
+
+          {/* Explain Plan Button */}
+          <button
+            onClick={() => setIsExplainOpen(true)}
+            disabled={!activeConnectionName}
+            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+          >
+            <Activity className="h-3.5 w-3.5 text-cyan-400" />
+            <span>Explain Plan</span>
+          </button>
 
           {/* Schema Migration Button */}
           <button
@@ -296,6 +316,15 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         <SchemaDiffModal
           onClose={() => setIsDiffOpen(false)}
           onApplyMigration={handleApplyMigration}
+        />
+      )}
+
+      {/* EXPLAIN ANALYZE Plan Modal */}
+      {isExplainOpen && (
+        <ExplainPlanModal
+          query={query}
+          onClose={() => setIsExplainOpen(false)}
+          onApplyIndexSuggestion={handleApplyIndexSuggestion}
         />
       )}
 
