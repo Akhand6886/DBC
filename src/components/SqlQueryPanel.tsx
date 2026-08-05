@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, GitCompare, Save, Activity, FileSpreadsheet } from 'lucide-react';
+import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from './SchemaDiffModal';
@@ -33,6 +33,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   // Inline Cell Editing state
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colName: string } | null>(null);
   const [pendingEdits, setPendingEdits] = useState<Record<string, any>>({});
+
+  // Dropdown states
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   // Modals state
   const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
@@ -114,20 +118,12 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     if (onRefreshSchema) onRefreshSchema();
   };
 
-  const handleQuickExportExcel = () => {
+  const handleExportFormat = (format: ExportOptions['format']) => {
     if (!queryResult || queryResult.rows.length === 0) return;
-    const filename = downloadExportFile(queryResult.columns, queryResult.rows, { format: 'excel' });
+    setIsExportMenuOpen(false);
+    const filename = downloadExportFile(queryResult.columns, queryResult.rows, { format });
     if (onLogTerminal) {
-      onLogTerminal(`[DBC Exporter]: Exported query results to native Excel spreadsheet '${filename}'.`);
-    }
-  };
-
-  const handleExportData = (options: ExportOptions) => {
-    if (!queryResult || queryResult.rows.length === 0) return;
-    const filename = downloadExportFile(queryResult.columns, queryResult.rows, options);
-    setIsExportOpen(false);
-    if (onLogTerminal) {
-      onLogTerminal(`[DBC Exporter]: Exported dataset to '${filename}' (${options.format.toUpperCase()}).`);
+      onLogTerminal(`[DBC Exporter]: Exported dataset to '${filename}' (${format.toUpperCase()}).`);
     }
   };
 
@@ -135,14 +131,13 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
 
   return (
     <div className="flex-1 flex flex-col bg-ide-bg font-mono text-xs overflow-hidden h-full">
-      {/* Action Toolbar */}
-      <div className="h-11 border-b border-ide-border px-4 flex items-center justify-between select-none bg-ide-sidebar/80 backdrop-blur-md">
+      {/* Streamlined Action Toolbar */}
+      <div className="h-11 border-b border-ide-border px-4 flex items-center justify-between select-none bg-ide-sidebar/90 backdrop-blur-md">
         <div className="flex items-center space-x-2 text-white">
           <Database className="h-4 w-4 text-cyan-400" />
-          <span className="font-bold tracking-tight text-xs">DBMS SQL Studio</span>
+          <span className="font-bold tracking-tight text-xs">DBMS Studio</span>
           <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-          <span className="text-slate-400 text-[11px]">Connection:</span>
-          <span className="text-cyan-300 font-bold bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/30 shadow-sm">
+          <span className="text-cyan-300 font-bold bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/30 text-[11px]">
             {activeConnectionName || 'None Selected'}
           </span>
         </div>
@@ -152,65 +147,98 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           {pendingEditCount > 0 && (
             <button
               onClick={handleCommitEdits}
-              className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1 rounded-lg font-bold flex items-center space-x-1.5 shadow animate-pulse text-[11px]"
+              className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 shadow animate-pulse text-[11px]"
             >
               <Save className="h-3.5 w-3.5" />
-              <span>Commit {pendingEditCount} Edits</span>
+              <span>Save {pendingEditCount} Edits</span>
             </button>
           )}
 
-          {/* Quick Export to Excel Button */}
-          {queryResult && queryResult.rows.length > 0 && (
+          {/* Consolidated Tools Dropdown */}
+          <div className="relative">
             <button
-              onClick={handleQuickExportExcel}
-              className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-lg font-bold flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
-              title="Export query results directly to Excel (.xlsx)"
+              onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
+              className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
             >
-              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Export to Excel</span>
+              <Wrench className="h-3.5 w-3.5 text-cyan-400" />
+              <span>Tools</span>
+              <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
-          )}
 
-          {/* Explain Plan Button */}
-          <button
-            onClick={() => setIsExplainOpen(true)}
-            disabled={!activeConnectionName}
-            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
-          >
-            <Activity className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Explain Plan</span>
-          </button>
+            {isToolsMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-48 bg-ide-sidebar border border-ide-border rounded-xl shadow-2xl py-1 z-30 space-y-0.5">
+                <button
+                  onClick={() => (setIsToolsMenuOpen(false), setIsTableCreatorOpen(true))}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <PlusSquare className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>Create Table DDL</span>
+                </button>
+                <button
+                  onClick={() => (setIsToolsMenuOpen(false), setIsExplainOpen(true))}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <Activity className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Explain Plan</span>
+                </button>
+                <button
+                  onClick={() => (setIsToolsMenuOpen(false), setIsDiffOpen(true))}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <GitCompare className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Schema Migration</span>
+                </button>
+              </div>
+            )}
+          </div>
 
-          {/* Schema Migration Button */}
-          <button
-            onClick={() => setIsDiffOpen(true)}
-            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
-          >
-            <GitCompare className="h-3.5 w-3.5 text-amber-400" />
-            <span>Migration Diff</span>
-          </button>
+          {/* Single Unified Export Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
+              disabled={!queryResult || queryResult.rows.length === 0}
+              className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 disabled:opacity-40 text-[11px]"
+            >
+              <Download className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Export</span>
+              <ChevronDown className="h-3 w-3 text-slate-400" />
+            </button>
 
-          {/* Create Table Button */}
-          <button
-            onClick={() => setIsTableCreatorOpen(true)}
-            disabled={!activeConnectionName}
-            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
-          >
-            <PlusSquare className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Create Table</span>
-          </button>
+            {isExportMenuOpen && (
+              <div className="absolute right-0 mt-1.5 w-44 bg-ide-sidebar border border-ide-border rounded-xl shadow-2xl py-1 z-30 space-y-0.5">
+                <button
+                  onClick={() => handleExportFormat('excel')}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+                  <span>Excel (.xlsx)</span>
+                </button>
+                <button
+                  onClick={() => handleExportFormat('csv')}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <FileText className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>CSV (.csv)</span>
+                </button>
+                <button
+                  onClick={() => handleExportFormat('json')}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <FileJson className="h-3.5 w-3.5 text-yellow-400" />
+                  <span>JSON (.json)</span>
+                </button>
+                <button
+                  onClick={() => handleExportFormat('markdown')}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <Code className="h-3.5 w-3.5 text-purple-400" />
+                  <span>Markdown (.md)</span>
+                </button>
+              </div>
+            )}
+          </div>
 
-          {/* Export Wizard Button */}
-          <button
-            onClick={() => setIsExportOpen(true)}
-            disabled={!queryResult || queryResult.rows.length === 0}
-            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 disabled:opacity-40 text-[11px]"
-          >
-            <Download className="h-3.5 w-3.5 text-cyan-400" />
-            <span>Export Wizard</span>
-          </button>
-
-          {/* Run Button */}
+          {/* Primary Action Button: Run Query */}
           <button
             onClick={() => handleExecuteQuery()}
             disabled={isRunning || !activeConnectionName}
@@ -246,22 +274,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Results Header */}
         <div className="h-8 border-b border-ide-border px-4 bg-ide-sidebar/90 flex items-center justify-between text-slate-400 select-none text-[11px]">
-          <div className="flex items-center space-x-3">
-            <span className="font-semibold flex items-center space-x-1.5">
-              <span>Query Results</span>
-              <span className="text-[10px] text-slate-500 font-normal">(Double-click cell to edit value inline)</span>
-            </span>
-            {queryResult && queryResult.rows.length > 0 && (
-              <button
-                onClick={handleQuickExportExcel}
-                className="text-[10px] text-emerald-400 hover:underline flex items-center space-x-1"
-              >
-                <FileSpreadsheet className="h-3 w-3" />
-                <span>Quick Export to Excel</span>
-              </button>
-            )}
-          </div>
-
+          <span className="font-semibold">Query Results</span>
           {queryResult && (
             <div className="flex items-center space-x-1.5 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
@@ -367,7 +380,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       {isExportOpen && (
         <DataExportWizard
           onClose={() => setIsExportOpen(false)}
-          onExport={handleExportData}
+          onExport={(options) => handleExportFormat(options.format)}
         />
       )}
     </div>
