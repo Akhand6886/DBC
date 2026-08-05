@@ -25,8 +25,9 @@ import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel
 import { SqlQueryPanel } from '../components/SqlQueryPanel';
 import { SchemaVisualizer } from '../components/SchemaVisualizer';
 import { DbPerformanceMonitor } from '../components/DbPerformanceMonitor';
+import { TableInspectorModal } from '../components/TableInspectorModal';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command, Database } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -45,10 +46,13 @@ export default function Home() {
   const [isBrowserOpen, setIsBrowserOpen] = useState(false);
   const [isGitOpen, setIsGitOpen] = useState(false);
   const [isPaletteOpen, setIsPaletteOpen] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
+
+  // Table Inspector state
+  const [inspectTable, setInspectTable] = useState<string | null>(null);
 
   // Database State
   const [connections, setConnections] = useState<DbConnection[]>([
@@ -58,9 +62,9 @@ export default function Home() {
   const [activeConnectionId, setActiveConnectionId] = useState<string>('conn-1');
 
   const [terminalLogs, setTerminalLogs] = useState<string[]>([
-    'Agentic AI IDE Database controller active.',
+    'Agentic AI IDE DBMS Controller initialized.',
     'SQLite connection to metadata.db established successfully.',
-    'Ready for SQL transactions.'
+    'Ready for SQL transactions & schema operations.'
   ]);
   const [activeDiff, setActiveDiff] = useState<ShadowDiffCheck | null>(null);
   const [fastPathCount, setFastPathCount] = useState(14);
@@ -116,7 +120,8 @@ export default function Home() {
 
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
-    { id: 'database', label: 'Open Database Console', category: 'action', icon: <FileCode className="h-4 w-4" />, handler: () => setActiveView('database') },
+    { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4" />, handler: () => setActiveView('database') },
+    { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Database className="h-4 w-4" />, handler: () => setInspectTable('users') },
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
     { id: 'settings', label: 'Open Settings & BYOK Keys', category: 'settings', shortcut: '⌘,', icon: <Settings className="h-4 w-4" />, handler: () => setIsSettingsOpen(true) },
     { id: 'git', label: 'Git Source Control', category: 'git', shortcut: '⌘⇧G', icon: <GitBranch className="h-4 w-4" />, handler: () => setIsGitOpen(true) },
@@ -171,7 +176,6 @@ export default function Home() {
     setOpenFiles(updated);
     if (activeFile?.id === fileId) {
       setActiveFile(updated.length > 0 ? updated[updated.length - 1] : null);
-      if (updated.length === 0) setShowWelcome(true);
     }
   };
 
@@ -269,7 +273,7 @@ export default function Home() {
   const activeConnection = connections.find((c) => c.id === activeConnectionId);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-ide-bg text-slate-100 overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-ide-bg text-slate-100 overflow-hidden font-sans">
       <div className="flex-1 flex overflow-hidden">
         <ActivityBar activeView={activeView} onViewChange={handleViewChange} fastPathCount={fastPathCount} />
 
@@ -309,6 +313,7 @@ export default function Home() {
                 <SqlQueryPanel
                   activeConnectionName={activeConnection?.name || ''}
                   onLogTerminal={handleLogTerminal}
+                  onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
                 />
                 {activeConnection && (
                   <div className="p-3 border-t border-ide-border bg-ide-sidebar">
@@ -360,6 +365,7 @@ export default function Home() {
       {isBrowserOpen && <BrowserPreviewModal onClose={() => setIsBrowserOpen(false)} onLogTerminal={handleLogTerminal} />}
       {isGitOpen && <GitPanel onClose={() => setIsGitOpen(false)} onLogTerminal={handleLogTerminal} />}
       {isPaletteOpen && <CommandPalette actions={paletteActions} onClose={() => setIsPaletteOpen(false)} />}
+      {inspectTable && <TableInspectorModal tableName={inspectTable} onClose={() => setInspectTable(null)} />}
     </div>
   );
 }
