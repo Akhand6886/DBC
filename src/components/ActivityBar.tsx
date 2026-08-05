@@ -1,57 +1,51 @@
 'use client';
 
 import React from 'react';
-import { Files, Search, Bot, BarChart2, Settings, ShieldCheck, Globe, GitBranch, Database } from 'lucide-react';
+import { Files, Search, Settings, GitBranch, Globe, ShieldCheck, BarChart2, Database, Code, Sliders } from 'lucide-react';
 
-export type ActivityView = 'explorer' | 'search' | 'composer' | 'analytics' | 'settings' | 'verification' | 'browser' | 'git' | 'database';
+export type ActivityView = 'explorer' | 'search' | 'git' | 'database' | 'browser' | 'verification' | 'analytics' | 'settings';
 
 interface ActivityBarProps {
   activeView: ActivityView;
   onViewChange: (view: ActivityView) => void;
-  fastPathCount: number;
+  fastPathCount?: number;
 }
 
 export const ActivityBar: React.FC<ActivityBarProps> = ({
   activeView,
   onViewChange,
-  fastPathCount,
+  fastPathCount = 14,
 }) => {
-  const items = [
-    { id: 'explorer', label: 'Explorer', icon: Files },
-    { id: 'search', label: 'Search', icon: Search },
-    { id: 'git', label: 'Git Source Control', icon: GitBranch },
-    { id: 'database', label: 'Database Console', icon: Database },
-    { id: 'composer', label: 'Agent Composer (Mission Control)', icon: Bot, badge: 'AI' },
-    { id: 'browser', label: 'Browser-in-the-Loop & Visual Verification', icon: Globe },
-    { id: 'verification', label: 'Shadow Verification & Rollback Hub', icon: ShieldCheck },
-    { id: 'analytics', label: 'Router Analytics', icon: BarChart2 },
+  const topNavItems: { id: ActivityView; label: string; icon: React.ReactNode; badge?: number }[] = [
+    { id: 'database', label: 'DBMS Studio (Console & Data Grid)', icon: <Database className="h-5 w-5" /> },
+    { id: 'explorer', label: 'Explorer (⌘Shift+E)', icon: <Files className="h-5 w-5" /> },
+    { id: 'search', label: 'Search (⌘Shift+F)', icon: <Search className="h-5 w-5" /> },
+    { id: 'git', label: 'Source Control (⌘Shift+G)', icon: <GitBranch className="h-5 w-5" /> },
+    { id: 'browser', label: 'Browser-in-the-Loop', icon: <Globe className="h-5 w-5" /> },
+    { id: 'verification', label: 'Shadow Verification Hub', icon: <ShieldCheck className="h-5 w-5" /> },
+    { id: 'analytics', label: 'Router Analytics', icon: <BarChart2 className="h-5 w-5" />, badge: fastPathCount },
   ];
 
   return (
-    <aside className="w-12 bg-ide-activity border-r border-ide-border flex flex-col justify-between items-center py-3 select-none z-20">
-      {/* Top Activity Icons */}
-      <div className="flex flex-col space-y-3.5 items-center w-full">
-        <div className="h-7 w-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white shadow-md shadow-cyan-500/20 mb-2 transition-transform hover:scale-105">
-          <Bot className="h-4 w-4" />
-        </div>
-
-        {items.map((item) => {
-          const Icon = item.icon;
+    <div className="w-12 bg-[#333333] border-r border-[#3c3c3c] flex flex-col items-center justify-between py-2 select-none z-20 font-sans">
+      {/* Top Main Navigation */}
+      <div className="flex flex-col items-center space-y-1 w-full">
+        {topNavItems.map((item) => {
           const isActive = activeView === item.id;
           return (
             <button
               key={item.id}
-              onClick={() => onViewChange(item.id as ActivityView)}
+              onClick={() => onViewChange(item.id)}
               title={item.label}
-              className={`relative p-2.5 rounded-xl transition-all duration-150 active:scale-95 flex items-center justify-center ${
+              className={`relative w-full h-11 flex items-center justify-center transition-colors ${
                 isActive
-                  ? 'text-cyan-300 bg-ide-card border border-ide-border shadow-lg shadow-cyan-500/10 before:absolute before:left-0 before:w-1 before:h-6 before:bg-cyan-400 before:rounded-r-full'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-ide-card/50'
+                  ? 'text-white border-l-2 border-white bg-[#252526]'
+                  : 'text-[#858585] hover:text-[#cccccc] hover:bg-[#2d2d2d]'
               }`}
             >
-              <Icon className="h-4 w-4" />
-              {item.badge && (
-                <span className="absolute -top-1 -right-1 bg-cyan-500 text-[8px] text-white font-bold px-1 rounded-full shadow">
+              {item.icon}
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="absolute top-1.5 right-1.5 bg-[#007acc] text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] h-[14px] flex items-center justify-center">
                   {item.badge}
                 </span>
               )}
@@ -60,20 +54,20 @@ export const ActivityBar: React.FC<ActivityBarProps> = ({
         })}
       </div>
 
-      {/* Bottom Activity Controls */}
-      <div className="flex flex-col space-y-3 items-center">
-        <div className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center space-x-1" title="Fast-Path Executions">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span>⚡{fastPathCount}</span>
-        </div>
+      {/* Bottom Utility Navigation */}
+      <div className="flex flex-col items-center space-y-1 w-full">
         <button
           onClick={() => onViewChange('settings')}
-          title="Settings"
-          className={`p-2.5 rounded-xl text-slate-400 hover:text-slate-100 transition-all active:scale-95 ${activeView === 'settings' ? 'text-cyan-300 bg-ide-card border border-ide-border' : ''}`}
+          title="Manage Settings & BYOK Keys"
+          className={`w-full h-11 flex items-center justify-center transition-colors ${
+            activeView === 'settings'
+              ? 'text-white border-l-2 border-white bg-[#252526]'
+              : 'text-[#858585] hover:text-[#cccccc] hover:bg-[#2d2d2d]'
+          }`}
         >
-          <Settings className="h-4 w-4" />
+          <Sliders className="h-5 w-5" />
         </button>
       </div>
-    </aside>
+    </div>
   );
 };
