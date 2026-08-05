@@ -31,10 +31,13 @@ function createWindow() {
 
   mainWindow.loadURL(startUrl);
 
-  // Open external links in default OS browser
+  // Open external http/https links in default OS browser without intercepting data/blob downloads
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: 'deny' };
+    if (url.startsWith('http:') || url.startsWith('https:')) {
+      shell.openExternal(url);
+      return { action: 'deny' };
+    }
+    return { action: 'allow' };
   });
 
   mainWindow.on('closed', () => {

@@ -119,20 +119,40 @@ export function downloadExportFile(
   options: ExportOptions
 ): string {
   const { content, mimeType, extension } = generateExportContent(columns, rows, options);
-  const blob = new Blob([content], { type: mimeType });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-
   const timestamp = new Date().toISOString().slice(0, 10);
-  const defaultName = `sql_query_export_${timestamp}.${extension}`;
-  a.href = url;
-  a.download = options.filename || defaultName;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const fileName = options.filename || `sql_query_export_${timestamp}.${extension}`;
 
-  return options.filename || defaultName;
+  try {
+    // 1. Data URI download (100% reliable in Electron desktop apps)
+    const encodedContent = encodeURIComponent(content);
+    const dataUri = `data:${mimeType};charset=utf-8,${encodedContent}`;
+    const a = document.createElement('a');
+    a.href = dataUri;
+    a.download = fileName;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      if (document.body.contains(a)) {
+        document.body.removeChild(a);
+      }
+    }, 300);
+  } catch (e) {
+    // 2. Blob URL fallback
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 300);
+  }
+
+  return fileName;
 }
 
 function escapeXml(unsafe: string): string {

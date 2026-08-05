@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare } from 'lucide-react';
+import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from './SchemaDiffModal';
@@ -44,7 +44,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   const [isDiffOpen, setIsDiffOpen] = useState(false);
   const [isExplainOpen, setIsExplainOpen] = useState(false);
 
-  const handleExecuteQuery = async (customQuery?: string) => {
+  const handleExecuteQuery = async (customQuery?: string): Promise<RealQueryResult> => {
     const qStr = customQuery || query;
     setIsRunning(true);
     setQueryResult(null);
@@ -61,6 +61,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         onLogTerminal(`[DBC SQL Driver]: Executed SQL in ${result.executionTimeMs}ms.`);
       }
     }
+    return result;
   };
 
   const handleCellDoubleClick = (rowIdx: number, colName: string) => {
@@ -118,12 +119,20 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     if (onRefreshSchema) onRefreshSchema();
   };
 
-  const handleExportFormat = (format: ExportOptions['format']) => {
-    if (!queryResult || queryResult.rows.length === 0) return;
+  const handleExportFormat = async (format: ExportOptions['format']) => {
     setIsExportMenuOpen(false);
-    const filename = downloadExportFile(queryResult.columns, queryResult.rows, { format });
-    if (onLogTerminal) {
-      onLogTerminal(`[DBC Exporter]: Exported dataset to '${filename}' (${format.toUpperCase()}).`);
+    let targetResult = queryResult;
+
+    // Auto-run query if result set is not generated yet
+    if (!targetResult || targetResult.rows.length === 0) {
+      targetResult = await handleExecuteQuery();
+    }
+
+    if (targetResult && targetResult.rows.length > 0) {
+      const filename = downloadExportFile(targetResult.columns, targetResult.rows, { format });
+      if (onLogTerminal) {
+        onLogTerminal(`[DBC Exporter]: Exported dataset to '${filename}' (${format.toUpperCase()}).`);
+      }
     }
   };
 
@@ -196,8 +205,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           <div className="relative">
             <button
               onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              disabled={!queryResult || queryResult.rows.length === 0}
-              className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 disabled:opacity-40 text-[11px]"
+              className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
             >
               <Download className="h-3.5 w-3.5 text-emerald-400" />
               <span>Export</span>
@@ -345,7 +353,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-slate-500 space-y-2">
               <AlertCircle className="h-8 w-8 text-slate-600" />
-              <span>No active transaction outputs. Click &quot;Run Query&quot; to execute SQL.</span>
+              <span>No active transaction outputs. Click &quot;Run Query&quot; or &quot;Export&quot; to execute SQL.</span>
             </div>
           )}
         </div>
