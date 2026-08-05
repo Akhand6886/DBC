@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, GitCompare, Save, Activity } from 'lucide-react';
+import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, GitCompare, Save, Activity, FileSpreadsheet } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from './SchemaDiffModal';
 import { ExplainPlanModal } from './ExplainPlanModal';
 import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
+import { downloadExportFile, ExportOptions } from '../lib/db/dataExporter';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
   ssr: false,
@@ -25,7 +26,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   onLogTerminal,
   onRefreshSchema,
 }) => {
-  const [query, setQuery] = useState('SELECT * FROM users;');
+  const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
   const [isRunning, setIsRunning] = useState(false);
   const [queryResult, setQueryResult] = useState<RealQueryResult | null>(null);
 
@@ -113,10 +114,20 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     if (onRefreshSchema) onRefreshSchema();
   };
 
-  const handleExportData = (format: string, delimiter: string) => {
+  const handleQuickExportExcel = () => {
+    if (!queryResult || queryResult.rows.length === 0) return;
+    const filename = downloadExportFile(queryResult.columns, queryResult.rows, { format: 'excel' });
+    if (onLogTerminal) {
+      onLogTerminal(`[DBC Exporter]: Exported query results to native Excel spreadsheet '${filename}'.`);
+    }
+  };
+
+  const handleExportData = (options: ExportOptions) => {
+    if (!queryResult || queryResult.rows.length === 0) return;
+    const filename = downloadExportFile(queryResult.columns, queryResult.rows, options);
     setIsExportOpen(false);
     if (onLogTerminal) {
-      onLogTerminal(`[DBC Export Wizard]: Generated transaction results dataset export in ${format.toUpperCase()} format.`);
+      onLogTerminal(`[DBC Exporter]: Exported dataset to '${filename}' (${options.format.toUpperCase()}).`);
     }
   };
 
@@ -145,6 +156,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             >
               <Save className="h-3.5 w-3.5" />
               <span>Commit {pendingEditCount} Edits</span>
+            </button>
+          )}
+
+          {/* Quick Export to Excel Button */}
+          {queryResult && queryResult.rows.length > 0 && (
+            <button
+              onClick={handleQuickExportExcel}
+              className="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-lg font-bold flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+              title="Export query results directly to Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-400" />
+              <span>Export to Excel</span>
             </button>
           )}
 
@@ -177,14 +200,14 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             <span>Create Table</span>
           </button>
 
-          {/* Export Button */}
+          {/* Export Wizard Button */}
           <button
             onClick={() => setIsExportOpen(true)}
             disabled={!queryResult || queryResult.rows.length === 0}
             className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 disabled:opacity-40 text-[11px]"
           >
-            <Download className="h-3.5 w-3.5 text-emerald-400" />
-            <span>Export Data</span>
+            <Download className="h-3.5 w-3.5 text-cyan-400" />
+            <span>Export Wizard</span>
           </button>
 
           {/* Run Button */}
@@ -223,10 +246,22 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Results Header */}
         <div className="h-8 border-b border-ide-border px-4 bg-ide-sidebar/90 flex items-center justify-between text-slate-400 select-none text-[11px]">
-          <span className="font-semibold flex items-center space-x-1.5">
-            <span>Query Results</span>
-            <span className="text-[10px] text-slate-500 font-normal">(Double-click cell to edit value inline)</span>
-          </span>
+          <div className="flex items-center space-x-3">
+            <span className="font-semibold flex items-center space-x-1.5">
+              <span>Query Results</span>
+              <span className="text-[10px] text-slate-500 font-normal">(Double-click cell to edit value inline)</span>
+            </span>
+            {queryResult && queryResult.rows.length > 0 && (
+              <button
+                onClick={handleQuickExportExcel}
+                className="text-[10px] text-emerald-400 hover:underline flex items-center space-x-1"
+              >
+                <FileSpreadsheet className="h-3 w-3" />
+                <span>Quick Export to Excel</span>
+              </button>
+            )}
+          </div>
+
           {queryResult && (
             <div className="flex items-center space-x-1.5 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
