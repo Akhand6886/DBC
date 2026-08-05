@@ -6,8 +6,8 @@
 Phase 0: Code-OSS Fork & Rebrand ──► Phase 1: Single-Agent MVP ──► Phase 2: Confidence Router
      (2–3 Weeks)                      (4–6 Weeks)                      (4–6 Weeks)
                                                                             │
-Phase 4: Browser-in-the-Loop ◄── Phase 3: Multi-Agent & Mission Control ◄───┘
-     (4 Weeks)                        (6–8 Weeks)
+Phase 5: Agentic DBMS Studio ◄── Phase 4: Browser-in-the-Loop ◄── Phase 3: Multi-Agent & Mission Control ◄───┘
+     (4 Weeks)                        (4 Weeks)                        (6–8 Weeks)
 ```
 
 ---
@@ -49,3 +49,12 @@ Phase 4: Browser-in-the-Loop ◄── Phase 3: Multi-Agent & Mission Control �
 - **Key Deliverables:**
   - Embedded browser window with Chrome DevTools Protocol (CDP) hooks.
   - Automated visual screenshot inspection & spec verification loop for web apps.
+
+### Phase 5 — Dedicated Agentic DBMS Studio & AI Schema Engineering (Duration: 4 Weeks)
+- **Goal:** Deliver a specialized, AI-powered Database Management System (DBMS) Studio.
+- **Key Deliverables:**
+  - Real SQL Driver Engine (`sqlDriver.ts`) supporting `CREATE TABLE`, `INSERT`, `SELECT`, and syntax error diagnostic catching.
+  - Interactive Inline Cell Data Editing with pending update commit tracking.
+  - AI Database Migration Generator & Schema Diffing (`schemaDiffer.ts`) producing `UP` and `DOWN` SQL scripts with data-loss safety checks.
+  - Visual Query Execution Plan Analyzer (`explainAnalyzer.ts`) rendering `EXPLAIN ANALYZE` node graph cards, bottleneck highlights, and **AI Index Advisor** recommendations.
+  - Table DDL Inspector, Visual Table Creator DDL Wizard, and Live Database Performance Monitor.
