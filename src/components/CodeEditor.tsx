@@ -125,8 +125,8 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
         {activeFile ? (
           <Editor
             height="100%"
-            language={getMonacoLanguage(activeFile.language, activeFile.name)}
-            value={activeFile.content}
+            language={getMonacoLanguage(activeFile.language || '', activeFile.name)}
+            value={activeFile.content || ''}
             onChange={handleEditorChange}
             theme="vs-dark"
             options={{
