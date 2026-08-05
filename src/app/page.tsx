@@ -319,6 +319,12 @@ export default function Home() {
       <TopMenuBar
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenPalette={() => setIsPaletteOpen(true)}
+        onNewFile={() => handleAddFile('untitled.sql')}
+        onNewFolder={() => handleAddFolder('new_folder')}
+        onToggleSidebar={() => setShowSidebar(prev => !prev)}
+        onToggleTerminal={() => setShowTerminal(prev => !prev)}
+        onRunQuery={() => handleLogTerminal('[DBC Engine]: Executed SQL query from menu.')}
+        onOpenGit={() => setIsGitOpen(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -421,7 +427,12 @@ export default function Home() {
         />
       </div>
 
-      <StatusBar lastLatencyMs={lastLatencyMs} lastRoutePath={lastRoutePath} onOpenSidecar={() => setIsSidecarOpen(true)} />
+      <StatusBar
+        lastLatencyMs={lastLatencyMs}
+        lastRoutePath={lastRoutePath}
+        onOpenSidecar={() => setIsSidecarOpen(true)}
+        onOpenGit={() => setIsGitOpen(true)}
+      />
 
       {isSearchOpen && <SearchModal files={workspaceFiles} onSelectFile={handleSelectFile} onClose={() => setIsSearchOpen(false)} onReplaceAll={handleReplaceAll} />}
       {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} onSaveSettings={() => addToast('success', 'Settings & BYOK keys saved.')} />}
