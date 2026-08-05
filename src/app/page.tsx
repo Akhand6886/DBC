@@ -125,7 +125,7 @@ export default function Home() {
   const paletteActions: PaletteAction[] = [
     { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4" />, handler: () => setActiveView('database') },
     { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setInspectTable('users') },
-    { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setEditingTable('users') },
+    { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4 text-emerald-400" />, handler: () => setEditingTable('users') },
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
     { id: 'settings', label: 'Open Settings & BYOK Keys', category: 'settings', shortcut: '⌘,', icon: <Settings className="h-4 w-4" />, handler: () => setIsSettingsOpen(true) },
     { id: 'git', label: 'Git Source Control', category: 'git', shortcut: '⌘⇧G', icon: <GitBranch className="h-4 w-4" />, handler: () => setIsGitOpen(true) },
@@ -194,13 +194,50 @@ export default function Home() {
     const newFile: FileNode = {
       id: `file-${Date.now()}`,
       name: fileName,
-      path: `src/${fileName}`,
-      language: fileName.endsWith('.rs') ? 'rust' : fileName.endsWith('.json') ? 'json' : 'typescript',
-      content: `// ${fileName}\n`
+      path: `queries/${fileName}`,
+      language: fileName.endsWith('.sql') ? 'sql' : fileName.endsWith('.rs') ? 'rust' : fileName.endsWith('.json') ? 'json' : 'typescript',
+      content: fileName.endsWith('.sql') ? `-- ${fileName}\nSELECT * FROM users;\n` : `// ${fileName}\n`
     };
     setWorkspaceFiles((prev) => [...prev, newFile]);
     handleSelectFile(newFile);
     addToast('success', `Created ${fileName}`);
+  };
+
+  const handleAddFolder = (folderName: string) => {
+    const newFolder: FileNode = {
+      id: `folder-${Date.now()}`,
+      name: folderName,
+      path: folderName,
+      isFolder: true,
+      isOpen: true,
+      children: []
+    };
+    setWorkspaceFiles((prev) => [...prev, newFolder]);
+    addToast('success', `Created folder ${folderName}`);
+  };
+
+  const handleRenameFile = (fileId: string, newName: string) => {
+    const updateTree = (nodes: FileNode[]): FileNode[] =>
+      nodes.map(n => {
+        if (n.id === fileId) return { ...n, name: newName };
+        if (n.isFolder && n.children) return { ...n, children: updateTree(n.children) };
+        return n;
+      });
+    setWorkspaceFiles(prev => updateTree(prev));
+    addToast('info', `Renamed file to ${newName}`);
+  };
+
+  const handleSaveScriptToWorkspace = (scriptName: string, content: string) => {
+    const newFile: FileNode = {
+      id: `file-${Date.now()}`,
+      name: scriptName,
+      path: `queries/${scriptName}`,
+      language: 'sql',
+      content
+    };
+    setWorkspaceFiles(prev => [...prev, newFile]);
+    addToast('success', `Saved SQL script ${scriptName} to workspace queries/ folder.`);
+    handleLogTerminal(`[Workspace File System]: Saved SQL script to queries/${scriptName}`);
   };
 
   const handleDeleteFile = (fileId: string) => {
@@ -288,7 +325,9 @@ export default function Home() {
             activeFileId={activeFile?.id || ''}
             onSelectFile={handleSelectFile}
             onAddFile={handleAddFile}
+            onAddFolder={handleAddFolder}
             onDeleteFile={handleDeleteFile}
+            onRenameFile={handleRenameFile}
           />
         )}
 
@@ -332,6 +371,7 @@ export default function Home() {
                     activeConnectionName={activeConnection?.name || ''}
                     onLogTerminal={handleLogTerminal}
                     onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
+                    onSaveScriptToWorkspace={handleSaveScriptToWorkspace}
                   />
                   {activeConnection && (
                     <div className="p-3 border-t border-ide-border bg-ide-sidebar">
