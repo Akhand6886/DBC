@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, Edit3, Save, RotateCcw } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
+import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
   ssr: false,
@@ -22,10 +23,9 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   onLogTerminal,
   onRefreshSchema,
 }) => {
-  const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
+  const [query, setQuery] = useState('SELECT * FROM users;');
   const [isRunning, setIsRunning] = useState(false);
-  const [results, setResults] = useState<{ columns: string[]; rows: Record<string, any>[] } | null>(null);
-  const [latency, setLatency] = useState<number | null>(null);
+  const [queryResult, setQueryResult] = useState<RealQueryResult | null>(null);
 
   // Inline Cell Editing state
   const [editingCell, setEditingCell] = useState<{ rowIdx: number; colName: string } | null>(null);
@@ -35,31 +35,23 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
 
-  const handleExecuteQuery = (customQuery?: string) => {
+  const handleExecuteQuery = async (customQuery?: string) => {
     const qStr = customQuery || query;
     setIsRunning(true);
-    setResults(null);
+    setQueryResult(null);
     setPendingEdits({});
-    const startTime = Date.now();
 
-    setTimeout(() => {
-      setIsRunning(false);
-      setLatency(Date.now() - startTime);
+    const result = await realSqlDriver.executeQuery(qStr);
+    setIsRunning(false);
+    setQueryResult(result);
 
-      const mockColumns = ['id', 'username', 'email', 'role', 'created_at'];
-      const mockRows = [
-        { id: 1, username: 'admin', email: 'admin@dbc.org', role: 'Administrator', created_at: '2026-01-12' },
-        { id: 2, username: 'alpha', email: 'alpha@dbc.org', role: 'Security Admin', created_at: '2026-03-04' },
-        { id: 3, username: 'agent_cli', email: 'agent@dbc.org', role: 'API Agent', created_at: '2026-07-28' },
-        { id: 4, username: 'audit_guest', email: 'guest@dbc.org', role: 'Auditor', created_at: '2026-07-30' }
-      ];
-
-      setResults({ columns: mockColumns, rows: mockRows });
-
-      if (onLogTerminal) {
-        onLogTerminal(`[DBC SQL Runner]: Executed SQL statement successfully.`);
+    if (onLogTerminal) {
+      if (result.error) {
+        onLogTerminal(`[DBC SQL Driver Error]: ${result.error}`);
+      } else {
+        onLogTerminal(`[DBC SQL Driver]: Executed SQL in ${result.executionTimeMs}ms.`);
       }
-    }, 450);
+    }
   };
 
   const handleCellDoubleClick = (rowIdx: number, colName: string) => {
@@ -67,16 +59,15 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   };
 
   const handleCellChange = (rowIdx: number, colName: string, newValue: any) => {
-    if (!results) return;
+    if (!queryResult) return;
     const key = `${rowIdx}:${colName}`;
     setPendingEdits(prev => ({ ...prev, [key]: newValue }));
   };
 
   const handleCommitEdits = () => {
-    if (!results || Object.keys(pendingEdits).length === 0) return;
+    if (!queryResult || Object.keys(pendingEdits).length === 0) return;
 
-    // Apply pending edits to result rows
-    const updatedRows = [...results.rows];
+    const updatedRows = [...queryResult.rows];
     Object.entries(pendingEdits).forEach(([key, val]) => {
       const [rIdxStr, colName] = key.split(':');
       const rIdx = parseInt(rIdxStr, 10);
@@ -86,7 +77,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     });
 
     const editCount = Object.keys(pendingEdits).length;
-    setResults({ ...results, rows: updatedRows });
+    setQueryResult({ ...queryResult, rows: updatedRows });
     setPendingEdits({});
     setEditingCell(null);
 
@@ -95,11 +86,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     }
   };
 
-  const handleExecuteDDL = (ddl: string) => {
+  const handleExecuteDDL = async (ddl: string) => {
     setIsTableCreatorOpen(false);
     setQuery(ddl);
-    handleExecuteQuery(ddl);
-    if (onLogTerminal) onLogTerminal(`[DBC SQL Runner]: Executed DDL table creation transaction.`);
+    await handleExecuteQuery(ddl);
     if (onRefreshSchema) onRefreshSchema();
   };
 
@@ -151,7 +141,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           {/* Export Button */}
           <button
             onClick={() => setIsExportOpen(true)}
-            disabled={!results}
+            disabled={!queryResult || queryResult.rows.length === 0}
             className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 disabled:opacity-40 text-[11px]"
           >
             <Download className="h-3.5 w-3.5 text-emerald-400" />
@@ -165,7 +155,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             className="bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:opacity-40 text-white px-4 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 shadow-md shadow-cyan-500/20 transition-all active:scale-95 text-[11px]"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
-            <span>{isRunning ? 'Running...' : 'Run Query'}</span>
+            <span>{isRunning ? 'Executing...' : 'Run Query'}</span>
           </button>
         </div>
       </div>
@@ -198,10 +188,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             <span>Query Results</span>
             <span className="text-[10px] text-slate-500 font-normal">(Double-click cell to edit value inline)</span>
           </span>
-          {latency !== null && (
+          {queryResult && (
             <div className="flex items-center space-x-1.5 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Returned {results?.rows.length} rows in {latency}ms</span>
+              <span>Returned {queryResult.rows.length} rows in {queryResult.executionTimeMs}ms</span>
             </div>
           )}
         </div>
@@ -210,13 +200,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         <div className="flex-grow overflow-auto bg-ide-bg">
           {isRunning ? (
             <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-2 animate-pulse">
-              <span className="text-cyan-400 font-semibold">Executing SQL transaction...</span>
+              <span className="text-cyan-400 font-semibold">Executing SQL query against engine...</span>
             </div>
-          ) : results ? (
+          ) : queryResult?.error ? (
+            <div className="p-4 text-rose-400 bg-rose-950/20 border border-rose-500/30 rounded-lg m-4 flex items-center space-x-2 font-mono">
+              <AlertCircle className="h-5 w-5 flex-shrink-0" />
+              <span>{queryResult.error}</span>
+            </div>
+          ) : queryResult && queryResult.columns.length > 0 ? (
             <table className="w-full text-left border-collapse text-[11px] whitespace-nowrap">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-ide-sidebar border-b border-ide-border text-slate-300 font-semibold shadow-sm">
-                  {results.columns.map((col, idx) => (
+                  {queryResult.columns.map((col, idx) => (
                     <th key={idx} className="px-4 py-2 border-r border-ide-border bg-ide-sidebar">
                       {col}
                     </th>
@@ -224,9 +219,9 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-ide-border/50 text-slate-200">
-                {results.rows.map((row, rIdx) => (
+                {queryResult.rows.map((row, rIdx) => (
                   <tr key={rIdx} className="hover:bg-cyan-500/10 even:bg-ide-card/30 transition-colors">
-                    {results.columns.map((col, cIdx) => {
+                    {queryResult.columns.map((col, cIdx) => {
                       const editKey = `${rIdx}:${col}`;
                       const isEdited = pendingEdits.hasOwnProperty(editKey);
                       const displayVal = isEdited ? pendingEdits[editKey] : row[col];
@@ -251,7 +246,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
                               className="bg-ide-bg border border-cyan-500 text-cyan-300 px-1 py-0.5 rounded text-[11px] font-mono focus:outline-none w-full"
                             />
                           ) : (
-                            <span>{String(displayVal)}</span>
+                            <span>{String(displayVal ?? 'NULL')}</span>
                           )}
                         </td>
                       );
