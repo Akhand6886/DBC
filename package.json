@@ -1,0 +1,31 @@
+{
+  "name": "agentic-ai-ide",
+  "version": "1.0.0",
+  "description": "Agentic AI IDE — Telemetry-Free Code-OSS Editor with Dedicated DBMS Studio & Confidence Router",
+  "main": "build/build.sh",
+  "scripts": {
+    "prepare:fork": "node scripts/prepare-fork.js",
+    "apply:branding": "node scripts/apply-branding.js",
+    "build:code-oss": "bash build/build.sh",
+    "test": "node scripts/prepare-fork.js --test"
+  },
+  "keywords": [
+    "code-oss",
+    "vscode",
+    "vscodium",
+    "ide",
+    "dbms",
+    "openvsx",
+    "telemetry-free"
+  ],
+  "author": "Agentic AI IDE Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Akhand6886/DBC.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Akhand6886/DBC/issues"
+  },
+  "homepage": "https://github.com/Akhand6886/DBC#readme"
+}

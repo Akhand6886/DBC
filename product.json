@@ -1,0 +1,35 @@
+{
+  "nameShort": "Agentic IDE",
+  "nameLong": "Agentic AI IDE",
+  "applicationName": "agentic-ide",
+  "dataFolderName": ".agentic-ide",
+  "win32MutexName": "agenticide",
+  "licenseName": "MIT",
+  "licenseUrl": "https://github.com/Akhand6886/DBC/blob/main/LICENSE",
+  "win32DirName": "Agentic AI IDE",
+  "win32NameVersion": "Agentic AI IDE",
+  "win32RegValueName": "AgenticAIIDE",
+  "win32AppId": "{{E6B7A6A8-[#007acc]-42A1-9F31-5E29E2D852C1}}",
+  "win32x64AppId": "{{A8C4A9D3-[#007acc]-4F6D-[#007acc]-6E11C497B92A}}",
+  "win32arm64AppId": "{{F2B9B34B-[#007acc]-4359-9E11-2B4A62C8891D}}",
+  "win32UserAppId": "{{34C89D91-[#007acc]-4F9A-B212-[#007acc]9B4A8E}}",
+  "win32x64UserAppId": "{{83A2C491-[#007acc]-421D-[#007acc]A39B4B}}",
+  "win32arm64UserAppId": "{{19B2D8E3-[#007acc]-4A11-[#007acc]B49C22}}",
+  "darwinBundleIdentifier": "org.agentic.ide",
+  "reportIssueUrl": "https://github.com/Akhand6886/DBC/issues",
+  "urlProtocol": "agentic-ide",
+  "extensionsGallery": {
+    "serviceUrl": "https://open-vsx.org/vscode/gallery",
+    "itemUrl": "https://open-vsx.org/vscode/item",
+    "resourceUrlTemplate": "https://open-vsx.org/vscode/asset/{publisher}/{name}/{version}/Microsoft.VisualStudio.Code.WebResources/{path}",
+    "controlUrl": ""
+  },
+  "linkProtectionTrustedDomains": [
+    "https://open-vsx.org",
+    "https://github.com"
+  ],
+  "enableTelemetry": false,
+  "telemetryOptOutUrl": "",
+  "quality": "stable",
+  "documentationUrl": "https://github.com/Akhand6886/DBC/blob/main/docs/FEATURES.md"
+}
