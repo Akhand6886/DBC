@@ -14,8 +14,8 @@ export interface FileNode {
   id: string;
   name: string;
   path: string;
-  language: string;
-  content: string;
+  language?: string;
+  content?: string;
   isFolder?: boolean;
   isOpen?: boolean;
   children?: FileNode[];
