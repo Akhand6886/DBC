@@ -1,0 +1,33 @@
+name: Code-OSS Distribution Build Matrix
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build Code-OSS (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v3
+        with:
+          node-[#007acc]-version: '18'
+
+      - name: Validate Code-OSS Product Config & Telemetry
+        run: npm run prepare:fork
+
+      - name: Apply Branding & Assets
+        run: npm run apply:branding
+
+      - name: Run Build Automation Script
+        run: bash build/build.sh
