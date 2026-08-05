@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare } from 'lucide-react';
+import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from './SchemaDiffModal';
@@ -19,12 +19,14 @@ interface SqlQueryPanelProps {
   activeConnectionName: string;
   onLogTerminal?: (msg: string) => void;
   onRefreshSchema?: () => void;
+  onSaveScriptToWorkspace?: (scriptName: string, content: string) => void;
 }
 
 export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   activeConnectionName,
   onLogTerminal,
   onRefreshSchema,
+  onSaveScriptToWorkspace,
 }) => {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
   const [isRunning, setIsRunning] = useState(false);
@@ -119,11 +121,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     if (onRefreshSchema) onRefreshSchema();
   };
 
+  const handleSaveToWorkspace = () => {
+    setIsToolsMenuOpen(false);
+    const fileName = `query_${Date.now().toString(36)}.sql`;
+    if (onSaveScriptToWorkspace) {
+      onSaveScriptToWorkspace(fileName, query);
+    }
+  };
+
   const handleExportFormat = async (format: ExportOptions['format']) => {
     setIsExportMenuOpen(false);
     let targetResult = queryResult;
 
-    // Auto-run query if result set is not generated yet
     if (!targetResult || targetResult.rows.length === 0) {
       targetResult = await handleExecuteQuery();
     }
@@ -175,7 +184,14 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             </button>
 
             {isToolsMenuOpen && (
-              <div className="absolute right-0 mt-1.5 w-48 bg-ide-sidebar border border-ide-border rounded-xl shadow-2xl py-1 z-30 space-y-0.5">
+              <div className="absolute right-0 mt-1.5 w-52 bg-ide-sidebar border border-ide-border rounded-xl shadow-2xl py-1 z-30 space-y-0.5">
+                <button
+                  onClick={handleSaveToWorkspace}
+                  className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
+                >
+                  <FileCode className="h-3.5 w-3.5 text-cyan-400" />
+                  <span>Save Script to Workspace</span>
+                </button>
                 <button
                   onClick={() => (setIsToolsMenuOpen(false), setIsTableCreatorOpen(true))}
                   className="w-full px-3 py-2 text-left hover:bg-ide-card flex items-center space-x-2 text-slate-200 text-[11px]"
