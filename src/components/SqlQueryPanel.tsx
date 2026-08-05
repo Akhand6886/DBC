@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, Edit3, Save, RotateCcw } from 'lucide-react';
+import { Play, Database, CheckCircle2, ChevronRight, AlertCircle, PlusSquare, Download, GitCompare, Save } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
+import { SchemaDiffModal } from './SchemaDiffModal';
 import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
@@ -34,6 +35,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   // Modals state
   const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isDiffOpen, setIsDiffOpen] = useState(false);
 
   const handleExecuteQuery = async (customQuery?: string) => {
     const qStr = customQuery || query;
@@ -93,6 +95,14 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     if (onRefreshSchema) onRefreshSchema();
   };
 
+  const handleApplyMigration = async (migrationSql: string) => {
+    setIsDiffOpen(false);
+    setQuery(migrationSql);
+    await handleExecuteQuery(migrationSql);
+    if (onLogTerminal) onLogTerminal('[DBC Schema Migration]: Applied UP migration script to active database connection.');
+    if (onRefreshSchema) onRefreshSchema();
+  };
+
   const handleExportData = (format: string, delimiter: string) => {
     setIsExportOpen(false);
     if (onLogTerminal) {
@@ -127,6 +137,15 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
               <span>Commit {pendingEditCount} Edits</span>
             </button>
           )}
+
+          {/* Schema Migration Button */}
+          <button
+            onClick={() => setIsDiffOpen(true)}
+            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-ide-card border border-ide-border flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+          >
+            <GitCompare className="h-3.5 w-3.5 text-amber-400" />
+            <span>Migration Diff</span>
+          </button>
 
           {/* Create Table Button */}
           <button
@@ -269,6 +288,14 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         <TableCreatorModal
           onClose={() => setIsTableCreatorOpen(false)}
           onExecuteDDL={handleExecuteDDL}
+        />
+      )}
+
+      {/* Migration Diff Modal */}
+      {isDiffOpen && (
+        <SchemaDiffModal
+          onClose={() => setIsDiffOpen(false)}
+          onApplyMigration={handleApplyMigration}
         />
       )}
 
