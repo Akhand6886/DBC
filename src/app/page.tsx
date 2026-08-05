@@ -18,18 +18,18 @@ import { BrowserPreviewModal } from '../components/BrowserPreviewModal';
 import { GitPanel } from '../components/GitPanel';
 import { CommandPalette, PaletteAction } from '../components/CommandPalette';
 import { WelcomeTab } from '../components/WelcomeTab';
+import { TopMenuBar } from '../components/TopMenuBar';
 import { useToast } from '../components/ToastProvider';
 
 // DBMS Studio & Editor Imports
 import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
 import { SqlQueryPanel } from '../components/SqlQueryPanel';
-import { SchemaVisualizer } from '../components/SchemaVisualizer';
 import { DbPerformanceMonitor } from '../components/DbPerformanceMonitor';
 import { TableInspectorModal } from '../components/TableInspectorModal';
 import { DbObjectExplorer } from '../components/DbObjectExplorer';
 import { TableDataEditor } from '../components/TableDataEditor';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Command, Database, Table } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -123,7 +123,7 @@ export default function Home() {
 
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
-    { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4" />, handler: () => setActiveView('database') },
+    { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4 text-[#007acc]" />, handler: () => setActiveView('database') },
     { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setInspectTable('users') },
     { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4 text-emerald-400" />, handler: () => setEditingTable('users') },
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
@@ -134,7 +134,7 @@ export default function Home() {
     { id: 'sidecar', label: 'Rust Sidecar & LanceDB Inspector', category: 'action', icon: <Zap className="h-4 w-4" />, handler: () => setIsSidecarOpen(true) },
     { id: 'analytics', label: 'Router Analytics Dashboard', category: 'router', icon: <BarChart2 className="h-4 w-4" />, handler: () => setActiveView('analytics') },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
-    { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <Terminal className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
+    { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <FileCode className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
     { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
     { id: 'welcome', label: 'Show Welcome Tab', category: 'navigation', icon: <Command className="h-4 w-4" />, handler: () => setShowWelcome(true) },
   ];
@@ -314,7 +314,13 @@ export default function Home() {
   const activeConnection = connections.find((c) => c.id === activeConnectionId);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-ide-bg text-slate-100 overflow-hidden font-sans">
+    <div className="h-screen w-screen flex flex-col bg-[#1e1e1e] text-slate-100 overflow-hidden font-sans">
+      {/* Top Menu Bar */}
+      <TopMenuBar
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenPalette={() => setIsPaletteOpen(true)}
+      />
+
       <div className="flex-1 flex overflow-hidden">
         <ActivityBar activeView={activeView} onViewChange={handleViewChange} fastPathCount={fastPathCount} />
 
@@ -332,7 +338,7 @@ export default function Home() {
         )}
 
         {showSidebar && activeView === 'database' && (
-          <div className="flex border-r border-ide-border h-full">
+          <div className="flex border-r border-[#3c3c3c] h-full bg-[#252526]">
             <DbConnectionPanel
               connections={connections}
               activeConnectionId={activeConnectionId}
@@ -357,7 +363,7 @@ export default function Home() {
         {activeView === 'analytics' ? (
           <AnalyticsPanel />
         ) : (
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-hidden bg-[#1e1e1e]">
             {activeView === 'database' ? (
               editingTable ? (
                 <TableDataEditor
@@ -374,7 +380,7 @@ export default function Home() {
                     onSaveScriptToWorkspace={handleSaveScriptToWorkspace}
                   />
                   {activeConnection && (
-                    <div className="p-3 border-t border-ide-border bg-ide-sidebar">
+                    <div className="p-3 border-t border-[#3c3c3c] bg-[#252526]">
                       <DbPerformanceMonitor />
                     </div>
                   )}
