@@ -1,7 +1,17 @@
 {
   "name": "agentic-ai-ide",
   "version": "1.0.0",
-  "description": "Agentic AI IDE with Confidence-Scored Hybrid Router",
+  "description": "Agentic AI IDE with Confidence-Scored Hybrid Router & DBMS Studio",
+  "author": "Agentic IDE Team <team@agentic.ide>",
+  "license": "MIT",
+  "homepage": "https://github.com/Akhand6886/DBC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Akhand6886/DBC.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Akhand6886/DBC/issues"
+  },
   "main": "electron/main.js",
   "private": true,
   "scripts": {
@@ -32,6 +42,8 @@
     "cross-env": "^7.0.3",
     "electron": "^33.0.0",
     "electron-builder": "^25.1.8",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^14.2.15",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.14",
     "typescript": "^5.6.3"
