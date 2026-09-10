@@ -61,6 +61,39 @@ VS Code Dark UI   Confidence Router       Verification Engine   Rust Indexing   
 ---
 
 ### 4. Confidence-Scored Hybrid Router (`/router`)
+
+```
+User Prompt (MissionControl / Quick Actions)
+                  │
+                  ▼
+        previewIntent() / classifyDeveloperIntent()
+        ├── S_pattern: structural regex & AST match
+        ├── S_LSP: symbol index availability
+        └── Ambiguity Penalty: open-ended / multi-file keywords
+                  │
+                  ▼
+      Score Calculation: (0.6 * S_pattern + 0.4 * S_LSP - Penalty)
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+Score >= Threshold      Score < Threshold
+(e.g., >= 80%)         (e.g., < 80%)
+        │                   │
+        ▼                   ▼
+[DETERMINISTIC FAST-PATH]  [AGENTIC LLM ESCALATION]
+- ~3ms latency             - ~800ms latency
+- $0.00 token cost         - Provider token cost (OpenAI/Claude/Gemini/Ollama)
+- LSP / Formatter / Tests  - Deep reasoning / multi-file generation
+        │                   │
+        └─────────┬─────────┘
+                  │
+                  ▼
+      AgentExecutionPlan Created
+      ├── ShadowDiffCheck buffer
+      ├── Router Trace logged
+      └── SystemMetrics updated (Fast-Path ratio, $ saved)
+```
+
 - **Dual-Path Execution Architecture (`routerEngine.ts` & `AnalyticsPanel.tsx`):**
   - **Deterministic Fast Path ($\ge 80\%$ confidence):** Resolves pattern-matched structural operations in $\sim 3\text{ms}$ with $\$0.00$ model token cost.
   - **Agentic LLM Path ($< 80\%$ confidence):** Escalates ambiguous, multi-file, or deep analytical prompts to Large Language Models.
