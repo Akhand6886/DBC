@@ -23,6 +23,8 @@ import { TopMenuBar } from '../components/TopMenuBar';
 import { useToast } from '../components/ToastProvider';
 import { RouterConfigModal } from '../components/RouterConfigModal';
 import { RouterTraceModal } from '../components/RouterTraceModal';
+import { ErrorBoundary } from '../components/ErrorBoundary';
+import { loadPersistedWorkspace, savePersistedWorkspace } from '../lib/workspacePersistence';
 
 // DBMS Studio & Editor Imports
 import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
@@ -133,6 +135,42 @@ export default function Home() {
   ]);
   const [lastExecutionPlan, setLastExecutionPlan] = useState<AgentExecutionPlan | null>(recentPlans[0]);
 
+  // ─── Workspace State Hydration from Local Storage ─────────────────
+  useEffect(() => {
+    const saved = loadPersistedWorkspace();
+    if (saved) {
+      if (saved.files && saved.files.length > 0) {
+        setWorkspaceFiles(saved.files);
+        if (saved.activeFileId) {
+          const found = saved.files.find((f) => f.id === saved.activeFileId);
+          if (found) setActiveFile(found);
+        }
+        if (saved.openFileIds && saved.openFileIds.length > 0) {
+          const opens = saved.files.filter((f) => saved.openFileIds.includes(f.id));
+          if (opens.length > 0) setOpenFiles(opens);
+        }
+      }
+      if (saved.connections && saved.connections.length > 0) {
+        setConnections(saved.connections);
+        if (saved.activeConnectionId) setActiveConnectionId(saved.activeConnectionId);
+      }
+    }
+  }, []);
+
+  // ─── Debounced Auto-Save to Local Storage ───────────────────────────
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      savePersistedWorkspace({
+        files: workspaceFiles,
+        activeFileId: activeFile?.id || null,
+        openFileIds: openFiles.map((f) => f.id),
+        connections,
+        activeConnectionId
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [workspaceFiles, activeFile, openFiles, connections, activeConnectionId]);
+
   // ─── Global Keyboard Shortcuts ─────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -171,14 +209,19 @@ export default function Home() {
       if (mod && e.key === 'w') {
         e.preventDefault();
         if (activeFile) {
-          handleCloseTab(activeFile.id);
+          const fileId = activeFile.id;
+          setOpenFiles((prev) => {
+            const updated = prev.filter((f) => f.id !== fileId);
+            setActiveFile(updated.length > 0 ? updated[updated.length - 1] : null);
+            return updated;
+          });
         }
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeFile]);
+  }, [activeFile, addToast]);
 
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
@@ -395,7 +438,8 @@ export default function Home() {
   const activeConnection = connections.find((c) => c.id === activeConnectionId);
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#1e1e1e] text-slate-100 overflow-hidden font-sans">
+    <ErrorBoundary>
+      <div className="h-screen w-screen flex flex-col bg-[#1e1e1e] text-slate-100 overflow-hidden font-sans">
       {/* Top Menu Bar */}
       <TopMenuBar
         onOpenSettings={() => setIsSettingsOpen(true)}
@@ -555,6 +599,7 @@ export default function Home() {
           onClose={() => setIsRouterTraceOpen(false)}
         />
       )}
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
