@@ -46,12 +46,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSaveSet
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5 font-mono text-xs animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 font-mono text-xs animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <Settings className="h-4 w-4 text-cyan-400" />
+            <Settings className="h-4 w-4 text-cyan-400 flex-shrink-0" />
             <span className="font-bold uppercase tracking-wider text-xs">IDE Settings & BYOK Manager</span>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
@@ -60,7 +60,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSaveSet
         </div>
 
         {/* Navigation Sub-tabs */}
-        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex space-x-1">
+        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex flex-wrap sm:flex-nowrap gap-1">
           <button
             onClick={() => setActiveTab('byok')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all ${
