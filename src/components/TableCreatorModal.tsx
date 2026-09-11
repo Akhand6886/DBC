@@ -50,12 +50,12 @@ export const TableCreatorModal: React.FC<TableCreatorModalProps> = ({
   const ddl = generateDDL();
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <Database className="h-4 w-4 text-cyan-400" />
+            <Database className="h-4 w-4 text-cyan-400 flex-shrink-0" />
             <span className="font-bold uppercase tracking-wider text-xs">Visual Table Creator</span>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
