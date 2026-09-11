@@ -150,22 +150,22 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-[#1e1e1e] font-mono text-xs overflow-hidden h-full">
       {/* Streamlined Action Toolbar */}
-      <div className="h-11 border-b border-[#3c3c3c] px-4 flex items-center justify-between select-none bg-[#252526]">
-        <div className="flex items-center space-x-2 text-white">
-          <Database className="h-4 w-4 text-[#007acc]" />
-          <span className="font-bold tracking-tight text-xs">DBMS Studio</span>
-          <ChevronRight className="h-3.5 w-3.5 text-slate-500" />
-          <span className="text-[#007acc] font-bold bg-[#007acc]/10 px-2.5 py-0.5 rounded-full border border-[#007acc]/30 text-[11px]">
+      <div className="min-h-[44px] border-b border-[#3c3c3c] px-2.5 sm:px-4 py-1.5 flex items-center justify-between select-none bg-[#252526] gap-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 text-white min-w-0">
+          <Database className="h-4 w-4 text-[#007acc] flex-shrink-0" />
+          <span className="font-bold tracking-tight text-xs hidden md:inline">DBMS Studio</span>
+          <ChevronRight className="h-3.5 w-3.5 text-slate-500 hidden md:inline flex-shrink-0" />
+          <span className="text-[#007acc] font-bold bg-[#007acc]/10 px-2 sm:px-2.5 py-0.5 rounded-full border border-[#007acc]/30 text-[11px] truncate max-w-[120px] sm:max-w-[220px]">
             {activeConnectionName || 'None Selected'}
           </span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
           {/* Commit Pending Edits Badge */}
           {pendingEditCount > 0 && (
             <button
               onClick={handleCommitEdits}
-              className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 shadow animate-pulse text-[11px]"
+              className="bg-amber-600 hover:bg-amber-500 text-white px-2.5 sm:px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 shadow animate-pulse text-[11px]"
             >
               <Save className="h-3.5 w-3.5" />
               <span>Save {pendingEditCount} Edits</span>
@@ -176,10 +176,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           <div className="relative">
             <button
               onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
-              className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px]"
             >
               <Wrench className="h-3.5 w-3.5 text-[#007acc]" />
-              <span>Tools</span>
+              <span className="hidden sm:inline">Tools</span>
               <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
 
@@ -221,10 +221,10 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           <div className="relative">
             <button
               onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px]"
             >
               <Download className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Export</span>
+              <span className="hidden sm:inline">Export</span>
               <ChevronDown className="h-3 w-3 text-slate-400" />
             </button>
 
@@ -266,10 +266,11 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           <button
             onClick={() => handleExecuteQuery()}
             disabled={isRunning || !activeConnectionName}
-            className="bg-[#007acc] hover:bg-[#005a9e] disabled:opacity-40 text-white px-4 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 shadow transition-all active:scale-95 text-[11px]"
+            className="bg-[#007acc] hover:bg-[#005a9e] disabled:opacity-40 text-white px-3 sm:px-4 py-1.5 rounded-lg font-bold flex items-center space-x-1 sm:space-x-1.5 shadow transition-all active:scale-95 text-[11px]"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
-            <span>{isRunning ? 'Executing...' : 'Run Query'}</span>
+            <span>{isRunning ? 'Running' : 'Run'}</span>
+            <span className="hidden sm:inline">{isRunning ? '...' : ' Query'}</span>
           </button>
         </div>
       </div>
@@ -297,12 +298,13 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       {/* Query Output Results Panel */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Results Header */}
-        <div className="h-8 border-b border-[#3c3c3c] px-4 bg-[#252526] flex items-center justify-between text-slate-400 select-none text-[11px]">
+        <div className="h-8 border-b border-[#3c3c3c] px-2.5 sm:px-4 bg-[#252526] flex items-center justify-between text-slate-400 select-none text-[11px]">
           <span className="font-semibold">Query Results</span>
           {queryResult && (
             <div className="flex items-center space-x-1.5 text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Returned {queryResult.rows.length} rows in {queryResult.executionTimeMs}ms</span>
+              <span className="hidden sm:inline">Returned {queryResult.rows.length} rows in {queryResult.executionTimeMs}ms</span>
+              <span className="sm:hidden">{queryResult.rows.length} rows ({queryResult.executionTimeMs}ms)</span>
             </div>
           )}
         </div>
