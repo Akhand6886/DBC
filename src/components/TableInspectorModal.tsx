@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Key, Shield, Code, X, Copy, Check, Eye } from 'lucide-react';
+import { Table, Key, Shield, Code, X, Copy, Check, Eye, Database } from 'lucide-react';
+import { realSqlDriver } from '../lib/db/sqlDriver';
 
 interface TableInspectorModalProps {
   tableName: string;
@@ -15,19 +16,11 @@ export const TableInspectorModal: React.FC<TableInspectorModalProps> = ({
   const [activeTab, setActiveTab] = useState<'columns' | 'ddl' | 'indexes'>('columns');
   const [copied, setCopied] = useState(false);
 
-  const mockDDL = `CREATE TABLE ${tableName} (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  username VARCHAR(255) NOT NULL UNIQUE,
-  email VARCHAR(255) NOT NULL,
-  role_id INTEGER REFERENCES roles(id),
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_${tableName}_username ON ${tableName}(username);
-CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
+  const tableSchema = realSqlDriver.getTable(tableName);
+  const realDDL = realSqlDriver.generateTableDDL(tableName);
 
   const handleCopyDDL = () => {
-    navigator.clipboard.writeText(mockDDL);
+    navigator.clipboard.writeText(realDDL);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -41,7 +34,7 @@ CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
             <Table className="h-5 w-5 text-cyan-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">Table DDL & Schema Inspector</h2>
-              <p className="text-[11px] text-slate-400">Inspecting Table: <span className="text-cyan-300 font-bold">{tableName}</span></p>
+              <p className="text-[11px] text-slate-400">Inspecting Table: <span className="text-cyan-300 font-bold">{tableName}</span> ({tableSchema?.columns.length ?? 0} columns)</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
@@ -81,30 +74,40 @@ CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
                 </tr>
               </thead>
               <tbody className="divide-y divide-ide-border text-slate-200">
-                <tr>
-                  <td className="px-3 py-2 font-bold text-cyan-300">id</td>
-                  <td className="px-3 py-2 font-mono">INTEGER</td>
-                  <td className="px-3 py-2"><span className="bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 px-1.5 py-0.5 rounded text-[9px] font-bold">PRIMARY KEY</span></td>
-                  <td className="px-3 py-2 text-rose-400">NOT NULL</td>
-                </tr>
-                <tr>
-                  <td className="px-3 py-2 font-bold text-cyan-300">username</td>
-                  <td className="px-3 py-2 font-mono">VARCHAR(255)</td>
-                  <td className="px-3 py-2"><span className="bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1.5 py-0.5 rounded text-[9px] font-bold">UNIQUE</span></td>
-                  <td className="px-3 py-2 text-rose-400">NOT NULL</td>
-                </tr>
-                <tr>
-                  <td className="px-3 py-2 font-bold text-cyan-300">email</td>
-                  <td className="px-3 py-2 font-mono">VARCHAR(255)</td>
-                  <td className="px-3 py-2 text-slate-500">-</td>
-                  <td className="px-3 py-2 text-rose-400">NOT NULL</td>
-                </tr>
-                <tr>
-                  <td className="px-3 py-2 font-bold text-cyan-300">role_id</td>
-                  <td className="px-3 py-2 font-mono">INTEGER</td>
-                  <td className="px-3 py-2"><span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9px] font-bold">FOREIGN KEY (roles.id)</span></td>
-                  <td className="px-3 py-2 text-emerald-400">NULLABLE</td>
-                </tr>
+                {tableSchema?.columns && tableSchema.columns.length > 0 ? (
+                  tableSchema.columns.map((col, idx) => (
+                    <tr key={idx} className="hover:bg-ide-card/50">
+                      <td className="px-3 py-2 font-bold text-cyan-300">{col.name}</td>
+                      <td className="px-3 py-2 font-mono text-slate-300">{col.type}</td>
+                      <td className="px-3 py-2">
+                        {col.isPrimary ? (
+                          <span className="bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                            PRIMARY KEY
+                          </span>
+                        ) : col.isForeign ? (
+                          <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                            FOREIGN KEY
+                          </span>
+                        ) : (
+                          <span className="text-slate-500">-</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {col.isPrimary ? (
+                          <span className="text-rose-400">NOT NULL</span>
+                        ) : (
+                          <span className="text-emerald-400">NULLABLE</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-3 py-4 text-center text-slate-500">
+                      No column metadata available for table &lsquo;{tableName}&rsquo;.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -119,26 +122,30 @@ CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
               {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
               <span>{copied ? 'Copied!' : 'Copy'}</span>
             </button>
-            <pre>{mockDDL}</pre>
+            <pre>{realDDL}</pre>
           </div>
         )}
 
         {activeTab === 'indexes' && (
           <div className="space-y-2 border border-ide-border rounded-xl p-3 bg-ide-bg max-h-56 overflow-y-auto">
-            <div className="bg-ide-sidebar p-2.5 rounded-lg border border-ide-border flex items-center justify-between">
-              <div>
-                <div className="font-bold text-cyan-300">idx_{tableName}_username</div>
-                <div className="text-[10px] text-slate-400">ON {tableName} (username) · UNIQUE BTREE</div>
+            {tableSchema?.columns.filter(c => c.isPrimary || c.isForeign).map((col, idx) => (
+              <div key={idx} className="bg-ide-sidebar p-2.5 rounded-lg border border-ide-border flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-cyan-300">
+                    idx_{tableName}_{col.name}
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    ON {tableName} ({col.name}) · {col.isPrimary ? 'PRIMARY BTREE' : 'FOREIGN BTREE'}
+                  </div>
+                </div>
+                <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">ACTIVE</span>
               </div>
-              <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">ACTIVE</span>
-            </div>
-            <div className="bg-ide-sidebar p-2.5 rounded-lg border border-ide-border flex items-center justify-between">
-              <div>
-                <div className="font-bold text-cyan-300">idx_{tableName}_role_id</div>
-                <div className="text-[10px] text-slate-400">ON {tableName} (role_id) · BTREE</div>
+            ))}
+            {(!tableSchema?.columns || tableSchema.columns.filter(c => c.isPrimary || c.isForeign).length === 0) && (
+              <div className="p-4 text-center text-slate-500">
+                No secondary indexes defined for table &lsquo;{tableName}&rsquo;.
               </div>
-              <span className="text-[9px] font-bold bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">ACTIVE</span>
-            </div>
+            )}
           </div>
         )}
       </div>
