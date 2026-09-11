@@ -12,7 +12,7 @@ import {
   TrendingUp,
   Sliders,
   FileCode,
-  ArrowUpRight
+  Info
 } from 'lucide-react';
 
 interface AnalyticsPanelProps {
@@ -24,24 +24,30 @@ interface AnalyticsPanelProps {
 
 export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
   metrics = {
-    totalQueries: 12480,
-    fastPathCount: 10508,
-    llmCount: 1972,
-    avgFastPathLatencyMs: 3,
-    avgLlmLatencyMs: 840,
-    totalCostSavedUSD: 432.80,
-    shadowVerificationsPassed: 1420
+    totalQueries: 0,
+    fastPathCount: 0,
+    llmCount: 0,
+    avgFastPathLatencyMs: 0,
+    avgLlmLatencyMs: 0,
+    totalCostSavedUSD: 0.0,
+    shadowVerificationsPassed: 0
   },
   recentPlans = [],
   onInspectPlan,
   onOpenRouterConfig,
 }) => {
-  const totalQueries = Math.max(1, metrics.totalQueries);
-  const fastPathRatio = ((metrics.fastPathCount / totalQueries) * 100).toFixed(1);
-  const latencyReduction = (
-    ((metrics.avgLlmLatencyMs - metrics.avgFastPathLatencyMs) / metrics.avgLlmLatencyMs) *
-    100
-  ).toFixed(1);
+  const hasQueries = metrics.totalQueries > 0;
+  const fastPathRatio = hasQueries
+    ? ((metrics.fastPathCount / metrics.totalQueries) * 100).toFixed(1)
+    : '0';
+
+  const latencyReduction =
+    hasQueries && metrics.avgLlmLatencyMs > 0
+      ? (
+          ((metrics.avgLlmLatencyMs - metrics.avgFastPathLatencyMs) / metrics.avgLlmLatencyMs) *
+          100
+        ).toFixed(1)
+      : '0';
 
   return (
     <div className="flex-1 bg-[#1e1e1e] p-5 overflow-y-auto font-mono text-xs space-y-5 select-none">
@@ -89,7 +95,9 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
           <div className="text-[10px] text-emerald-400 flex items-center space-x-1">
             <TrendingUp className="h-3 w-3" />
             <span>
-              {metrics.fastPathCount.toLocaleString()} / {metrics.totalQueries.toLocaleString()} resolved without LLM
+              {hasQueries
+                ? `${metrics.fastPathCount.toLocaleString()} / ${metrics.totalQueries.toLocaleString()} resolved without LLM`
+                : 'Awaiting first query execution'}
             </span>
           </div>
         </div>
@@ -101,10 +109,11 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
             <Clock className="h-4 w-4 text-cyan-400" />
           </div>
           <div className="text-2xl font-bold text-white">
-            {metrics.avgFastPathLatencyMs}ms{' '}
-            <span className="text-xs text-slate-400 font-normal">vs {metrics.avgLlmLatencyMs}ms LLM</span>
+            {hasQueries ? `${metrics.avgFastPathLatencyMs}ms` : '-- ms'}
           </div>
-          <div className="text-[10px] text-cyan-400">{latencyReduction}% latency reduction</div>
+          <div className="text-[10px] text-cyan-400">
+            {hasQueries ? `${latencyReduction}% latency reduction` : 'Zero latency recorded'}
+          </div>
         </div>
 
         {/* Card 3: Cost Saved */}
@@ -113,8 +122,12 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
             <span>Token Cost Savings</span>
             <DollarSign className="h-4 w-4 text-purple-400" />
           </div>
-          <div className="text-2xl font-bold text-white">${metrics.totalCostSavedUSD.toFixed(2)}</div>
-          <div className="text-[10px] text-purple-400">Direct model API fees avoided</div>
+          <div className="text-2xl font-bold text-white">
+            ${metrics.totalCostSavedUSD.toFixed(2)}
+          </div>
+          <div className="text-[10px] text-purple-400">
+            {hasQueries ? 'Direct model API fees avoided' : 'No tokens consumed'}
+          </div>
         </div>
 
         {/* Card 4: Shadow Checks */}
@@ -124,11 +137,13 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
             <ShieldCheck className="h-4 w-4 text-amber-400" />
           </div>
           <div className="text-2xl font-bold text-white">{metrics.shadowVerificationsPassed}</div>
-          <div className="text-[10px] text-amber-400">Syntax & diagnostic checks verified</div>
+          <div className="text-[10px] text-amber-400">
+            {hasQueries ? 'Syntax & diagnostic checks verified' : 'Zero AST patches tested'}
+          </div>
         </div>
       </div>
 
-      {/* Execution Trace History Table */}
+      {/* Execution Trace History Table / Zero State */}
       <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl p-4 space-y-3 shadow">
         <div className="flex items-center justify-between border-b border-[#3c3c3c] pb-2.5">
           <div className="flex items-center space-x-2 text-white font-sans font-bold text-xs uppercase tracking-wider">
@@ -141,10 +156,13 @@ export const AnalyticsPanel: React.FC<AnalyticsPanelProps> = ({
         </div>
 
         {recentPlans.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 space-y-1">
-            <p className="text-xs">No router dispatches executed in this session yet.</p>
-            <p className="text-[11px] text-slate-500">
-              Type a query or prompt in Mission Control AI to observe live routing decisions.
+          <div className="py-10 text-center text-slate-400 space-y-2">
+            <div className="h-10 w-10 mx-auto rounded-full bg-[#1e1e1e] border border-[#3c3c3c] flex items-center justify-center text-[#007acc]">
+              <Info className="h-5 w-5" />
+            </div>
+            <p className="text-xs font-semibold text-slate-300">No router dispatches executed in this session yet.</p>
+            <p className="text-[11px] text-slate-500 max-w-md mx-auto">
+              Run SQL queries in DBMS Studio or ask the AI Copilot to see real-time dual-path decisions, confidence scores, and token cost savings.
             </p>
           </div>
         ) : (

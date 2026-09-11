@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Terminal, Settings, Command, ChevronDown, FilePlus, FolderPlus, Save, Play, Search, GitBranch, Globe, Sliders } from 'lucide-react';
+import { Terminal, Settings, Command, ChevronDown, FilePlus, FolderPlus, Save, Play, Search, GitBranch, Globe, Sliders, Sparkles } from 'lucide-react';
 
 interface TopMenuBarProps {
   onOpenSettings: () => void;
@@ -12,6 +12,8 @@ interface TopMenuBarProps {
   onToggleTerminal: () => void;
   onRunQuery: () => void;
   onOpenGit: () => void;
+  showMissionControl?: boolean;
+  onToggleMissionControl?: () => void;
 }
 
 export const TopMenuBar: React.FC<TopMenuBarProps> = ({
@@ -23,6 +25,8 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onToggleTerminal,
   onRunQuery,
   onOpenGit,
+  showMissionControl = false,
+  onToggleMissionControl,
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -165,6 +169,20 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
 
       {/* Right Utility Shortcuts */}
       <div className="flex items-center space-x-2 text-[11px]">
+        {onToggleMissionControl && (
+          <button
+            onClick={onToggleMissionControl}
+            className={`px-2.5 py-0.5 rounded text-[11px] font-bold flex items-center space-x-1.5 transition-all ${
+              showMissionControl
+                ? 'bg-[#007acc] text-white shadow'
+                : 'bg-[#1e1e1e] hover:bg-[#3c3c3c] text-slate-300 border border-[#3c3c3c]'
+            }`}
+            title="Toggle AI Copilot (⌘L)"
+          >
+            <Sparkles className="h-3 w-3 text-yellow-300" />
+            <span>AI Copilot</span>
+          </button>
+        )}
         <button
           onClick={onOpenSettings}
           className="hover:text-white p-1 rounded hover:bg-[#3c3c3c]"

@@ -34,7 +34,7 @@ import { TableInspectorModal } from '../components/TableInspectorModal';
 import { DbObjectExplorer } from '../components/DbObjectExplorer';
 import { TableDataEditor } from '../components/TableDataEditor';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -75,65 +75,29 @@ export default function Home() {
     'Ready for SQL transactions & interactive data grid editing.'
   ]);
   const [activeDiff, setActiveDiff] = useState<ShadowDiffCheck | null>(null);
-  const [fastPathCount, setFastPathCount] = useState(14);
-  const [lastLatencyMs, setLastLatencyMs] = useState<number | undefined>(3);
-  const [lastRoutePath, setLastRoutePath] = useState<string | undefined>('DETERMINISTIC_FAST_PATH');
+  const [fastPathCount, setFastPathCount] = useState(0);
+  const [lastLatencyMs, setLastLatencyMs] = useState<number | undefined>(undefined);
+  const [lastRoutePath, setLastRoutePath] = useState<string | undefined>(undefined);
 
-  // Router State
+  // Router & UI State
   const [routerConfig, setRouterConfig] = useState<RouterConfig>(DEFAULT_ROUTER_CONFIG);
   const [isRouterConfigOpen, setIsRouterConfigOpen] = useState(false);
   const [isRouterTraceOpen, setIsRouterTraceOpen] = useState(false);
+  const [showMissionControl, setShowMissionControl] = useState(false);
+  const [showPerfMonitor, setShowPerfMonitor] = useState(false);
 
   const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
-    totalQueries: 12480,
-    fastPathCount: 10508,
-    llmCount: 1972,
-    avgFastPathLatencyMs: 3,
-    avgLlmLatencyMs: 840,
-    totalCostSavedUSD: 432.80,
-    shadowVerificationsPassed: 1420
+    totalQueries: 0,
+    fastPathCount: 0,
+    llmCount: 0,
+    avgFastPathLatencyMs: 0,
+    avgLlmLatencyMs: 0,
+    totalCostSavedUSD: 0.0,
+    shadowVerificationsPassed: 0
   });
 
-  const [recentPlans, setRecentPlans] = useState<AgentExecutionPlan[]>([
-    {
-      id: 'plan-01',
-      prompt: 'rename table users to app_users',
-      routerPath: 'DETERMINISTIC_FAST_PATH',
-      confidenceScore: 97,
-      intent: {
-        rawPrompt: 'rename table users to app_users',
-        actionType: 'LSP_RENAME',
-        targetSymbol: 'users',
-        confidenceScore: 97,
-        scoreBreakdown: { patternScore: 98, lspAvailabilityScore: 95, ambiguityPenalty: 0, finalScore: 97 },
-        explanation: 'Matched rule: LSP textDocument/rename. High structural pattern match.'
-      },
-      executionTimeMs: 3,
-      tokenCostUSD: 0.0,
-      generatedChanges: [],
-      status: 'SUCCESS',
-      modelProvider: 'anthropic'
-    },
-    {
-      id: 'plan-02',
-      prompt: 'implement multi-table audit trigger for transactions',
-      routerPath: 'AGENTIC_LLM_PATH',
-      confidenceScore: 36,
-      intent: {
-        rawPrompt: 'implement multi-table audit trigger for transactions',
-        actionType: 'MULTI_FILE_FEATURE',
-        confidenceScore: 36,
-        scoreBreakdown: { patternScore: 30, lspAvailabilityScore: 95, ambiguityPenalty: 55, finalScore: 36 },
-        explanation: 'High ambiguity detected (multi-file logic, open-ended reasoning). Escalated to Agentic LLM.'
-      },
-      executionTimeMs: 812,
-      tokenCostUSD: 0.0035,
-      generatedChanges: [],
-      status: 'SUCCESS',
-      modelProvider: 'anthropic'
-    }
-  ]);
-  const [lastExecutionPlan, setLastExecutionPlan] = useState<AgentExecutionPlan | null>(recentPlans[0]);
+  const [recentPlans, setRecentPlans] = useState<AgentExecutionPlan[]>([]);
+  const [lastExecutionPlan, setLastExecutionPlan] = useState<AgentExecutionPlan | null>(null);
 
   // ─── Workspace State Hydration from Local Storage ─────────────────
   useEffect(() => {
@@ -200,6 +164,10 @@ export default function Home() {
         e.preventDefault();
         setShowTerminal(prev => !prev);
       }
+      if (mod && e.key === 'l') {
+        e.preventDefault();
+        setShowMissionControl(prev => !prev);
+      }
       if (mod && e.key === 's') {
         e.preventDefault();
         if (activeFile) {
@@ -225,6 +193,7 @@ export default function Home() {
 
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
+    { id: 'toggle-ai', label: 'Toggle AI Copilot Drawer', category: 'action', shortcut: '⌘L', icon: <Sparkles className="h-4 w-4 text-yellow-300" />, handler: () => setShowMissionControl(prev => !prev) },
     { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4 text-[#007acc]" />, handler: () => setActiveView('database') },
     { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setInspectTable('users') },
     { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4 text-emerald-400" />, handler: () => setEditingTable('users') },
@@ -450,6 +419,8 @@ export default function Home() {
         onToggleTerminal={() => setShowTerminal(prev => !prev)}
         onRunQuery={() => handleLogTerminal('[DBC Engine]: Executed SQL query from menu.')}
         onOpenGit={() => setIsGitOpen(true)}
+        showMissionControl={showMissionControl}
+        onToggleMissionControl={() => setShowMissionControl(prev => !prev)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -469,25 +440,19 @@ export default function Home() {
         )}
 
         {showSidebar && activeView === 'database' && (
-          <div className="flex border-r border-[#3c3c3c] h-full bg-[#252526]">
-            <DbConnectionPanel
-              connections={connections}
-              activeConnectionId={activeConnectionId}
-              onSelectConnection={setActiveConnectionId}
-              onAddConnection={handleAddConnection}
-              onDeleteConnection={handleDeleteConnection}
-            />
-            {activeConnection && (
-              <DbObjectExplorer
-                onOpenDataEditor={(tableName) => setEditingTable(tableName)}
-                onInspectDDL={(tableName) => setInspectTable(tableName)}
-                onRunSelectTop={(tableName) => {
-                  setActiveView('database');
-                  handleLogTerminal(`[DBMS Editor]: Executed SELECT * FROM ${tableName} LIMIT 100;`);
-                }}
-              />
-            )}
-          </div>
+          <DbObjectExplorer
+            connections={connections}
+            activeConnectionId={activeConnectionId}
+            onSelectConnection={setActiveConnectionId}
+            onAddConnection={handleAddConnection}
+            onDeleteConnection={handleDeleteConnection}
+            onOpenDataEditor={(tableName) => setEditingTable(tableName)}
+            onInspectDDL={(tableName) => setInspectTable(tableName)}
+            onRunSelectTop={(tableName) => {
+              setActiveView('database');
+              handleLogTerminal(`[DBMS Editor]: Executed SELECT * FROM ${tableName} LIMIT 100;`);
+            }}
+          />
         )}
 
         {/* Main panels */}
@@ -518,7 +483,7 @@ export default function Home() {
                     onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
                     onSaveScriptToWorkspace={handleSaveScriptToWorkspace}
                   />
-                  {activeConnection && (
+                  {showPerfMonitor && activeConnection && (
                     <div className="p-3 border-t border-[#3c3c3c] bg-[#252526]">
                       <DbPerformanceMonitor />
                     </div>
@@ -552,17 +517,20 @@ export default function Home() {
           </div>
         )}
 
-        <MissionControl
-          activeFilePath={activeFile?.path}
-          activeFileContent={activeFile?.content || ''}
-          routerConfig={routerConfig}
-          lastExecutionPlan={lastExecutionPlan}
-          onApplyPatch={handleApplyPatch}
-          onExecutePlan={handleExecutePlan}
-          onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
-          onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
-          onLogTerminal={handleLogTerminal}
-        />
+        {showMissionControl && (
+          <MissionControl
+            activeFilePath={activeFile?.path}
+            activeFileContent={activeFile?.content || ''}
+            routerConfig={routerConfig}
+            lastExecutionPlan={lastExecutionPlan}
+            onApplyPatch={handleApplyPatch}
+            onExecutePlan={handleExecutePlan}
+            onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
+            onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
+            onClose={() => setShowMissionControl(false)}
+            onLogTerminal={handleLogTerminal}
+          />
+        )}
       </div>
 
       <StatusBar

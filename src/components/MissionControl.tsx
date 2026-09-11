@@ -20,7 +20,8 @@ import {
   DollarSign,
   FileCode,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from 'lucide-react';
 
 interface MissionControlProps {
@@ -32,6 +33,7 @@ interface MissionControlProps {
   onExecutePlan?: (plan: AgentExecutionPlan) => void;
   onOpenRouterConfig?: () => void;
   onOpenRouterTrace?: () => void;
+  onClose?: () => void;
   onLogTerminal?: (msg: string) => void;
 }
 
@@ -44,6 +46,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   onExecutePlan,
   onOpenRouterConfig,
   onOpenRouterTrace,
+  onClose,
   onLogTerminal,
 }) => {
   const [prompt, setPrompt] = useState('');
@@ -126,6 +129,16 @@ export const MissionControl: React.FC<MissionControlProps> = ({
             <option value="gemini">Gemini 1.5</option>
             <option value="ollama">Ollama (Offline)</option>
           </select>
+
+          {onClose && (
+            <button
+              onClick={onClose}
+              title="Close AI Panel"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-slate-400 hover:text-white transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

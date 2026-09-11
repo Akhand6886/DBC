@@ -13,8 +13,8 @@ interface StatusBarProps {
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
-  lastLatencyMs = 3,
-  lastRoutePath = 'DETERMINISTIC_FAST_PATH',
+  lastLatencyMs,
+  lastRoutePath,
   onOpenSidecar,
   onOpenGit,
   onOpenRouterTrace,
@@ -57,18 +57,25 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         {/* Router Mode Indicator / Interactive Trigger */}
         <button
           onClick={onOpenRouterTrace || onOpenRouterConfig}
-          title="Click to inspect last Router Trace & Confidence score"
+          title="Click to inspect Router rules & confidence score"
           className="flex items-center space-x-1 font-mono text-[10px] bg-[#005a9e] hover:bg-[#004a80] px-2 py-0.5 rounded transition-colors"
         >
-          {isFast ? (
-            <>
-              <Zap className="h-3 w-3 text-yellow-300 fill-current" />
-              <span>Fast-Path ({lastLatencyMs}ms)</span>
-            </>
+          {lastLatencyMs !== undefined ? (
+            isFast ? (
+              <>
+                <Zap className="h-3 w-3 text-yellow-300 fill-current" />
+                <span>Fast-Path ({lastLatencyMs}ms)</span>
+              </>
+            ) : (
+              <>
+                <Cpu className="h-3 w-3 text-amber-300" />
+                <span>LLM ({lastLatencyMs}ms)</span>
+              </>
+            )
           ) : (
             <>
-              <Cpu className="h-3 w-3 text-amber-300" />
-              <span>LLM ({lastLatencyMs}ms)</span>
+              <Zap className="h-3 w-3 text-yellow-300/80" />
+              <span>Router: Ready</span>
             </>
           )}
         </button>
