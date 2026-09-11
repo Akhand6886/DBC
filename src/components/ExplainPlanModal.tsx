@@ -66,12 +66,12 @@ export const ExplainPlanModal: React.FC<ExplainPlanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <Activity className="h-5 w-5 text-cyan-400" />
+            <Activity className="h-5 w-5 text-cyan-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">Visual Query Execution Plan (EXPLAIN ANALYZE)</h2>
               <p className="text-[11px] text-slate-400">Total Execution Time: <span className="text-cyan-300 font-bold">{analysis.totalTimeMs}ms</span> · Total Cost: <span className="text-cyan-300 font-bold">{analysis.totalCost}</span></p>
@@ -85,7 +85,7 @@ export const ExplainPlanModal: React.FC<ExplainPlanModalProps> = ({
         {/* AI Index Advisor */}
         {analysis.aiIndexSuggestion && (
           <div className="bg-gradient-to-r from-cyan-950/40 to-blue-950/40 border border-cyan-500/40 rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-1">
               <span className="text-cyan-300 font-bold flex items-center space-x-1.5">
                 <Sparkles className="h-4 w-4 text-cyan-400" />
                 <span>AI Index Advisor Recommendation</span>
@@ -97,13 +97,13 @@ export const ExplainPlanModal: React.FC<ExplainPlanModalProps> = ({
             <p className="text-slate-300 text-[11px]">
               High cost Sequential Scan detected on table <span className="text-cyan-300 font-bold">&apos;{analysis.aiIndexSuggestion.tableName}&apos;</span>. Adding a B-Tree index will convert sequential lookup into an $O(1)$ index lookup.
             </p>
-            <div className="flex items-center justify-between pt-1">
-              <code className="text-cyan-300 bg-ide-bg px-2.5 py-1 rounded border border-ide-border text-[10px]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
+              <code className="text-cyan-300 bg-ide-bg px-2.5 py-1 rounded border border-ide-border text-[10px] truncate">
                 {analysis.aiIndexSuggestion.sql}
               </code>
               <button
                 onClick={() => onApplyIndexSuggestion(analysis.aiIndexSuggestion!.sql)}
-                className="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1 rounded text-[10px] font-bold flex items-center space-x-1 shadow"
+                className="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1 rounded text-[10px] font-bold flex items-center justify-center space-x-1 shadow flex-shrink-0"
               >
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span>Create Index</span>
