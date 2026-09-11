@@ -82,17 +82,17 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
   return (
     <div className="flex-1 flex flex-col bg-[#1e1e1e] font-mono text-xs overflow-hidden h-full">
       {/* Editor Toolbar */}
-      <div className="h-11 border-b border-[#3c3c3c] px-4 flex items-center justify-between bg-[#252526] select-none">
-        <div className="flex items-center space-x-2 text-white">
-          <Table className="h-4 w-4 text-[#007acc]" />
-          <span className="font-bold text-xs">Table Data Editor:</span>
-          <span className="text-[#007acc] font-bold bg-[#007acc]/10 px-2.5 py-0.5 rounded-full border border-[#007acc]/30">
+      <div className="min-h-[44px] border-b border-[#3c3c3c] px-2.5 sm:px-4 py-1.5 flex items-center justify-between bg-[#252526] select-none gap-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 text-white min-w-0">
+          <Table className="h-4 w-4 text-[#007acc] flex-shrink-0" />
+          <span className="font-bold text-xs hidden md:inline">Table:</span>
+          <span className="text-[#007acc] font-bold bg-[#007acc]/10 px-2 sm:px-2.5 py-0.5 rounded-full border border-[#007acc]/30 truncate max-w-[120px] sm:max-w-[200px]">
             {tableName}
           </span>
-          <span className="text-[10px] text-slate-500">({rows.length} rows)</span>
+          <span className="text-[10px] text-slate-500 hidden sm:inline">({rows.length} rows)</span>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
           {/* Search Filter */}
           <div className="relative flex items-center">
             <Search className="h-3.5 w-3.5 text-slate-500 absolute left-2.5" />
@@ -100,28 +100,29 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Filter table rows..."
-              className="bg-[#1e1e1e] border border-[#3c3c3c] rounded-lg pl-8 pr-2 py-1 text-[11px] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#007acc] w-44"
+              placeholder="Filter..."
+              className="bg-[#1e1e1e] border border-[#3c3c3c] rounded-lg pl-8 pr-2 py-1 text-[11px] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#007acc] w-28 sm:w-44 transition-all"
             />
           </div>
 
           {/* Add Row Button */}
           <button
             onClick={handleAddRow}
-            className="text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+            className="text-slate-300 hover:text-white px-2.5 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px]"
           >
             <Plus className="h-3.5 w-3.5 text-[#007acc]" />
-            <span>Add Row</span>
+            <span className="hidden sm:inline">Add Row</span>
           </button>
 
           {/* Delete Row Button */}
           {selectedRows.length > 0 && (
             <button
               onClick={handleDeleteSelected}
-              className="bg-rose-950/40 text-rose-300 border border-rose-500/40 px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 transition-all active:scale-95 text-[11px]"
+              className="bg-rose-950/40 text-rose-300 border border-rose-500/40 px-2.5 sm:px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px]"
             >
               <Trash2 className="h-3.5 w-3.5 text-rose-400" />
-              <span>Delete ({selectedRows.length})</span>
+              <span className="hidden sm:inline">Delete </span>
+              <span>({selectedRows.length})</span>
             </button>
           )}
 
@@ -129,14 +130,15 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
           {pendingChanges && (
             <button
               onClick={handleCommitChanges}
-              className="bg-amber-600 hover:bg-amber-500 text-white px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 shadow animate-pulse text-[11px]"
+              className="bg-amber-600 hover:bg-amber-500 text-white px-2.5 sm:px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1 sm:space-x-1.5 shadow animate-pulse text-[11px]"
             >
               <Save className="h-3.5 w-3.5" />
-              <span>Save Changes</span>
+              <span className="hidden sm:inline">Save Changes</span>
+              <span className="sm:hidden">Save</span>
             </button>
           )}
 
-          <button onClick={onClose} className="text-slate-400 hover:text-white p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-white p-1 ml-1" title="Close Editor">
             <X className="h-4 w-4" />
           </button>
         </div>
