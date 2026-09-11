@@ -19,6 +19,7 @@ interface CodeEditorProps {
   activeDiff?: ShadowDiffCheck | null;
   onAcceptDiff?: () => void;
   onRejectDiff?: () => void;
+  onSave?: () => void;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -30,7 +31,14 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   activeDiff,
   onAcceptDiff,
   onRejectDiff,
+  onSave,
 }) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      if (onSave) onSave();
+    });
+  };
+
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       onContentChange(value);
@@ -117,6 +125,7 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             language={getMonacoLanguage(activeFile.language || '', activeFile.name)}
             value={activeFile.content || ''}
             onChange={handleEditorChange}
+            onMount={handleEditorDidMount}
             theme="vs-dark"
             options={{
               fontSize: 13,
