@@ -35,8 +35,8 @@ export const RouterConfigModal: React.FC<RouterConfigModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 font-mono text-xs select-none">
-      <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl max-w-lg w-full p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 font-mono text-xs select-none">
+      <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#3c3c3c] pb-3">
           <div className="flex items-center space-x-2 text-white font-sans font-bold">
