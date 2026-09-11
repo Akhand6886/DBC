@@ -282,6 +282,11 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           language="sql"
           value={query}
           onChange={(val) => setQuery(val || '')}
+          onMount={(editor, monaco) => {
+            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+              handleExecuteQuery();
+            });
+          }}
           theme="vs-dark"
           options={{
             fontSize: 13,
