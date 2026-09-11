@@ -8,12 +8,18 @@ interface TopMenuBarProps {
   onOpenPalette: () => void;
   onNewFile: () => void;
   onNewFolder: () => void;
+  onSaveFile?: () => void;
+  onOpenSearch?: () => void;
   onToggleSidebar: () => void;
   onToggleTerminal: () => void;
   onRunQuery: () => void;
   onOpenGit: () => void;
   showMissionControl?: boolean;
   onToggleMissionControl?: () => void;
+  onOpenSidecar?: () => void;
+  onOpenShortcuts?: () => void;
+  onRunTests?: () => void;
+  onOpenDatabase?: () => void;
 }
 
 export const TopMenuBar: React.FC<TopMenuBarProps> = ({
@@ -21,28 +27,43 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onOpenPalette,
   onNewFile,
   onNewFolder,
+  onSaveFile,
+  onOpenSearch,
   onToggleSidebar,
   onToggleTerminal,
   onRunQuery,
   onOpenGit,
   showMissionControl = false,
   onToggleMissionControl,
+  onOpenSidecar,
+  onOpenShortcuts,
+  onRunTests,
+  onOpenDatabase,
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
-  const toggleMenu = (menuName: string) => {
+  const toggleMenu = (e: React.MouseEvent, menuName: string) => {
+    e.stopPropagation();
     setOpenMenu(openMenu === menuName ? null : menuName);
   };
 
-  const handleAction = (action: () => void) => {
+  const handleAction = (action?: () => void) => {
     setOpenMenu(null);
-    action();
+    if (action) action();
   };
 
   return (
     <div className="h-8 bg-[#323233] border-b border-[#3c3c3c] flex items-center justify-between px-3 text-xs text-[#cccccc] select-none font-sans relative z-40">
+      {/* Invisible backdrop to dismiss open menus on click outside */}
+      {openMenu && (
+        <div
+          className="fixed inset-0 z-40 bg-transparent cursor-default"
+          onClick={() => setOpenMenu(null)}
+        />
+      )}
+
       {/* Menu Items */}
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center space-x-1 relative z-50">
         {/* Brand Icon */}
         <div className="flex items-center space-x-1.5 pr-2 border-r border-[#3c3c3c]">
           <span className="font-bold text-white tracking-tight flex items-center space-x-1">
@@ -54,7 +75,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         {/* File Dropdown */}
         <div className="relative">
           <button
-            onClick={() => toggleMenu('file')}
+            onClick={(e) => toggleMenu(e, 'file')}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'file' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -70,6 +91,12 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
               <button onClick={() => handleAction(onNewFolder)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
                 <span>New Folder</span>
               </button>
+              {onSaveFile && (
+                <button onClick={() => handleAction(onSaveFile)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                  <span>Save</span>
+                  <span className="text-[10px] text-slate-400">⌘S</span>
+                </button>
+              )}
               <div className="my-1 border-t border-[#3c3c3c]"></div>
               <button onClick={() => handleAction(onOpenSettings)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
                 <span>Preferences: Settings</span>
@@ -82,7 +109,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         {/* Edit Dropdown */}
         <div className="relative">
           <button
-            onClick={() => toggleMenu('edit')}
+            onClick={(e) => toggleMenu(e, 'edit')}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'edit' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -95,6 +122,12 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
                 <span>Command Palette...</span>
                 <span className="text-[10px] text-slate-400">⌘⇧P</span>
               </button>
+              {onOpenSearch && (
+                <button onClick={() => handleAction(onOpenSearch)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                  <span>Find in Files...</span>
+                  <span className="text-[10px] text-slate-400">⌘⇧F</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -102,7 +135,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         {/* View Dropdown */}
         <div className="relative">
           <button
-            onClick={() => toggleMenu('view')}
+            onClick={(e) => toggleMenu(e, 'view')}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'view' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -130,7 +163,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         {/* Run Dropdown */}
         <div className="relative">
           <button
-            onClick={() => toggleMenu('run')}
+            onClick={(e) => toggleMenu(e, 'run')}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'run' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -141,21 +174,105 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
             <div className="absolute left-0 mt-1 w-48 bg-[#252526] border border-[#3c3c3c] rounded-md shadow-2xl py-1 z-50 text-[11px]">
               <button onClick={() => handleAction(onRunQuery)} className="w-full px-3 py-2 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between font-bold text-cyan-300">
                 <span>Execute SQL Query</span>
-                <span className="text-[10px] text-slate-400">▶</span>
+                <span className="text-[10px] text-slate-400">⌘↵</span>
               </button>
+              {onRunTests && (
+                <button onClick={() => handleAction(onRunTests)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                  <span>Run Test Suite</span>
+                  <span className="text-[10px] text-slate-400">▶</span>
+                </button>
+              )}
             </div>
           )}
         </div>
 
-        {['Selection', 'Go', 'Terminal', 'Help'].map((item) => (
+        {/* Go Dropdown */}
+        <div className="relative hidden lg:inline-block">
           <button
-            key={item}
-            onClick={() => handleAction(onOpenPalette)}
-            className="hidden lg:inline-block px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px]"
+            onClick={(e) => toggleMenu(e, 'go')}
+            className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
+              openMenu === 'go' ? 'bg-[#3c3c3c] text-white' : ''
+            }`}
           >
-            {item}
+            Go
           </button>
-        ))}
+          {openMenu === 'go' && (
+            <div className="absolute left-0 mt-1 w-52 bg-[#252526] border border-[#3c3c3c] rounded-md shadow-2xl py-1 z-50 text-[11px]">
+              <button onClick={() => handleAction(onOpenPalette)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                <span>Go to File...</span>
+                <span className="text-[10px] text-slate-400">⌘P</span>
+              </button>
+              {onOpenSidecar && (
+                <button onClick={() => handleAction(onOpenSidecar)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                  <span>Go to Symbol...</span>
+                  <span className="text-[10px] text-slate-400">⌘⇧O</span>
+                </button>
+              )}
+              {onOpenDatabase && (
+                <button onClick={() => handleAction(onOpenDatabase)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-cyan-300">
+                  <span>Switch to DBMS Studio</span>
+                  <span className="text-[10px] text-slate-400">DB</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Terminal Dropdown */}
+        <div className="relative hidden lg:inline-block">
+          <button
+            onClick={(e) => toggleMenu(e, 'terminal')}
+            className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
+              openMenu === 'terminal' ? 'bg-[#3c3c3c] text-white' : ''
+            }`}
+          >
+            Terminal
+          </button>
+          {openMenu === 'terminal' && (
+            <div className="absolute left-0 mt-1 w-52 bg-[#252526] border border-[#3c3c3c] rounded-md shadow-2xl py-1 z-50 text-[11px]">
+              <button onClick={() => handleAction(onToggleTerminal)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                <span>Toggle Terminal Panel</span>
+                <span className="text-[10px] text-slate-400">⌘J</span>
+              </button>
+              {onRunTests && (
+                <button onClick={() => handleAction(onRunTests)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                  <span>Run Test Suite</span>
+                  <span className="text-[10px] text-slate-400">▶</span>
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Help Dropdown */}
+        <div className="relative hidden lg:inline-block">
+          <button
+            onClick={(e) => toggleMenu(e, 'help')}
+            className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
+              openMenu === 'help' ? 'bg-[#3c3c3c] text-white' : ''
+            }`}
+          >
+            Help
+          </button>
+          {openMenu === 'help' && (
+            <div className="absolute left-0 mt-1 w-56 bg-[#252526] border border-[#3c3c3c] rounded-md shadow-2xl py-1 z-50 text-[11px]">
+              {onOpenShortcuts && (
+                <button onClick={() => handleAction(onOpenShortcuts)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between font-semibold text-yellow-300">
+                  <span>Keyboard Shortcuts</span>
+                  <span className="text-[10px] text-slate-400">⌘/</span>
+                </button>
+              )}
+              <button onClick={() => handleAction(onOpenPalette)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                <span>Command Palette...</span>
+                <span className="text-[10px] text-slate-400">⌘⇧P</span>
+              </button>
+              <button onClick={() => handleAction(onOpenSettings)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
+                <span>Preferences & BYOK Keys</span>
+                <span className="text-[10px] text-slate-400">⌘,</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Window Title & Search Palette Bar */}
