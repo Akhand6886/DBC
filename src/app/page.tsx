@@ -23,8 +23,10 @@ import { TopMenuBar } from '../components/TopMenuBar';
 import { useToast } from '../components/ToastProvider';
 import { RouterConfigModal } from '../components/RouterConfigModal';
 import { RouterTraceModal } from '../components/RouterTraceModal';
+import { ShortcutsModal } from '../components/ShortcutsModal';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { loadPersistedWorkspace, savePersistedWorkspace } from '../lib/workspacePersistence';
+import { byokClient } from '../lib/agent/byokClient';
 
 // DBMS Studio & Editor Imports
 import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
@@ -48,6 +50,7 @@ export default function Home() {
   // Modal & Drawer states
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
   const [isSidecarOpen, setIsSidecarOpen] = useState(false);
   const [isBrowserOpen, setIsBrowserOpen] = useState(false);
@@ -57,6 +60,26 @@ export default function Home() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
+
+  // BYOK Keys & Editor Settings State
+  const [byokKeys, setByokKeys] = useState<{
+    openai?: string;
+    anthropic?: string;
+    gemini?: string;
+    ollama?: string;
+  }>({
+    openai: '',
+    anthropic: '',
+    gemini: '',
+    ollama: 'http://localhost:11434'
+  });
+
+  const [editorSettings, setEditorSettings] = useState({
+    theme: 'vscode-dark',
+    fontSize: 13,
+    tabSize: 2,
+    autoSave: true
+  });
 
   // Table Inspector & Data Editor state
   const [inspectTable, setInspectTable] = useState<string | null>(null);
@@ -99,7 +122,7 @@ export default function Home() {
   const [recentPlans, setRecentPlans] = useState<AgentExecutionPlan[]>([]);
   const [lastExecutionPlan, setLastExecutionPlan] = useState<AgentExecutionPlan | null>(null);
 
-  // ─── Workspace State Hydration from Local Storage ─────────────────
+  // ─── Workspace State & BYOK Hydration from Local Storage ────────────
   useEffect(() => {
     const saved = loadPersistedWorkspace();
     if (saved) {
@@ -119,6 +142,24 @@ export default function Home() {
         if (saved.activeConnectionId) setActiveConnectionId(saved.activeConnectionId);
       }
     }
+
+    try {
+      const savedKeys = localStorage.getItem('dbc_byok_keys');
+      if (savedKeys) {
+        const parsed = JSON.parse(savedKeys);
+        setByokKeys(parsed);
+        if (parsed.openai) byokClient.setApiKey('openai', parsed.openai);
+        if (parsed.anthropic) byokClient.setApiKey('anthropic', parsed.anthropic);
+        if (parsed.gemini) byokClient.setApiKey('gemini', parsed.gemini);
+        if (parsed.ollama) byokClient.setEndpoint('ollama', parsed.ollama);
+      }
+      const savedSettings = localStorage.getItem('dbc_editor_settings');
+      if (savedSettings) {
+        setEditorSettings(JSON.parse(savedSettings));
+      }
+    } catch (e) {
+      console.error('Error hydrating settings from localStorage', e);
+    }
   }, []);
 
   // ─── Debounced Auto-Save to Local Storage ───────────────────────────
@@ -135,46 +176,170 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [workspaceFiles, activeFile, openFiles, connections, activeConnectionId]);
 
+  // ─── Save File Handler ─────────────────────────────────────────────
+  const handleSaveActiveFile = () => {
+    if (!activeFile) return;
+    const cleanFile = { ...activeFile, isModified: false };
+    setActiveFile(cleanFile);
+    setOpenFiles((prev) => prev.map((f) => (f.id === activeFile.id ? cleanFile : f)));
+    setWorkspaceFiles((prev) => {
+      const updateTree = (nodes: FileNode[]): FileNode[] =>
+        nodes.map((n) => {
+          if (n.id === cleanFile.id) return cleanFile;
+          if (n.isFolder && n.children) return { ...n, children: updateTree(n.children) };
+          return n;
+        });
+      return updateTree(prev);
+    });
+    addToast('success', `Saved ${cleanFile.name}`);
+    handleLogTerminal(`[Workspace File System]: Saved ${cleanFile.path}`);
+  };
+
+  // ─── Save Settings Handler ─────────────────────────────────────────
+  const handleSaveSettings = (newSettings: any) => {
+    if (newSettings.keys) {
+      setByokKeys(newSettings.keys);
+      try {
+        localStorage.setItem('dbc_byok_keys', JSON.stringify(newSettings.keys));
+        if (newSettings.keys.openai) byokClient.setApiKey('openai', newSettings.keys.openai);
+        if (newSettings.keys.anthropic) byokClient.setApiKey('anthropic', newSettings.keys.anthropic);
+        if (newSettings.keys.gemini) byokClient.setApiKey('gemini', newSettings.keys.gemini);
+        if (newSettings.keys.ollama) byokClient.setEndpoint('ollama', newSettings.keys.ollama);
+      } catch (e) {
+        console.error('Error saving keys to localStorage', e);
+      }
+    }
+    const cleanSettings = {
+      theme: newSettings.theme || 'vscode-dark',
+      fontSize: newSettings.fontSize || 13,
+      tabSize: newSettings.tabSize || 2,
+      autoSave: newSettings.autoSave !== undefined ? newSettings.autoSave : true
+    };
+    setEditorSettings(cleanSettings);
+    try {
+      localStorage.setItem('dbc_editor_settings', JSON.stringify(cleanSettings));
+    } catch (e) {
+      console.error('Error saving settings to localStorage', e);
+    }
+    addToast('success', 'Settings & API Keys saved successfully.');
+    handleLogTerminal('[BYOK Manager]: Updated provider configurations.');
+  };
+
   // ─── Global Keyboard Shortcuts ─────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       const mod = e.metaKey || e.ctrlKey;
+      const key = e.key.toLowerCase();
 
-      if (mod && e.shiftKey && e.key === 'p') {
+      // Escape: Dismiss active modal / drawer / inspector
+      if (e.key === 'Escape') {
+        if (isPaletteOpen) setIsPaletteOpen(false);
+        else if (isShortcutsOpen) setIsShortcutsOpen(false);
+        else if (isSearchOpen) setIsSearchOpen(false);
+        else if (isSettingsOpen) setIsSettingsOpen(false);
+        else if (isVerificationOpen) setIsVerificationOpen(false);
+        else if (isSidecarOpen) setIsSidecarOpen(false);
+        else if (isBrowserOpen) setIsBrowserOpen(false);
+        else if (isGitOpen) setIsGitOpen(false);
+        else if (isRouterConfigOpen) setIsRouterConfigOpen(false);
+        else if (isRouterTraceOpen) setIsRouterTraceOpen(false);
+        else if (inspectTable) setInspectTable(null);
+        else if (editingTable) setEditingTable(null);
+        else if (showMissionControl) setShowMissionControl(false);
+        return;
+      }
+
+      // ⌘/ or ⌘?: Keyboard Shortcuts Cheat Sheet
+      if (mod && (key === '/' || key === '?')) {
+        e.preventDefault();
+        setIsShortcutsOpen(prev => !prev);
+        return;
+      }
+
+      // ⌘Enter: Execute SQL query or Run test suite
+      if (mod && (key === 'enter' || e.key === 'Enter')) {
+        e.preventDefault();
+        if (activeView === 'database') {
+          handleLogTerminal('[DBC Engine]: Executed query via ⌘↵ shortcut.');
+          addToast('info', 'Executing active SQL query...');
+        } else {
+          handleRunTestSuite();
+        }
+        return;
+      }
+
+      // ⌘P or ⌘K or ⌘⇧P: Command Palette / Quick Open
+      if ((mod && key === 'p') || (mod && key === 'k')) {
         e.preventDefault();
         setIsPaletteOpen(prev => !prev);
+        return;
       }
-      if (mod && e.shiftKey && e.key === 'f') {
+
+      // ⌘⇧F or ⌘F: Global Search
+      if (mod && key === 'f') {
         e.preventDefault();
         setIsSearchOpen(true);
+        return;
       }
-      if (mod && e.shiftKey && e.key === 'g') {
+
+      // ⌘⇧G: Git Panel
+      if (mod && e.shiftKey && key === 'g') {
         e.preventDefault();
         setIsGitOpen(true);
+        return;
       }
-      if (mod && e.key === ',') {
+
+      // ⌘⇧R: Router Config
+      if (mod && e.shiftKey && key === 'r') {
+        e.preventDefault();
+        setIsRouterConfigOpen(true);
+        return;
+      }
+
+      // ⌘,: Settings & BYOK
+      if (mod && key === ',') {
         e.preventDefault();
         setIsSettingsOpen(true);
+        return;
       }
-      if (mod && e.key === 'b') {
+
+      // ⌘B: Toggle Primary Sidebar
+      if (mod && key === 'b') {
         e.preventDefault();
         setShowSidebar(prev => !prev);
+        return;
       }
-      if (mod && e.key === 'j') {
+
+      // ⌘J: Toggle Bottom Terminal
+      if (mod && key === 'j') {
         e.preventDefault();
         setShowTerminal(prev => !prev);
+        return;
       }
-      if (mod && e.key === 'l') {
+
+      // ⌘L: Toggle AI Copilot / Mission Control
+      if (mod && key === 'l') {
         e.preventDefault();
         setShowMissionControl(prev => !prev);
+        return;
       }
-      if (mod && e.key === 's') {
+
+      // ⌘N: New File
+      if (mod && key === 'n') {
         e.preventDefault();
-        if (activeFile) {
-          addToast('success', `Saved ${activeFile.name}`);
-        }
+        handleAddFile(`query_${Date.now().toString().slice(-4)}.sql`);
+        return;
       }
-      if (mod && e.key === 'w') {
+
+      // ⌘S: Save Active File
+      if (mod && key === 's') {
+        e.preventDefault();
+        handleSaveActiveFile();
+        return;
+      }
+
+      // ⌘W: Close Active Tab
+      if (mod && key === 'w') {
         e.preventDefault();
         if (activeFile) {
           const fileId = activeFile.id;
@@ -184,17 +349,37 @@ export default function Home() {
             return updated;
           });
         }
+        return;
       }
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeFile, addToast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    activeFile,
+    activeView,
+    isPaletteOpen,
+    isShortcutsOpen,
+    isSearchOpen,
+    isSettingsOpen,
+    isVerificationOpen,
+    isSidecarOpen,
+    isBrowserOpen,
+    isGitOpen,
+    isRouterConfigOpen,
+    isRouterTraceOpen,
+    inspectTable,
+    editingTable,
+    showMissionControl,
+    addToast
+  ]);
 
   // ─── Command Palette Actions ───────────────────────────────────────
   const paletteActions: PaletteAction[] = [
     { id: 'toggle-ai', label: 'Toggle AI Copilot Drawer', category: 'action', shortcut: '⌘L', icon: <Sparkles className="h-4 w-4 text-yellow-300" />, handler: () => setShowMissionControl(prev => !prev) },
-    { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4 text-[#007acc]" />, handler: () => setActiveView('database') },
+    { id: 'shortcuts', label: 'Keyboard Shortcuts Cheat Sheet', category: 'navigation', shortcut: '⌘/', icon: <Command className="h-4 w-4 text-yellow-300" />, handler: () => setIsShortcutsOpen(true) },
+    { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4 text-[#007acc]" />, handler: () => { setActiveView('database'); setEditingTable(null); } },
     { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setInspectTable('users') },
     { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4 text-emerald-400" />, handler: () => setEditingTable('users') },
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
@@ -415,12 +600,28 @@ export default function Home() {
         onOpenPalette={() => setIsPaletteOpen(true)}
         onNewFile={() => handleAddFile('untitled.sql')}
         onNewFolder={() => handleAddFolder('new_folder')}
+        onSaveFile={handleSaveActiveFile}
+        onOpenSearch={() => setIsSearchOpen(true)}
         onToggleSidebar={() => setShowSidebar(prev => !prev)}
         onToggleTerminal={() => setShowTerminal(prev => !prev)}
-        onRunQuery={() => handleLogTerminal('[DBC Engine]: Executed SQL query from menu.')}
+        onRunQuery={() => {
+          if (activeView === 'database') {
+            handleLogTerminal('[DBC Engine]: Executed active SQL query from menu.');
+            addToast('info', 'Executing active SQL query...');
+          } else {
+            handleLogTerminal('[DBC Engine]: Executed query from menu.');
+          }
+        }}
         onOpenGit={() => setIsGitOpen(true)}
         showMissionControl={showMissionControl}
         onToggleMissionControl={() => setShowMissionControl(prev => !prev)}
+        onOpenSidecar={() => setIsSidecarOpen(true)}
+        onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onRunTests={handleRunTestSuite}
+        onOpenDatabase={() => {
+          setActiveView('database');
+          setEditingTable(null);
+        }}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -508,6 +709,7 @@ export default function Home() {
                 activeDiff={activeDiff}
                 onAcceptDiff={() => setActiveDiff(null)}
                 onRejectDiff={() => setActiveDiff(null)}
+                onSave={handleSaveActiveFile}
               />
             )}
 
@@ -549,7 +751,15 @@ export default function Home() {
       />
 
       {isSearchOpen && <SearchModal files={workspaceFiles} onSelectFile={handleSelectFile} onClose={() => setIsSearchOpen(false)} onReplaceAll={handleReplaceAll} />}
-      {isSettingsOpen && <SettingsModal onClose={() => setIsSettingsOpen(false)} onSaveSettings={() => addToast('success', 'Settings & BYOK keys saved.')} />}
+      {isSettingsOpen && (
+        <SettingsModal
+          initialKeys={byokKeys}
+          initialSettings={editorSettings}
+          onClose={() => setIsSettingsOpen(false)}
+          onSaveSettings={handleSaveSettings}
+        />
+      )}
+      {isShortcutsOpen && <ShortcutsModal onClose={() => setIsShortcutsOpen(false)} />}
       {isVerificationOpen && <ShadowVerificationDrawer history={shadowHistory} onRollback={handleRollbackSnapshot} onClose={() => setIsVerificationOpen(false)} />}
       {isSidecarOpen && <SidecarInspectorModal onJumpToSymbol={handleJumpToSymbol} onClose={() => setIsSidecarOpen(false)} />}
       {isBrowserOpen && <BrowserPreviewModal onClose={() => setIsBrowserOpen(false)} onLogTerminal={handleLogTerminal} />}
