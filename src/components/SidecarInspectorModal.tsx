@@ -22,12 +22,12 @@ export const SidecarInspectorModal: React.FC<SidecarInspectorModalProps> = ({
   const vectorMatches = vectorQuery.trim() ? rustSidecar.searchSemanticEmbeddings(vectorQuery) : rustSidecar.getAllSymbols();
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-3xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <Cpu className="h-5 w-5 text-orange-400" />
+            <Cpu className="h-5 w-5 text-orange-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">Rust Sidecar AST Indexer & LanceDB Vector Store</h2>
               <p className="text-[11px] text-slate-400">
@@ -41,20 +41,20 @@ export const SidecarInspectorModal: React.FC<SidecarInspectorModalProps> = ({
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-4 gap-3 text-center text-xs">
-          <div className="bg-ide-bg border border-ide-border rounded-xl p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 text-center text-xs">
+          <div className="bg-ide-bg border border-ide-border rounded-xl p-2.5 sm:p-3">
             <div className="text-[10px] text-slate-400 uppercase">Indexed Files</div>
             <div className="font-bold text-cyan-300 text-sm">{stats.indexedFiles}</div>
           </div>
-          <div className="bg-ide-bg border border-ide-border rounded-xl p-3">
+          <div className="bg-ide-bg border border-ide-border rounded-xl p-2.5 sm:p-3">
             <div className="text-[10px] text-slate-400 uppercase">AST Symbols</div>
             <div className="font-bold text-orange-400 text-sm">{stats.totalSymbols}</div>
           </div>
-          <div className="bg-ide-bg border border-ide-border rounded-xl p-3">
-            <div className="text-[10px] text-slate-400 uppercase">Vector Dimensions</div>
+          <div className="bg-ide-bg border border-ide-border rounded-xl p-2.5 sm:p-3">
+            <div className="text-[10px] text-slate-400 uppercase">Vector Dims</div>
             <div className="font-bold text-purple-400 text-sm">{stats.vectorEmbeddingDimensions}d</div>
           </div>
-          <div className="bg-ide-bg border border-ide-border rounded-xl p-3">
+          <div className="bg-ide-bg border border-ide-border rounded-xl p-2.5 sm:p-3">
             <div className="text-[10px] text-slate-400 uppercase">Index Latency</div>
             <div className="font-bold text-emerald-400 text-sm">{stats.latencyMs} ms</div>
           </div>
