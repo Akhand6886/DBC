@@ -6,22 +6,39 @@ import { Settings, Key, Sliders, Palette, X, Check, Save } from 'lucide-react';
 interface SettingsModalProps {
   onClose: () => void;
   onSaveSettings: (settings: any) => void;
+  initialKeys?: {
+    openai?: string;
+    anthropic?: string;
+    gemini?: string;
+    ollama?: string;
+  };
+  initialSettings?: {
+    theme?: string;
+    fontSize?: number;
+    tabSize?: number;
+    autoSave?: boolean;
+  };
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ onClose, onSaveSettings }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({
+  onClose,
+  onSaveSettings,
+  initialKeys,
+  initialSettings,
+}) => {
   const [activeTab, setActiveTab] = useState<'editor' | 'themes' | 'byok'>('byok');
   
   // Settings Form State
-  const [theme, setTheme] = useState('vscode-dark');
-  const [fontSize, setFontSize] = useState(13);
-  const [tabSize, setTabSize] = useState(2);
-  const [autoSave, setAutoSave] = useState(true);
+  const [theme, setTheme] = useState(initialSettings?.theme || 'vscode-dark');
+  const [fontSize, setFontSize] = useState(initialSettings?.fontSize || 13);
+  const [tabSize, setTabSize] = useState(initialSettings?.tabSize || 2);
+  const [autoSave, setAutoSave] = useState(initialSettings?.autoSave !== undefined ? initialSettings.autoSave : true);
 
   // BYOK Keys State
-  const [openaiKey, setOpenaiKey] = useState('');
-  const [anthropicKey, setAnthropicKey] = useState('');
-  const [geminiKey, setGeminiKey] = useState('');
-  const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
+  const [openaiKey, setOpenaiKey] = useState(initialKeys?.openai || '');
+  const [anthropicKey, setAnthropicKey] = useState(initialKeys?.anthropic || '');
+  const [geminiKey, setGeminiKey] = useState(initialKeys?.gemini || '');
+  const [ollamaUrl, setOllamaUrl] = useState(initialKeys?.ollama || 'http://localhost:11434');
 
   const [savedNotification, setSavedNotification] = useState(false);
 
