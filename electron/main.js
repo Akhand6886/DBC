@@ -22,8 +22,8 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 1024,
-    minHeight: 700,
+    minWidth: 720,
+    minHeight: 520,
     title: 'Agentic AI IDE & DBMS Studio',
     icon: iconPath,
     titleBarStyle: 'hiddenInset',
