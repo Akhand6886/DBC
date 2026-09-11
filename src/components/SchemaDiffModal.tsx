@@ -42,12 +42,12 @@ export const SchemaDiffModal: React.FC<SchemaDiffModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <GitCompare className="h-5 w-5 text-cyan-400" />
+            <GitCompare className="h-5 w-5 text-cyan-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">AI Database Migration & Schema Diffing</h2>
               <p className="text-[11px] text-slate-400">Comparing environments & generating migration version scripts</p>
@@ -59,7 +59,7 @@ export const SchemaDiffModal: React.FC<SchemaDiffModalProps> = ({
         </div>
 
         {/* Environment Selectors */}
-        <div className="bg-ide-bg border border-ide-border rounded-xl p-3 flex items-center justify-between">
+        <div className="bg-ide-bg border border-ide-border rounded-xl p-3 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
           <div className="flex-1 space-y-1">
             <span className="text-[10px] text-slate-500 font-bold uppercase">Source Database (Current):</span>
             <select
@@ -72,7 +72,7 @@ export const SchemaDiffModal: React.FC<SchemaDiffModalProps> = ({
             </select>
           </div>
 
-          <ArrowRight className="h-4 w-4 text-cyan-400 mx-4 flex-shrink-0 mt-3" />
+          <ArrowRight className="h-4 w-4 text-cyan-400 mx-auto sm:mx-4 flex-shrink-0 rotate-90 sm:rotate-0 my-1 sm:my-0" />
 
           <div className="flex-1 space-y-1">
             <span className="text-[10px] text-slate-500 font-bold uppercase">Target Environment:</span>
@@ -103,16 +103,16 @@ export const SchemaDiffModal: React.FC<SchemaDiffModalProps> = ({
         )}
 
         {/* Tabs */}
-        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex space-x-1">
+        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex flex-wrap sm:flex-nowrap gap-1">
           {[
-            { id: 'diff', label: 'Schema Delta Tree' },
-            { id: 'up', label: 'UP Migration Script' },
-            { id: 'down', label: 'DOWN Rollback Script' },
+            { id: 'diff', label: 'Schema Delta' },
+            { id: 'up', label: 'UP Migration' },
+            { id: 'down', label: 'DOWN Rollback' },
           ].map(t => (
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`flex-1 py-1.5 rounded text-xs font-semibold transition-all ${
+              className={`flex-1 min-w-[90px] py-1.5 rounded text-[11px] sm:text-xs font-semibold transition-all ${
                 activeTab === t.id ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
