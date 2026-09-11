@@ -130,7 +130,7 @@ export class RealSqlDriverEngine {
         const fromMatch = cleanSql.match(/FROM\s+([a-zA-Z0-9_]+)/i);
         if (fromMatch) {
           const tableName = fromMatch[1].toLowerCase();
-          const rows = this.inMemoryData[tableName] || [];
+          const rows = this.inMemoryData[tableName] ? [...this.inMemoryData[tableName]] : [];
           const columns = this.inMemoryTables[tableName]
             ? this.inMemoryTables[tableName].columns.map(c => c.name)
             : rows.length > 0 ? Object.keys(rows[0]) : ['result'];
@@ -138,6 +138,91 @@ export class RealSqlDriverEngine {
           return {
             columns,
             rows,
+            executionTimeMs: Date.now() - startTime
+          };
+        }
+      }
+
+      // 4. Handle UPDATE
+      if (/^UPDATE/i.test(cleanSql)) {
+        const match = cleanSql.match(/UPDATE\s+([a-zA-Z0-9_]+)\s+SET\s+([\s\S]+?)(?:\s+WHERE\s+([\s\S]+))?$/i);
+        if (match) {
+          const tableName = match[1].toLowerCase();
+          const setClause = match[2];
+          const whereClause = match[3];
+
+          if (this.inMemoryData[tableName]) {
+            const assignments = setClause.split(',').map(s => {
+              const [k, v] = s.split('=').map(x => x.trim().replace(/^['"]|['"]$/g, ''));
+              return { key: k, val: v };
+            });
+
+            let affected = 0;
+            this.inMemoryData[tableName] = this.inMemoryData[tableName].map(row => {
+              let shouldUpdate = true;
+              if (whereClause) {
+                const [wKey, wVal] = whereClause.split('=').map(x => x.trim().replace(/^['"]|['"]$/g, ''));
+                shouldUpdate = String(row[wKey]) === String(wVal);
+              }
+              if (shouldUpdate) {
+                affected++;
+                const updated = { ...row };
+                assignments.forEach(({ key, val }) => {
+                  updated[key] = val;
+                });
+                return updated;
+              }
+              return row;
+            });
+
+            return {
+              columns: [],
+              rows: [],
+              affectedRows: affected,
+              executionTimeMs: Date.now() - startTime
+            };
+          }
+        }
+      }
+
+      // 5. Handle DELETE FROM
+      if (/^DELETE\s+FROM/i.test(cleanSql)) {
+        const match = cleanSql.match(/DELETE\s+FROM\s+([a-zA-Z0-9_]+)(?:\s+WHERE\s+([\s\S]+))?$/i);
+        if (match) {
+          const tableName = match[1].toLowerCase();
+          const whereClause = match[2];
+
+          if (this.inMemoryData[tableName]) {
+            const initialCount = this.inMemoryData[tableName].length;
+            if (whereClause) {
+              const [wKey, wVal] = whereClause.split('=').map(x => x.trim().replace(/^['"]|['"]$/g, ''));
+              this.inMemoryData[tableName] = this.inMemoryData[tableName].filter(row => String(row[wKey]) !== String(wVal));
+            } else {
+              this.inMemoryData[tableName] = [];
+            }
+            const affected = initialCount - this.inMemoryData[tableName].length;
+
+            return {
+              columns: [],
+              rows: [],
+              affectedRows: affected,
+              executionTimeMs: Date.now() - startTime
+            };
+          }
+        }
+      }
+
+      // 6. Handle DROP TABLE
+      if (/^DROP\s+TABLE/i.test(cleanSql)) {
+        const match = cleanSql.match(/DROP\s+TABLE(?:\s+IF\s+EXISTS)?\s+([a-zA-Z0-9_]+)/i);
+        if (match) {
+          const tableName = match[1].toLowerCase();
+          delete this.inMemoryTables[tableName];
+          delete this.inMemoryData[tableName];
+          return {
+            columns: [],
+            rows: [],
+            affectedRows: 0,
             executionTimeMs: Date.now() - startTime
           };
         }
@@ -164,6 +249,46 @@ export class RealSqlDriverEngine {
    */
   public introspectSchema(): IntrospectedTable[] {
     return Object.values(this.inMemoryTables);
+  }
+
+  /**
+   * Retrieve a specific table by name.
+   */
+  public getTable(tableName: string): IntrospectedTable | undefined {
+    return this.inMemoryTables[tableName.toLowerCase()];
+  }
+
+  /**
+   * Retrieve live rows for a specific table.
+   */
+  public getTableData(tableName: string): Record<string, any>[] {
+    const key = tableName.toLowerCase();
+    return this.inMemoryData[key] ? [...this.inMemoryData[key]] : [];
+  }
+
+  /**
+   * Update live rows for a specific table.
+   */
+  public setTableData(tableName: string, rows: Record<string, any>[]): void {
+    const key = tableName.toLowerCase();
+    this.inMemoryData[key] = [...rows];
+  }
+
+  /**
+   * Dynamically generate DDL for a specific table.
+   */
+  public generateTableDDL(tableName: string): string {
+    const tbl = this.getTable(tableName);
+    if (!tbl) return `-- Table '${tableName}' does not exist in schema.`;
+
+    const colDefs = tbl.columns.map(col => {
+      let str = `  ${col.name} ${col.type}`;
+      if (col.isPrimary) str += ' PRIMARY KEY';
+      if (col.isForeign) str += ' REFERENCES foreign_table(id)';
+      return str;
+    });
+
+    return `CREATE TABLE ${tbl.name} (\n${colDefs.join(',\n')}\n);\n\nCREATE INDEX idx_${tbl.name}_primary ON ${tbl.name}(${tbl.columns[0]?.name || 'id'});`;
   }
 }
 
