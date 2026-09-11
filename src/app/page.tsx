@@ -518,18 +518,24 @@ export default function Home() {
         )}
 
         {showMissionControl && (
-          <MissionControl
-            activeFilePath={activeFile?.path}
-            activeFileContent={activeFile?.content || ''}
-            routerConfig={routerConfig}
-            lastExecutionPlan={lastExecutionPlan}
-            onApplyPatch={handleApplyPatch}
-            onExecutePlan={handleExecutePlan}
-            onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
-            onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
-            onClose={() => setShowMissionControl(false)}
-            onLogTerminal={handleLogTerminal}
-          />
+          <>
+            <div
+              className="fixed inset-0 bg-black/60 z-30 sm:hidden backdrop-blur-xs"
+              onClick={() => setShowMissionControl(false)}
+            />
+            <MissionControl
+              activeFilePath={activeFile?.path}
+              activeFileContent={activeFile?.content || ''}
+              routerConfig={routerConfig}
+              lastExecutionPlan={lastExecutionPlan}
+              onApplyPatch={handleApplyPatch}
+              onExecutePlan={handleExecutePlan}
+              onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
+              onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
+              onClose={() => setShowMissionControl(false)}
+              onLogTerminal={handleLogTerminal}
+            />
+          </>
         )}
       </div>
 
