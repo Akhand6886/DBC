@@ -155,3 +155,12 @@ Score >= Threshold      Score < Threshold
   - **Windows:** `.exe` installer (NSIS) and portable executables.
   - **Linux:** `.AppImage` and `.deb` packages.
 - **Native OS Window Controls:** Frameless / `hiddenInset` dark title bar styling (`#1e1e1e`).
+- **High-Resolution Application Branding (`assets/icon.png`):** High-tech squircle application icon merging database cylinder rings, code brackets, and an electric-blue AI circuit core.
+
+---
+
+### 11. Production-Ready Hardening & Resilience
+- **React Error Boundary (`ErrorBoundary.tsx`):** Root-level exception boundary catching runtime UI errors, displaying stack traces, and offering 1-click **Reload Session** and **Reset Corrupted Cache** actions.
+- **Workspace State Persistence (`workspacePersistence.ts`):** Debounced auto-save and hydration of workspace file modifications, active file tabs, database connections, and custom configurations using structured local storage caching.
+- **Electron Security Hardening (`electron/main.js`):** Restricts navigation to trusted local protocols (`app://`, `http://localhost:3000`), denies unauthorized window creation, exposes sandboxed contextBridge APIs, and enables secure scheme privileges.
+- **Automated Linting Compliance (`.eslintrc.json`):** Verified Next.js core web vitals and React hooks rules with zero linting warnings or errors.
