@@ -151,7 +151,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
           <button
             key={item}
             onClick={() => handleAction(onOpenPalette)}
-            className="px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px]"
+            className="hidden lg:inline-block px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px]"
           >
             {item}
           </button>
@@ -161,26 +161,27 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
       {/* Window Title & Search Palette Bar */}
       <button
         onClick={onOpenPalette}
-        className="bg-[#1e1e1e] border border-[#3c3c3c] hover:border-[#007acc] px-4 py-0.5 rounded text-[11px] text-[#cccccc] flex items-center space-x-2 w-80 justify-center shadow-inner"
+        className="hidden md:flex bg-[#1e1e1e] border border-[#3c3c3c] hover:border-[#007acc] px-3 py-0.5 rounded text-[11px] text-[#cccccc] items-center space-x-2 max-w-xs w-full flex-1 mx-2 justify-center shadow-inner truncate"
       >
-        <Command className="h-3 w-3 text-[#007acc]" />
-        <span>Agentic AI IDE — DBMS Studio</span>
+        <Command className="h-3 w-3 text-[#007acc] shrink-0" />
+        <span className="truncate">Agentic AI IDE — DBMS Studio</span>
       </button>
 
       {/* Right Utility Shortcuts */}
-      <div className="flex items-center space-x-2 text-[11px]">
+      <div className="flex items-center space-x-2 text-[11px] shrink-0">
         {onToggleMissionControl && (
           <button
             onClick={onToggleMissionControl}
-            className={`px-2.5 py-0.5 rounded text-[11px] font-bold flex items-center space-x-1.5 transition-all ${
+            className={`px-2 py-0.5 rounded text-[11px] font-bold flex items-center space-x-1.5 transition-all ${
               showMissionControl
                 ? 'bg-[#007acc] text-white shadow'
                 : 'bg-[#1e1e1e] hover:bg-[#3c3c3c] text-slate-300 border border-[#3c3c3c]'
             }`}
             title="Toggle AI Copilot (⌘L)"
           >
-            <Sparkles className="h-3 w-3 text-yellow-300" />
-            <span>AI Copilot</span>
+            <Sparkles className="h-3 w-3 text-yellow-300 shrink-0" />
+            <span className="hidden sm:inline">AI Copilot</span>
+            <span className="sm:hidden">AI</span>
           </button>
         )}
         <button
