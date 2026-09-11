@@ -76,8 +76,8 @@ export const SearchModal: React.FC<SearchModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-16 p-4">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full p-5 shadow-2xl space-y-4 font-mono text-xs animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center pt-8 sm:pt-16 p-3 sm:p-4">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto p-4 sm:p-5 shadow-2xl space-y-4 font-mono text-xs animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
