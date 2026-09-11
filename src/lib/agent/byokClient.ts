@@ -24,6 +24,10 @@ export class BYOKClientAdapter {
     this.configs[provider].apiKey = key;
   }
 
+  public setEndpoint(provider: LLMProvider, endpoint: string) {
+    this.configs[provider].endpoint = endpoint;
+  }
+
   public getConfig(provider: LLMProvider): BYOKConfig {
     return this.configs[provider];
   }
