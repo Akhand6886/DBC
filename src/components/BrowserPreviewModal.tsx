@@ -37,12 +37,12 @@ export const BrowserPreviewModal: React.FC<BrowserPreviewModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-4xl w-full h-[85vh] p-5 shadow-2xl flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-4xl w-full max-h-[90vh] h-[85vh] p-4 sm:p-5 shadow-2xl flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <Globe className="h-5 w-5 text-cyan-400" />
+            <Globe className="h-5 w-5 text-cyan-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">Browser-in-the-Loop & Visual Verification</h2>
               <p className="text-[11px] text-slate-400">
