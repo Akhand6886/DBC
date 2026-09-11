@@ -98,12 +98,12 @@ export const GitPanel: React.FC<GitPanelProps> = ({ onClose, onLogTerminal }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-3xl w-full h-[80vh] p-5 shadow-2xl flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-3xl w-full max-h-[90vh] h-[80vh] p-4 sm:p-5 shadow-2xl flex flex-col space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <GitBranch className="h-5 w-5 text-orange-400" />
+            <GitBranch className="h-5 w-5 text-orange-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">Git Source Control</h2>
               <p className="text-[11px] text-slate-400">
@@ -111,7 +111,7 @@ export const GitPanel: React.FC<GitPanelProps> = ({ onClose, onLogTerminal }) =>
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1.5 sm:space-x-2">
             <button className="p-1.5 text-slate-400 hover:text-white hover:bg-ide-card rounded" title="Pull">
               <Download className="h-4 w-4" />
             </button>
@@ -125,12 +125,12 @@ export const GitPanel: React.FC<GitPanelProps> = ({ onClose, onLogTerminal }) =>
         </div>
 
         {/* Sub-tabs */}
-        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex space-x-1">
+        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex flex-wrap sm:flex-nowrap gap-1">
           {(['changes', 'history', 'branches'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-xs font-semibold transition-all capitalize ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded text-[11px] sm:text-xs font-semibold transition-all capitalize ${
                 activeTab === tab ? 'bg-orange-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
