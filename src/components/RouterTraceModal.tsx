@@ -21,8 +21,8 @@ export const RouterTraceModal: React.FC<RouterTraceModalProps> = ({ plan, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 font-mono text-xs select-none">
-      <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl max-w-2xl w-full p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 font-mono text-xs select-none">
+      <div className="bg-[#252526] border border-[#3c3c3c] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-[#3c3c3c] pb-3">
           <div className="flex items-center space-x-2 text-white font-sans font-bold">
@@ -50,7 +50,7 @@ export const RouterTraceModal: React.FC<RouterTraceModalProps> = ({ plan, onClos
         </div>
 
         {/* Trace Overview Badges */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
           <div className="bg-[#1e1e1e] border border-[#3c3c3c] rounded-lg p-3 space-y-1">
             <div className="text-[10px] text-slate-400 uppercase">Routing Decision</div>
             <div className="font-bold text-xs">
@@ -90,9 +90,9 @@ export const RouterTraceModal: React.FC<RouterTraceModalProps> = ({ plan, onClos
           <div className="bg-[#1e1e1e] border border-[#3c3c3c] rounded-lg p-3 space-y-2">
             <div className="text-[10px] font-bold uppercase text-slate-400 flex items-center justify-between">
               <span>Confidence Score Components:</span>
-              <span className="text-slate-500 font-normal lowercase">formula: (0.6 &times; pattern + 0.4 &times; lsp - penalty)</span>
+              <span className="text-slate-500 font-normal lowercase hidden sm:inline">formula: (0.6 &times; pattern + 0.4 &times; lsp - penalty)</span>
             </div>
-            <div className="grid grid-cols-4 gap-2 text-center text-[11px]">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-[11px]">
               <div className="bg-[#252526] p-2 rounded border border-[#3c3c3c]">
                 <div className="text-slate-400 text-[10px]">Pattern (S_pat)</div>
                 <div className="font-bold text-cyan-300">{plan.intent.scoreBreakdown.patternScore}%</div>
