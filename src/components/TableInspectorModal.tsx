@@ -33,12 +33,12 @@ CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 font-mono text-xs">
-      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 font-mono text-xs">
+      <div className="bg-ide-sidebar border border-ide-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-ide-border pb-3">
           <div className="flex items-center space-x-2 text-white">
-            <Table className="h-5 w-5 text-cyan-400" />
+            <Table className="h-5 w-5 text-cyan-400 flex-shrink-0" />
             <div>
               <h2 className="font-bold uppercase tracking-wider text-xs">Table DDL & Schema Inspector</h2>
               <p className="text-[11px] text-slate-400">Inspecting Table: <span className="text-cyan-300 font-bold">{tableName}</span></p>
@@ -50,7 +50,7 @@ CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
         </div>
 
         {/* Tabs */}
-        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex space-x-1">
+        <div className="bg-ide-bg border border-ide-border rounded-lg p-1 flex flex-wrap sm:flex-nowrap gap-1">
           {[
             { id: 'columns', label: 'Columns & Types' },
             { id: 'ddl', label: 'Raw DDL SQL' },
@@ -59,7 +59,7 @@ CREATE INDEX idx_${tableName}_role_id ON ${tableName}(role_id);`;
             <button
               key={t.id}
               onClick={() => setActiveTab(t.id as any)}
-              className={`flex-1 py-1.5 rounded text-xs font-semibold transition-all ${
+              className={`flex-1 min-w-[90px] py-1.5 rounded text-[11px] sm:text-xs font-semibold transition-all ${
                 activeTab === t.id ? 'bg-cyan-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
