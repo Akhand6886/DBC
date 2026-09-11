@@ -91,7 +91,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   };
 
   return (
-    <div className="w-80 bg-[#252526] border-l border-[#3c3c3c] flex flex-col h-full font-mono text-xs select-none">
+    <div className="w-full sm:w-80 fixed sm:relative right-0 top-0 bottom-0 sm:top-auto sm:bottom-auto z-40 sm:z-auto bg-[#252526] border-l border-[#3c3c3c] flex flex-col h-full font-mono text-xs select-none shadow-2xl sm:shadow-none">
       {/* Panel Header */}
       <div className="px-3 py-2 border-b border-[#3c3c3c] flex items-center justify-between bg-[#2d2d2d]">
         <div className="flex items-center space-x-2 text-white font-sans font-bold text-xs">
