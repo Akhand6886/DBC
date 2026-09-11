@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Table, Plus, Trash2, Save, ArrowUpDown, Search, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Table, Plus, Trash2, Save, ArrowUpDown, Search, X, Inbox } from 'lucide-react';
+import { realSqlDriver } from '../lib/db/sqlDriver';
 
 interface TableDataEditorProps {
   tableName: string;
@@ -14,13 +15,26 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
   onClose,
   onLogTerminal,
 }) => {
-  const [columns] = useState(['id', 'username', 'email', 'role_id']);
-  const [rows, setRows] = useState<Record<string, any>[]>([
-    { id: 1, username: 'admin', email: 'admin@dbc.org', role_id: 1 },
-    { id: 2, username: 'alpha', email: 'alpha@dbc.org', role_id: 1 },
-    { id: 3, username: 'agent_cli', email: 'agent@dbc.org', role_id: 2 },
-    { id: 4, username: 'audit_guest', email: 'guest@dbc.org', role_id: 3 },
-  ]);
+  const [columns, setColumns] = useState<string[]>([]);
+  const [rows, setRows] = useState<Record<string, any>[]>([]);
+
+  // Load real table columns & live rows from driver
+  useEffect(() => {
+    const tableSchema = realSqlDriver.getTable(tableName);
+    if (tableSchema && tableSchema.columns.length > 0) {
+      setColumns(tableSchema.columns.map(c => c.name));
+    } else {
+      const existingData = realSqlDriver.getTableData(tableName);
+      if (existingData.length > 0) {
+        setColumns(Object.keys(existingData[0]));
+      } else {
+        setColumns(['id']);
+      }
+    }
+    setRows(realSqlDriver.getTableData(tableName));
+    setSelectedRows([]);
+    setPendingChanges(false);
+  }, [tableName]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortCol, setSortCol] = useState<string | null>(null);
@@ -30,7 +44,7 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
 
   // Filter rows by search term
   const filteredRows = rows.filter(r =>
-    Object.values(r).some(v => String(v).toLowerCase().includes(searchTerm.toLowerCase()))
+    Object.values(r).some(v => String(v ?? '').toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Sort rows
@@ -44,14 +58,22 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
   });
 
   const handleAddRow = () => {
-    const newId = rows.length > 0 ? Math.max(...rows.map(r => r.id || 0)) + 1 : 1;
-    const newRow = { id: newId, username: `user_${newId}`, email: `user${newId}@dbc.org`, role_id: 2 };
+    const newRow: Record<string, any> = {};
+    columns.forEach((col) => {
+      if (col === 'id') {
+        const maxId = rows.reduce((max, r) => Math.max(max, Number(r.id) || 0), 0);
+        newRow[col] = maxId + 1;
+      } else {
+        newRow[col] = '';
+      }
+    });
     setRows([...rows, newRow]);
     setPendingChanges(true);
   };
 
   const handleDeleteSelected = () => {
-    setRows(rows.filter((_, idx) => !selectedRows.includes(idx)));
+    const remaining = rows.filter((_, idx) => !selectedRows.includes(idx));
+    setRows(remaining);
     setSelectedRows([]);
     setPendingChanges(true);
   };
@@ -73,9 +95,10 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
   };
 
   const handleCommitChanges = () => {
+    realSqlDriver.setTableData(tableName, rows);
     setPendingChanges(false);
     if (onLogTerminal) {
-      onLogTerminal(`[DBMS Table Editor]: Committed changes to table '${tableName}' successfully.`);
+      onLogTerminal(`[DBMS Table Editor]: Committed ${rows.length} row(s) to table '${tableName}' successfully.`);
     }
   };
 
@@ -165,7 +188,18 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-[#3c3c3c]/50 text-slate-200">
-            {sortedRows.map((row, rIdx) => {
+            {sortedRows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length + 1} className="py-14 text-center text-slate-400">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <Inbox className="h-7 w-7 text-slate-500" />
+                    <span className="text-xs font-semibold">No records found in table &lsquo;{tableName}&rsquo;</span>
+                    <p className="text-[11px] text-slate-500">Click &ldquo;Add Row&rdquo; above to insert your first record.</p>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              sortedRows.map((row, rIdx) => {
               const isSelected = selectedRows.includes(rIdx);
               return (
                 <tr
@@ -197,7 +231,8 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
                   ))}
                 </tr>
               );
-            })}
+            })
+          )}
           </tbody>
         </table>
       </div>
