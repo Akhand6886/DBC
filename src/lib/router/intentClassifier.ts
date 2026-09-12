@@ -49,7 +49,7 @@ export function classifyDeveloperIntent(
   ) {
     patternScore = 98;
     const symbolMatch = rawPrompt.match(
-      /rename\s+(?:variable|function|class|symbol|table|column)?\s*['"]?([a-zA-Z0-9_]+)['"]?\s+to\s+['"]?([a-zA-Z0-9_]+)['"]?/i
+      /rename\s+(?:variable|function|class|symbol|table|column)?\s*['"]?([a-zA-Z0-9_]+)['"]?\s+(?:to|as|into)\s+['"]?([a-zA-Z0-9_]+)['"]?/i
     );
     const finalScore = Math.max(
       0,
@@ -60,6 +60,7 @@ export function classifyDeveloperIntent(
       rawPrompt,
       actionType: 'LSP_RENAME',
       targetSymbol: symbolMatch ? symbolMatch[1] : 'main',
+      newSymbolName: symbolMatch && symbolMatch[2] ? symbolMatch[2] : 'executeApp',
       targetFilePath,
       confidenceScore: finalScore,
       scoreBreakdown: { patternScore, lspAvailabilityScore, ambiguityPenalty, finalScore },
