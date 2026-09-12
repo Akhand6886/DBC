@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileNode, ShadowDiffCheck, RouterConfig, AgentExecutionPlan, SystemMetrics } from '../lib/types';
 import { INITIAL_WORKSPACE } from '../lib/initialWorkspace';
 import { DEFAULT_ROUTER_CONFIG } from '../lib/router/intentClassifier';
@@ -42,6 +42,7 @@ export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
   const [workspaceFiles, setWorkspaceFiles] = useState<FileNode[]>(INITIAL_WORKSPACE);
   const { addToast } = useToast();
+  const executeSqlRef = useRef<(() => void) | null>(null);
   
   const initialFile = INITIAL_WORKSPACE[0].children?.[0] || null;
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
@@ -261,7 +262,11 @@ export default function Home() {
         e.preventDefault();
         if (activeView === 'database') {
           handleLogTerminal('[DBC Engine]: Executed query via ⌘↵ shortcut.');
-          addToast('info', 'Executing active SQL query...');
+          if (executeSqlRef.current) {
+            executeSqlRef.current();
+          } else {
+            window.dispatchEvent(new CustomEvent('dbc-execute-sql'));
+          }
         } else {
           handleRunTestSuite();
         }
@@ -683,6 +688,7 @@ export default function Home() {
                     onLogTerminal={handleLogTerminal}
                     onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
                     onSaveScriptToWorkspace={handleSaveScriptToWorkspace}
+                    onRegisterExecute={(fn) => { executeSqlRef.current = fn; }}
                   />
                   {showPerfMonitor && activeConnection && (
                     <div className="p-3 border-t border-[#3c3c3c] bg-[#252526]">
