@@ -10,9 +10,11 @@ export function runDeterministicAction(
 
   if (intent.actionType === 'LSP_RENAME') {
     const targetSymbol = intent.targetSymbol || 'main';
-    const regex = new RegExp(`\\b${targetSymbol}\\b`, 'g');
-    proposedContent = currentContent.replace(regex, 'executeApp');
-    logMessage = `LSP textDocument/rename: Renamed symbol '${targetSymbol}' to 'executeApp' across file.`;
+    const newSymbolName = intent.newSymbolName || 'executeApp';
+    const escaped = targetSymbol.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\b${escaped}\\b`, 'g');
+    proposedContent = currentContent.replace(regex, newSymbolName);
+    logMessage = `LSP textDocument/rename: Renamed symbol '${targetSymbol}' to '${newSymbolName}' across file.`;
   } else if (intent.actionType === 'FORMAT_CODE') {
     proposedContent = currentContent.trim() + '\n';
     logMessage = `Prettier Formatter: Corrected indentation and normalized line endings.`;
