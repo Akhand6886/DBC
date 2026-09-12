@@ -42,6 +42,7 @@ export interface CodeIntent {
   rawPrompt: string;
   actionType: FastPathAction | 'COMPLEX_REASONING' | 'MULTI_FILE_FEATURE' | 'DEEP_BUG_FIX';
   targetSymbol?: string;
+  newSymbolName?: string;
   targetFilePath?: string;
   confidenceScore: number; // 0 - 100
   scoreBreakdown?: ScoreBreakdown;
