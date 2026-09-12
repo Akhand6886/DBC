@@ -217,7 +217,7 @@ export class BYOKClientAdapter {
 
     return {
       responseText,
-      tokensUsed: 420,
+      tokensUsed: 0,
       latencyMs: Math.floor(Math.random() * 150) + 750
     };
   }
