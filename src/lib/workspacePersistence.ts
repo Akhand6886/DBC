@@ -68,3 +68,33 @@ export function clearPersistedWorkspace(): void {
     console.warn('[WorkspacePersistence]: Failed to clear localStorage:', err);
   }
 }
+
+/**
+ * Recursively searches a FileNode tree for a node matching the given ID.
+ */
+export function findFileNodeById(nodes: FileNode[], id: string): FileNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node;
+    if (node.children && node.children.length > 0) {
+      const found = findFileNodeById(node.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Recursively flattens all non-folder files from a FileNode tree.
+ */
+export function flattenFileNodes(nodes: FileNode[]): FileNode[] {
+  let result: FileNode[] = [];
+  for (const node of nodes) {
+    if (!node.isFolder) {
+      result.push(node);
+    }
+    if (node.children && node.children.length > 0) {
+      result = result.concat(flattenFileNodes(node.children));
+    }
+  }
+  return result;
+}
