@@ -12,7 +12,7 @@
 | 2 | LSP_RENAME always renames to `'executeApp'` | 🐛 Medium | [`src/lib/router/deterministicEngine.ts:14`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/deterministicEngine.ts#L14) | ✅ **FIXED** | Passed user's target symbol name through `CodeIntent.newSymbolName` |
 | 3 | SELECT ignores WHERE / JOIN / LIMIT clauses | ⚠️ Medium | [`src/lib/db/sqlDriver.ts:129-143`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L129-L143) | ✅ **FIXED** | Implemented WHERE condition evaluator, JOIN, ORDER BY, and LIMIT/OFFSET |
 | 4 | ⌘Enter doesn't execute SQL (global handler) | 🐛 Medium | [`src/app/page.tsx:260-268`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L260-L268) | ✅ **FIXED** | Wired global ⌘Enter shortcut to SqlQueryPanel execution handler |
-| 5 | Workspace restore cannot find nested files | 🐛 Medium | [`src/app/page.tsx:132-137`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) | ⏳ Pending | Implement recursive file lookup on saved state restoration |
+| 5 | Workspace restore cannot find nested files | 🐛 Medium | [`src/app/page.tsx:132-137`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) | ✅ **FIXED** | Implemented recursive file tree search via `findFileNodeById` during hydration |
 | 6 | ErrorBoundary resets wrong cache keys | ⚠️ Low | [`src/components/ErrorBoundary.tsx:40-41`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) | ⏳ Pending | Target key `dbc_workspace_state_v1` on reset |
 | 7 | Editor settings (font/tab/theme) never applied to Monaco | ⚠️ Medium | [`src/components/CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) & [`src/components/SettingsModal.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx) | ⏳ Pending | Pass user settings into Monaco `<Editor>` props and theme loader |
 | 8 | Bracket check regex unbalanced | ⚠️ Low | [`src/lib/verification/shadowBuffer.ts:31`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) | ⏳ Pending | Add `)` to closing bracket pattern |
@@ -37,10 +37,10 @@
 - **Issue 8**: [shadowBuffer.ts:31](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) — Bracket check regex unbalanced
 - **Issue 12**: [explainAnalyzer.ts:56](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/explainAnalyzer.ts#L56) — ExplainAnalyzer cast `as any` for `'Filter'`
 
-### Partition 3: App Shell (Status: 1 Fixed, 3 Pending)
+### Partition 3: App Shell (Status: 2 Fixed, 2 Pending)
 - Files: `layout.tsx`, `page.tsx`
 - **Issue 4**: [page.tsx:260-268](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L260-L268) — ✅ Fixed (Wired global ⌘Enter shortcut to SqlQueryPanel execution handler)
-- **Issue 5**: [page.tsx:132-137](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) — File restoration only searches root nodes
+- **Issue 5**: [page.tsx:132-137](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) — ✅ Fixed (Recursive tree search via `findFileNodeById` restores nested active and open files)
 - **Issue 10**: [page.tsx:452-462](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L452-L462) — `handleAddFile` always targets `queries/`
 - **Issue 11**: [page.tsx:200-226](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L200-L226) — Empty string persisted for cleared keys
 
