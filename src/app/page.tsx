@@ -25,7 +25,7 @@ import { RouterConfigModal } from '../components/RouterConfigModal';
 import { RouterTraceModal } from '../components/RouterTraceModal';
 import { ShortcutsModal } from '../components/ShortcutsModal';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { loadPersistedWorkspace, savePersistedWorkspace } from '../lib/workspacePersistence';
+import { loadPersistedWorkspace, savePersistedWorkspace, findFileNodeById, flattenFileNodes } from '../lib/workspacePersistence';
 import { byokClient } from '../lib/agent/byokClient';
 
 // DBMS Studio & Editor Imports
@@ -130,11 +130,18 @@ export default function Home() {
       if (saved.files && saved.files.length > 0) {
         setWorkspaceFiles(saved.files);
         if (saved.activeFileId) {
-          const found = saved.files.find((f) => f.id === saved.activeFileId);
-          if (found) setActiveFile(found);
+          const found = findFileNodeById(saved.files, saved.activeFileId);
+          if (found) {
+            setActiveFile(found);
+          } else {
+            const allFiles = flattenFileNodes(saved.files);
+            if (allFiles.length > 0) setActiveFile(allFiles[0]);
+          }
         }
         if (saved.openFileIds && saved.openFileIds.length > 0) {
-          const opens = saved.files.filter((f) => saved.openFileIds.includes(f.id));
+          const opens = saved.openFileIds
+            .map((id) => findFileNodeById(saved.files, id))
+            .filter((f): f is FileNode => f !== null && !f.isFolder);
           if (opens.length > 0) setOpenFiles(opens);
         }
       }
