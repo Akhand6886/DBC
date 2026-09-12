@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
@@ -20,6 +20,7 @@ interface SqlQueryPanelProps {
   onLogTerminal?: (msg: string) => void;
   onRefreshSchema?: () => void;
   onSaveScriptToWorkspace?: (scriptName: string, content: string) => void;
+  onRegisterExecute?: (executeFn: () => void) => void;
 }
 
 export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
@@ -27,6 +28,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   onLogTerminal,
   onRefreshSchema,
   onSaveScriptToWorkspace,
+  onRegisterExecute,
 }) => {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
   const [isRunning, setIsRunning] = useState(false);
@@ -65,6 +67,24 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     }
     return result;
   };
+
+  useEffect(() => {
+    if (onRegisterExecute) {
+      onRegisterExecute(() => {
+        handleExecuteQuery();
+      });
+    }
+    const handleGlobalExec = () => {
+      handleExecuteQuery();
+    };
+    window.addEventListener('dbc-execute-sql', handleGlobalExec);
+    return () => {
+      if (onRegisterExecute) {
+        onRegisterExecute(() => {});
+      }
+      window.removeEventListener('dbc-execute-sql', handleGlobalExec);
+    };
+  }, [query, onRegisterExecute]);
 
   const handleCellDoubleClick = (rowIdx: number, colName: string) => {
     setEditingCell({ rowIdx, colName });
