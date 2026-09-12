@@ -55,6 +55,71 @@ export class RealSqlDriverEngine {
     ]
   };
 
+  private evaluateWhereCondition(row: Record<string, any>, whereClause?: string): boolean {
+    if (!whereClause || !whereClause.trim()) return true;
+    const andConditions = whereClause.split(/\s+AND\s+/i);
+
+    return andConditions.every(cond => {
+      const trimmed = cond.trim();
+      if (!trimmed) return true;
+
+      // IS NOT NULL
+      if (/\bIS\s+NOT\s+NULL\b/i.test(trimmed)) {
+        const col = trimmed.replace(/\bIS\s+NOT\s+NULL\b/i, '').trim().split('.').pop()!;
+        return row[col] !== null && row[col] !== undefined;
+      }
+
+      // IS NULL
+      if (/\bIS\s+NULL\b/i.test(trimmed)) {
+        const col = trimmed.replace(/\bIS\s+NULL\b/i, '').trim().split('.').pop()!;
+        return row[col] === null || row[col] === undefined;
+      }
+
+      // LIKE
+      const likeMatch = trimmed.match(/([a-zA-Z0-9_.]+)\s+LIKE\s+['"]([^'"]+)['"]/i);
+      if (likeMatch) {
+        const col = likeMatch[1].split('.').pop()!;
+        const pattern = likeMatch[2].replace(/%/g, '.*').replace(/_/g, '.');
+        const regex = new RegExp(`^${pattern}$`, 'i');
+        return regex.test(String(row[col] ?? ''));
+      }
+
+      // Operators: !=, <>, >=, <=, =, >, <
+      const opMatch = trimmed.match(/([a-zA-Z0-9_.]+)\s*(!=|<>|>=|<=|=|>|<)\s*(['"]?[^'"]+['"]?)/);
+      if (opMatch) {
+        const col = opMatch[1].split('.').pop()!;
+        const op = opMatch[2];
+        const rawVal = opMatch[3].trim().replace(/^['"]|['"]$/g, '');
+        const cellVal = row[col];
+
+        const numCell = Number(cellVal);
+        const numTarget = Number(rawVal);
+        const isNumeric = !isNaN(numCell) && !isNaN(numTarget) && cellVal !== '' && cellVal !== null;
+
+        if (op === '=' || op === '==') {
+          return isNumeric ? numCell === numTarget : String(cellVal).toLowerCase() === rawVal.toLowerCase();
+        }
+        if (op === '!=' || op === '<>') {
+          return isNumeric ? numCell !== numTarget : String(cellVal).toLowerCase() !== rawVal.toLowerCase();
+        }
+        if (op === '>') {
+          return isNumeric ? numCell > numTarget : String(cellVal) > rawVal;
+        }
+        if (op === '>=') {
+          return isNumeric ? numCell >= numTarget : String(cellVal) >= rawVal;
+        }
+        if (op === '<') {
+          return isNumeric ? numCell < numTarget : String(cellVal) < rawVal;
+        }
+        if (op === '<=') {
+          return isNumeric ? numCell <= numTarget : String(cellVal) <= rawVal;
+        }
+      }
+
+      return true;
+    });
+  }
+
   /**
    * Execute a real SQL query against the engine.
    */
@@ -127,13 +192,101 @@ export class RealSqlDriverEngine {
 
       // 3. Handle SELECT
       if (/^SELECT/i.test(cleanSql)) {
-        const fromMatch = cleanSql.match(/FROM\s+([a-zA-Z0-9_]+)/i);
-        if (fromMatch) {
-          const tableName = fromMatch[1].toLowerCase();
-          const rows = this.inMemoryData[tableName] ? [...this.inMemoryData[tableName]] : [];
-          const columns = this.inMemoryTables[tableName]
-            ? this.inMemoryTables[tableName].columns.map(c => c.name)
-            : rows.length > 0 ? Object.keys(rows[0]) : ['result'];
+        const selectMatch = cleanSql.match(/^SELECT\s+([\s\S]+?)\s+FROM\s+([a-zA-Z0-9_]+)/i);
+        if (selectMatch) {
+          const rawCols = selectMatch[1].trim();
+          const mainTable = selectMatch[2].toLowerCase();
+          let rows: Record<string, any>[] = this.inMemoryData[mainTable] ? this.inMemoryData[mainTable].map(r => ({ ...r })) : [];
+
+          // Optional JOIN
+          const joinMatch = cleanSql.match(/(?:(?:INNER|LEFT|RIGHT|FULL)?\s+)?JOIN\s+([a-zA-Z0-9_]+)(?:\s+(?:AS\s+)?([a-zA-Z0-9_]+))?\s+ON\s+([a-zA-Z0-9_.]+)\s*=\s*([a-zA-Z0-9_.]+)/i);
+          if (joinMatch) {
+            const joinTable = joinMatch[1].toLowerCase();
+            const leftColFull = joinMatch[3];
+            const rightColFull = joinMatch[4];
+            const leftCol = leftColFull.includes('.') ? leftColFull.split('.')[1] : leftColFull;
+            const rightCol = rightColFull.includes('.') ? rightColFull.split('.')[1] : rightColFull;
+
+            const joinData = this.inMemoryData[joinTable] || [];
+            const joinedRows: Record<string, any>[] = [];
+
+            for (const mainRow of rows) {
+              const matching = joinData.filter(jRow => {
+                const leftVal = mainRow[leftCol] ?? mainRow[rightCol];
+                const rightVal = jRow[rightCol] ?? jRow[leftCol];
+                return String(leftVal) === String(rightVal);
+              });
+
+              if (matching.length > 0) {
+                for (const m of matching) {
+                  joinedRows.push({ ...mainRow, ...m });
+                }
+              } else if (/LEFT/i.test(joinMatch[0])) {
+                joinedRows.push({ ...mainRow });
+              }
+            }
+            rows = joinedRows;
+          }
+
+          // WHERE clause
+          const whereMatch = cleanSql.match(/\bWHERE\s+([\s\S]+?)(?:\s+(?:GROUP\s+BY|ORDER\s+BY|LIMIT)\b|;|\s*$)/i);
+          if (whereMatch) {
+            rows = rows.filter(row => this.evaluateWhereCondition(row, whereMatch[1]));
+          }
+
+          // ORDER BY clause
+          const orderMatch = cleanSql.match(/\bORDER\s+BY\s+([a-zA-Z0-9_.]+)(?:\s+(ASC|DESC))?/i);
+          if (orderMatch) {
+            const col = orderMatch[1].split('.').pop()!;
+            const direction = (orderMatch[2] || 'ASC').toUpperCase();
+            rows.sort((a, b) => {
+              const valA = a[col];
+              const valB = b[col];
+              if (valA === valB) return 0;
+              if (valA == null) return 1;
+              if (valB == null) return -1;
+              const cmp = typeof valA === 'number' && typeof valB === 'number'
+                ? valA - valB
+                : String(valA).localeCompare(String(valB));
+              return direction === 'DESC' ? -cmp : cmp;
+            });
+          }
+
+          // LIMIT and OFFSET clause
+          const limitMatch = cleanSql.match(/\bLIMIT\s+(\d+)(?:\s+OFFSET\s+(\d+))?/i);
+          if (limitMatch) {
+            const limit = parseInt(limitMatch[1], 10);
+            const offset = limitMatch[2] ? parseInt(limitMatch[2], 10) : 0;
+            rows = rows.slice(offset, offset + limit);
+          }
+
+          // Column Projection
+          let columns: string[] = [];
+          if (rawCols === '*' || rawCols === `${mainTable}.*`) {
+            if (rows.length > 0) {
+              columns = Object.keys(rows[0]);
+            } else if (this.inMemoryTables[mainTable]) {
+              columns = this.inMemoryTables[mainTable].columns.map(c => c.name);
+            } else {
+              columns = ['result'];
+            }
+          } else {
+            const requestedCols = rawCols.split(',').map(c => {
+              const aliasMatch = c.trim().match(/^(?:[a-zA-Z0-9_.]+\s+(?:AS\s+)?([a-zA-Z0-9_]+)|([a-zA-Z0-9_.]+))$/i);
+              const colName = aliasMatch ? (aliasMatch[1] || aliasMatch[2]) : c.trim();
+              const sourceCol = colName.split('.').pop()!;
+              return { display: colName, source: sourceCol };
+            });
+
+            columns = requestedCols.map(c => c.display);
+            rows = rows.map(r => {
+              const projected: Record<string, any> = {};
+              for (const col of requestedCols) {
+                projected[col.display] = r[col.source] ?? r[col.display] ?? null;
+              }
+              return projected;
+            });
+          }
 
           return {
             columns,
@@ -161,8 +314,7 @@ export class RealSqlDriverEngine {
             this.inMemoryData[tableName] = this.inMemoryData[tableName].map(row => {
               let shouldUpdate = true;
               if (whereClause) {
-                const [wKey, wVal] = whereClause.split('=').map(x => x.trim().replace(/^['"]|['"]$/g, ''));
-                shouldUpdate = String(row[wKey]) === String(wVal);
+                shouldUpdate = this.evaluateWhereCondition(row, whereClause);
               }
               if (shouldUpdate) {
                 affected++;
@@ -195,8 +347,7 @@ export class RealSqlDriverEngine {
           if (this.inMemoryData[tableName]) {
             const initialCount = this.inMemoryData[tableName].length;
             if (whereClause) {
-              const [wKey, wVal] = whereClause.split('=').map(x => x.trim().replace(/^['"]|['"]$/g, ''));
-              this.inMemoryData[tableName] = this.inMemoryData[tableName].filter(row => String(row[wKey]) !== String(wVal));
+              this.inMemoryData[tableName] = this.inMemoryData[tableName].filter(row => !this.evaluateWhereCondition(row, whereClause));
             } else {
               this.inMemoryData[tableName] = [];
             }
