@@ -9,7 +9,7 @@
 | # | Issue / Bug | Severity | File | Status | Fix Details |
 |---|-------------|----------|------|--------|-------------|
 | 1 | Simulated `tokensUsed: 420` shows fake costs | 🐛 High | [`src/lib/agent/byokClient.ts:220`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L220) | ✅ **FIXED** | Set `tokensUsed: 0` in simulation mode |
-| 2 | LSP_RENAME always renames to `'executeApp'` | 🐛 Medium | [`src/lib/router/deterministicEngine.ts:14`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/deterministicEngine.ts#L14) | ⏳ Pending | Pass user's target symbol name through from router intent |
+| 2 | LSP_RENAME always renames to `'executeApp'` | 🐛 Medium | [`src/lib/router/deterministicEngine.ts:14`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/deterministicEngine.ts#L14) | ✅ **FIXED** | Passed user's target symbol name through `CodeIntent.newSymbolName` |
 | 3 | SELECT ignores WHERE / JOIN / LIMIT clauses | ⚠️ Medium | [`src/lib/db/sqlDriver.ts:129-143`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L129-L143) | ⏳ Pending | Implement basic WHERE/LIMIT filtering in simulated SQL driver |
 | 4 | ⌘Enter doesn't execute SQL (global handler) | 🐛 Medium | [`src/app/page.tsx:260-268`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L260-L268) | ⏳ Pending | Wire global shortcut to invoke active `SqlQueryPanel` execution |
 | 5 | Workspace restore cannot find nested files | 🐛 Medium | [`src/app/page.tsx:132-137`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) | ⏳ Pending | Implement recursive file lookup on saved state restoration |
@@ -29,10 +29,10 @@
 - Files: `types.ts`, `initialWorkspace.ts`, `workspacePersistence.ts`
 - Result: Clean typing and state schema.
 
-### Partition 2: Engine Layer (Status: 1 Fixed, 4 Pending)
+### Partition 2: Engine Layer (Status: 2 Fixed, 3 Pending)
 - Files: 13 files across `agent/`, `db/`, `router/`, `sidecar/`, `verification/`
 - **Issue 1**: [byokClient.ts:220](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L220) — ✅ Fixed (tokensUsed set to 0 in simulation mode)
-- **Issue 2**: [deterministicEngine.ts:14](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/deterministicEngine.ts#L14) — LSP_RENAME hardcoded to `'executeApp'`
+- **Issue 2**: [deterministicEngine.ts:14](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/deterministicEngine.ts#L14) — ✅ Fixed (Passes `newSymbolName` from `CodeIntent` instead of hardcoded `'executeApp'`)
 - **Issue 3**: [sqlDriver.ts:129-143](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L129-L143) — SELECT ignores WHERE/JOIN/LIMIT
 - **Issue 8**: [shadowBuffer.ts:31](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) — Bracket check regex unbalanced
 - **Issue 12**: [explainAnalyzer.ts:56](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/explainAnalyzer.ts#L56) — ExplainAnalyzer cast `as any` for `'Filter'`
