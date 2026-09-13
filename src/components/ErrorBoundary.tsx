@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
+import { clearPersistedWorkspace } from '../lib/workspacePersistence';
 
 interface Props {
   children: ReactNode;
@@ -37,6 +38,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
   private handleResetCache = () => {
     try {
+      clearPersistedWorkspace();
+      localStorage.removeItem('dbc_workspace_state_v1');
       localStorage.removeItem('dbc_workspace_cache');
       localStorage.removeItem('dbc_system_metrics');
       localStorage.removeItem('dbc_router_config');
