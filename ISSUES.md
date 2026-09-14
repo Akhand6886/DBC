@@ -44,9 +44,9 @@
 - **Issue 10**: [page.tsx:452-462](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L452-L462) — `handleAddFile` always targets `queries/`
 - **Issue 11**: [page.tsx:200-226](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L200-L226) — Empty string persisted for cleared keys
 
-### Partition 4: Shell Components (Status: 1 Pending)
+### Partition 4: Shell Components (Status: ✅ Clean)
 - Files: `TopMenuBar`, `ActivityBar`, `StatusBar`, `ErrorBoundary`, `ToastProvider`, `CommandPalette`
-- **Issue 6**: [ErrorBoundary.tsx:40-41](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) — Cache reset targets wrong localStorage keys
+- **Issue 6**: [ErrorBoundary.tsx:40-41](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) — ✅ Fixed (Invoked `clearPersistedWorkspace()` and removed `dbc_workspace_state_v1`)
 
 ### Partition 5: Editor & File Components (Status: 1 Pending)
 - Files: `CodeEditor`, `FileExplorer`, `SearchModal`, `TerminalPanel`, `WelcomeTab`, `ShortcutsModal`
