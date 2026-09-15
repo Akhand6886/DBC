@@ -170,6 +170,13 @@ export default function Home() {
     }
   }, []);
 
+  // ─── Sync Theme to Document Root ────────────────────────────────────
+  useEffect(() => {
+    if (editorSettings.theme && typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', editorSettings.theme);
+    }
+  }, [editorSettings.theme]);
+
   // ─── Debounced Auto-Save to Local Storage ───────────────────────────
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -696,6 +703,7 @@ export default function Home() {
                     onRefreshSchema={() => addToast('info', 'Refreshed database schema.')}
                     onSaveScriptToWorkspace={handleSaveScriptToWorkspace}
                     onRegisterExecute={(fn) => { executeSqlRef.current = fn; }}
+                    editorSettings={editorSettings}
                   />
                   {showPerfMonitor && activeConnection && (
                     <div className="p-3 border-t border-[#3c3c3c] bg-[#252526]">
@@ -723,6 +731,7 @@ export default function Home() {
                 onAcceptDiff={() => setActiveDiff(null)}
                 onRejectDiff={() => setActiveDiff(null)}
                 onSave={handleSaveActiveFile}
+                editorSettings={editorSettings}
               />
             )}
 
