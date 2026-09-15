@@ -8,7 +8,7 @@ export type FastPathAction =
   | 'TREE_SITTER_REFACTOR' 
   | 'RIPGREP_SEARCH';
 
-export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'ollama';
+export type LLMProvider = 'openai' | 'anthropic' | 'gemini' | 'ollama' | 'nvidia';
 
 export interface FileNode {
   id: string;
