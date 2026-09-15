@@ -3,6 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { FileNode, ShadowDiffCheck } from '../lib/types';
+import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../lib/monacoThemes';
 import { X, Check, FileCode, ShieldAlert, Sparkles } from 'lucide-react';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
@@ -20,6 +21,7 @@ interface CodeEditorProps {
   onAcceptDiff?: () => void;
   onRejectDiff?: () => void;
   onSave?: () => void;
+  editorSettings?: EditorSettings;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -32,8 +34,11 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onAcceptDiff,
   onRejectDiff,
   onSave,
+  editorSettings,
 }) => {
   const handleEditorDidMount = (editor: any, monaco: any) => {
+    defineMonacoThemes(monaco);
+    monaco.editor.setTheme(getMonacoThemeName(editorSettings?.theme));
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (onSave) onSave();
     });
@@ -125,10 +130,12 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
             language={getMonacoLanguage(activeFile.language || '', activeFile.name)}
             value={activeFile.content || ''}
             onChange={handleEditorChange}
+            beforeMount={(monaco) => defineMonacoThemes(monaco)}
             onMount={handleEditorDidMount}
-            theme="vs-dark"
+            theme={getMonacoThemeName(editorSettings?.theme)}
             options={{
-              fontSize: 13,
+              fontSize: editorSettings?.fontSize || 13,
+              tabSize: editorSettings?.tabSize || 2,
               fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace",
               fontLigatures: true,
               minimap: { enabled: true, scale: 0.75 },
@@ -139,7 +146,6 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
               cursorSmoothCaretAnimation: 'on',
               renderLineHighlight: 'all',
               automaticLayout: true,
-              tabSize: 2,
             }}
           />
         ) : (
