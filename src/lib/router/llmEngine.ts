@@ -9,7 +9,8 @@ export function runLLMReasoning(
     openai: 'OpenAI GPT-4o',
     anthropic: 'Anthropic Claude 3.5 Sonnet',
     gemini: 'Google Gemini 1.5 Pro',
-    ollama: 'Local Ollama (Llama 3.1 70B)'
+    ollama: 'Local Ollama (Llama 3.1 70B)',
+    nvidia: 'NVIDIA NIM (Llama 3.1 70B)'
   };
 
   const modelName = providerNames[provider] || providerNames.openai;
