@@ -197,9 +197,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
 
           {/* Consolidated Tools Dropdown */}
           <div className="relative">
+            {isToolsMenuOpen && (
+              <div
+                className="fixed inset-0 z-20 bg-transparent cursor-default"
+                onClick={() => setIsToolsMenuOpen(false)}
+              />
+            )}
             <button
-              onClick={() => setIsToolsMenuOpen(!isToolsMenuOpen)}
-              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px]"
+              onClick={() => {
+                setIsToolsMenuOpen(!isToolsMenuOpen);
+                setIsExportMenuOpen(false);
+              }}
+              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px] relative z-20"
             >
               <Wrench className="h-3.5 w-3.5 text-[#007acc]" />
               <span className="hidden sm:inline">Tools</span>
@@ -242,9 +251,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
 
           {/* Single Unified Export Dropdown */}
           <div className="relative">
+            {isExportMenuOpen && (
+              <div
+                className="fixed inset-0 z-20 bg-transparent cursor-default"
+                onClick={() => setIsExportMenuOpen(false)}
+              />
+            )}
             <button
-              onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
-              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px]"
+              onClick={() => {
+                setIsExportMenuOpen(!isExportMenuOpen);
+                setIsToolsMenuOpen(false);
+              }}
+              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px] relative z-20"
             >
               <Download className="h-3.5 w-3.5 text-emerald-400" />
               <span className="hidden sm:inline">Export</span>
