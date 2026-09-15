@@ -28,7 +28,7 @@ export function verifyAndCreateShadowDiff(
 
   // Bracket balance check
   const openBrackets = (proposedContent.match(/[{[(]/g) || []).length;
-  const closeBrackets = (proposedContent.match(/[}\]]/g) || []).length;
+  const closeBrackets = (proposedContent.match(/[}\])]/g) || []).length;
   const syntaxCheckPassed = Math.abs(openBrackets - closeBrackets) <= 2;
 
   return {
