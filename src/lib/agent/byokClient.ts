@@ -17,7 +17,8 @@ export class BYOKClientAdapter {
     openai: { provider: 'openai', modelName: 'gpt-4o' },
     anthropic: { provider: 'anthropic', modelName: 'claude-3-5-sonnet-20241022' },
     gemini: { provider: 'gemini', modelName: 'gemini-1.5-pro' },
-    ollama: { provider: 'ollama', endpoint: 'http://localhost:11434', modelName: 'llama3.1:70b' }
+    ollama: { provider: 'ollama', endpoint: 'http://localhost:11434', modelName: 'llama3.1:70b' },
+    nvidia: { provider: 'nvidia', endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions', modelName: 'meta/llama-3.1-70b-instruct' }
   };
 
   public setApiKey(provider: LLMProvider, key: string) {
@@ -63,6 +64,8 @@ export class BYOKClientAdapter {
           return await this.callGemini(config, prompt, context, startTime);
         case 'ollama':
           return await this.callOllama(config, prompt, context, startTime);
+        case 'nvidia':
+          return await this.callNvidia(config, prompt, context, startTime);
         default:
           return this.simulateResponse(config, startTime);
       }
@@ -205,6 +208,42 @@ export class BYOKClientAdapter {
     return {
       responseText: data.response || '// No response generated.',
       tokensUsed: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+      latencyMs
+    };
+  }
+
+  // ─── NVIDIA NIM API (OpenAI-compatible) ────────────────────────────
+  private async callNvidia(
+    config: BYOKConfig, prompt: string, context: string, startTime: number
+  ): Promise<{ responseText: string; tokensUsed: number; latencyMs: number }> {
+    const endpoint = config.endpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.apiKey}`
+      },
+      body: JSON.stringify({
+        model: config.modelName || 'meta/llama-3.1-70b-instruct',
+        messages: [
+          { role: 'system', content: `You are an elite SQL and database systems engineer. Context:\n${context}` },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
+        max_tokens: 1024
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`NVIDIA NIM HTTP ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    const latencyMs = Date.now() - startTime;
+    return {
+      responseText: data.choices?.[0]?.message?.content || '// No response received.',
+      tokensUsed: data.usage?.total_tokens || 0,
       latencyMs
     };
   }
