@@ -15,7 +15,7 @@
 | 5 | Workspace restore cannot find nested files | 🐛 Medium | [`src/app/page.tsx:132-137`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) | ✅ **FIXED** | Implemented recursive file tree search via `findFileNodeById` during hydration |
 | 6 | ErrorBoundary resets wrong cache keys | ⚠️ Low | [`src/components/ErrorBoundary.tsx:40-41`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) | ✅ **FIXED** | Invoked `clearPersistedWorkspace()` and cleared `dbc_workspace_state_v1` |
 | 7 | Editor settings (font/tab/theme) never applied to Monaco | ⚠️ Medium | [`src/components/CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) & [`src/components/SettingsModal.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx) | ✅ **FIXED** | Passed editorSettings to Monaco `<Editor>` instances & registered custom themes |
-| 8 | Bracket check regex unbalanced | ⚠️ Low | [`src/lib/verification/shadowBuffer.ts:31`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) | ⏳ Pending | Add `)` to closing bracket pattern |
+| 8 | Bracket check regex unbalanced | ⚠️ Low | [`src/lib/verification/shadowBuffer.ts:31`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) | ✅ **FIXED** | Added `)` to closing bracket pattern `/[}\])]/g` |
 | 9 | Tools/Export dropdowns lack outside-click dismiss | ⚠️ Low | [`src/components/SqlQueryPanel.tsx:176-217`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) | ⏳ Pending | Add backdrop overlay for clean outside-click closure |
 | 10 | `handleAddFile` always targets `queries/` path | ⚠️ Low | [`src/app/page.tsx:452-462`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L452-L462) | ⏳ Pending | Place new files in currently active/selected directory |
 | 11 | Empty API key string `''` persisted | ⚠️ Low | [`src/app/page.tsx:200-226`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L200-L226) | ⏳ Pending | Clean up empty key entries before persisting |
@@ -29,12 +29,12 @@
 - Files: `types.ts`, `initialWorkspace.ts`, `workspacePersistence.ts`
 - Result: Clean typing and state schema.
 
-### Partition 2: Engine Layer (Status: 3 Fixed, 2 Pending)
+### Partition 2: Engine Layer (Status: 4 Fixed, 1 Pending)
 - Files: 13 files across `agent/`, `db/`, `router/`, `sidecar/`, `verification/`
 - **Issue 1**: [byokClient.ts:220](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L220) — ✅ Fixed (tokensUsed set to 0 in simulation mode)
 - **Issue 2**: [deterministicEngine.ts:14](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/deterministicEngine.ts#L14) — ✅ Fixed (Passes `newSymbolName` from `CodeIntent` instead of hardcoded `'executeApp'`)
 - **Issue 3**: [sqlDriver.ts:129-143](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L129-L143) — ✅ Fixed (Rich WHERE filtering, JOIN, ORDER BY, LIMIT/OFFSET, and column projection)
-- **Issue 8**: [shadowBuffer.ts:31](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) — Bracket check regex unbalanced
+- **Issue 8**: [shadowBuffer.ts:31](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) — ✅ Fixed (Included `)` in `closeBrackets` regex)
 - **Issue 12**: [explainAnalyzer.ts:56](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/explainAnalyzer.ts#L56) — ExplainAnalyzer cast `as any` for `'Filter'`
 
 ### Partition 3: App Shell (Status: 2 Fixed, 2 Pending)
