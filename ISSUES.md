@@ -16,7 +16,7 @@
 | 6 | ErrorBoundary resets wrong cache keys | ⚠️ Low | [`src/components/ErrorBoundary.tsx:40-41`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) | ✅ **FIXED** | Invoked `clearPersistedWorkspace()` and cleared `dbc_workspace_state_v1` |
 | 7 | Editor settings (font/tab/theme) never applied to Monaco | ⚠️ Medium | [`src/components/CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) & [`src/components/SettingsModal.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx) | ✅ **FIXED** | Passed editorSettings to Monaco `<Editor>` instances & registered custom themes |
 | 8 | Bracket check regex unbalanced | ⚠️ Low | [`src/lib/verification/shadowBuffer.ts:31`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) | ✅ **FIXED** | Added `)` to closing bracket pattern `/[}\])]/g` |
-| 9 | Tools/Export dropdowns lack outside-click dismiss | ⚠️ Low | [`src/components/SqlQueryPanel.tsx:176-217`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) | ⏳ Pending | Add backdrop overlay for clean outside-click closure |
+| 9 | Tools/Export dropdowns lack outside-click dismiss | ⚠️ Low | [`src/components/SqlQueryPanel.tsx:176-217`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) | ✅ **FIXED** | Added transparent backdrop overlay to dismiss on outside click |
 | 10 | `handleAddFile` always targets `queries/` path | ⚠️ Low | [`src/app/page.tsx:452-462`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L452-L462) | ⏳ Pending | Place new files in currently active/selected directory |
 | 11 | Empty API key string `''` persisted | ⚠️ Low | [`src/app/page.tsx:200-226`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L200-L226) | ⏳ Pending | Clean up empty key entries before persisting |
 | 12 | `explainAnalyzer` PlanNode type error (`'Filter'`) | ⚠️ Low | [`src/lib/db/explainAnalyzer.ts:56`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/explainAnalyzer.ts#L56) | ⏳ Pending | Fix type casting to properly support all PlanNode types |
@@ -52,9 +52,9 @@
 - Files: `CodeEditor`, `FileExplorer`, `SearchModal`, `TerminalPanel`, `WelcomeTab`, `ShortcutsModal`
 - **Issue 7**: [CodeEditor.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) — ✅ Fixed (Monaco editor now receives dynamic `editorSettings` for font, tabSize, and custom themes)
 
-### Partition 6: Database Components (Status: 1 Pending)
+### Partition 6: Database Components (Status: ✅ Clean)
 - Files: `SqlQueryPanel`, `DbObjectExplorer`, `DbConnectionPanel`, etc.
-- **Issue 9**: [SqlQueryPanel.tsx:176-217](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) — Export and tools dropdowns do not close on outside click
+- **Issue 9**: [SqlQueryPanel.tsx:176-217](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) — ✅ Fixed (Added backdrop overlay to dismiss Tools and Export dropdowns on outside click)
 
 ### Partition 7: Modal & AI Components (Status: ✅ Clean)
 - Files: `MissionControl`, `SettingsModal`, `GitPanel`, etc.
