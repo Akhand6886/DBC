@@ -68,11 +68,13 @@ export default function Home() {
     anthropic?: string;
     gemini?: string;
     ollama?: string;
+    nvidia?: string;
   }>({
     openai: '',
     anthropic: '',
     gemini: '',
-    ollama: 'http://localhost:11434'
+    ollama: 'http://localhost:11434',
+    nvidia: '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'
   });
 
   const [editorSettings, setEditorSettings] = useState({
@@ -160,6 +162,9 @@ export default function Home() {
         if (parsed.anthropic) byokClient.setApiKey('anthropic', parsed.anthropic);
         if (parsed.gemini) byokClient.setApiKey('gemini', parsed.gemini);
         if (parsed.ollama) byokClient.setEndpoint('ollama', parsed.ollama);
+        if (parsed.nvidia) byokClient.setApiKey('nvidia', parsed.nvidia);
+      } else {
+        byokClient.setApiKey('nvidia', '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');
       }
       const savedSettings = localStorage.getItem('dbc_editor_settings');
       if (savedSettings) {
@@ -220,6 +225,7 @@ export default function Home() {
         if (newSettings.keys.anthropic) byokClient.setApiKey('anthropic', newSettings.keys.anthropic);
         if (newSettings.keys.gemini) byokClient.setApiKey('gemini', newSettings.keys.gemini);
         if (newSettings.keys.ollama) byokClient.setEndpoint('ollama', newSettings.keys.ollama);
+        if (newSettings.keys.nvidia) byokClient.setApiKey('nvidia', newSettings.keys.nvidia);
       } catch (e) {
         console.error('Error saving keys to localStorage', e);
       }
