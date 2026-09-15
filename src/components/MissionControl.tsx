@@ -127,6 +127,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
             <option value="anthropic">Claude 3.5</option>
             <option value="openai">GPT-4o</option>
             <option value="gemini">Gemini 1.5</option>
+            <option value="nvidia">NVIDIA NIM (Llama 3.1 70B)</option>
             <option value="ollama">Ollama (Offline)</option>
           </select>
 
