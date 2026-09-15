@@ -9,6 +9,7 @@ import { SchemaDiffModal } from './SchemaDiffModal';
 import { ExplainPlanModal } from './ExplainPlanModal';
 import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
 import { downloadExportFile, ExportOptions } from '../lib/db/dataExporter';
+import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../lib/monacoThemes';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
   ssr: false,
@@ -21,6 +22,7 @@ interface SqlQueryPanelProps {
   onRefreshSchema?: () => void;
   onSaveScriptToWorkspace?: (scriptName: string, content: string) => void;
   onRegisterExecute?: (executeFn: () => void) => void;
+  editorSettings?: EditorSettings;
 }
 
 export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
@@ -29,6 +31,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   onRefreshSchema,
   onSaveScriptToWorkspace,
   onRegisterExecute,
+  editorSettings,
 }) => {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
   const [isRunning, setIsRunning] = useState(false);
@@ -302,14 +305,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           language="sql"
           value={query}
           onChange={(val) => setQuery(val || '')}
+          beforeMount={(monaco) => defineMonacoThemes(monaco)}
           onMount={(editor, monaco) => {
+            defineMonacoThemes(monaco);
+            monaco.editor.setTheme(getMonacoThemeName(editorSettings?.theme));
             editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
               handleExecuteQuery();
             });
           }}
-          theme="vs-dark"
+          theme={getMonacoThemeName(editorSettings?.theme)}
           options={{
-            fontSize: 13,
+            fontSize: editorSettings?.fontSize || 13,
+            tabSize: editorSettings?.tabSize || 2,
             fontFamily: "'JetBrains Mono', monospace",
             minimap: { enabled: false },
             lineNumbers: 'on',
