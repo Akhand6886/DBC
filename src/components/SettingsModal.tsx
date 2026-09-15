@@ -11,6 +11,7 @@ interface SettingsModalProps {
     anthropic?: string;
     gemini?: string;
     ollama?: string;
+    nvidia?: string;
   };
   initialSettings?: {
     theme?: string;
@@ -39,6 +40,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [anthropicKey, setAnthropicKey] = useState(initialKeys?.anthropic || '');
   const [geminiKey, setGeminiKey] = useState(initialKeys?.gemini || '');
   const [ollamaUrl, setOllamaUrl] = useState(initialKeys?.ollama || 'http://localhost:11434');
+  const [nvidiaKey, setNvidiaKey] = useState(initialKeys?.nvidia || '');
 
   const [savedNotification, setSavedNotification] = useState(false);
 
@@ -52,7 +54,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         openai: openaiKey,
         anthropic: anthropicKey,
         gemini: geminiKey,
-        ollama: ollamaUrl
+        ollama: ollamaUrl,
+        nvidia: nvidiaKey
       }
     });
     setSavedNotification(true);
@@ -146,6 +149,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={geminiKey}
                   onChange={(e) => setGeminiKey(e.target.value)}
                   placeholder="AIzaSy..."
+                  className="w-full bg-ide-bg border border-ide-border rounded-lg p-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] text-slate-300 font-bold">NVIDIA NIM API Key (Llama 3.1 / DeepSeek):</label>
+                <input
+                  type="password"
+                  value={nvidiaKey}
+                  onChange={(e) => setNvidiaKey(e.target.value)}
+                  placeholder="nvapi-..."
                   className="w-full bg-ide-bg border border-ide-border rounded-lg p-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
