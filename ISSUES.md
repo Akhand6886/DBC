@@ -14,7 +14,7 @@
 | 4 | ⌘Enter doesn't execute SQL (global handler) | 🐛 Medium | [`src/app/page.tsx:260-268`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L260-L268) | ✅ **FIXED** | Wired global ⌘Enter shortcut to SqlQueryPanel execution handler |
 | 5 | Workspace restore cannot find nested files | 🐛 Medium | [`src/app/page.tsx:132-137`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L132-L137) | ✅ **FIXED** | Implemented recursive file tree search via `findFileNodeById` during hydration |
 | 6 | ErrorBoundary resets wrong cache keys | ⚠️ Low | [`src/components/ErrorBoundary.tsx:40-41`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) | ✅ **FIXED** | Invoked `clearPersistedWorkspace()` and cleared `dbc_workspace_state_v1` |
-| 7 | Editor settings (font/tab/theme) never applied to Monaco | ⚠️ Medium | [`src/components/CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) & [`src/components/SettingsModal.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx) | ⏳ Pending | Pass user settings into Monaco `<Editor>` props and theme loader |
+| 7 | Editor settings (font/tab/theme) never applied to Monaco | ⚠️ Medium | [`src/components/CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) & [`src/components/SettingsModal.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx) | ✅ **FIXED** | Passed editorSettings to Monaco `<Editor>` instances & registered custom themes |
 | 8 | Bracket check regex unbalanced | ⚠️ Low | [`src/lib/verification/shadowBuffer.ts:31`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L31) | ⏳ Pending | Add `)` to closing bracket pattern |
 | 9 | Tools/Export dropdowns lack outside-click dismiss | ⚠️ Low | [`src/components/SqlQueryPanel.tsx:176-217`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) | ⏳ Pending | Add backdrop overlay for clean outside-click closure |
 | 10 | `handleAddFile` always targets `queries/` path | ⚠️ Low | [`src/app/page.tsx:452-462`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L452-L462) | ⏳ Pending | Place new files in currently active/selected directory |
@@ -48,14 +48,14 @@
 - Files: `TopMenuBar`, `ActivityBar`, `StatusBar`, `ErrorBoundary`, `ToastProvider`, `CommandPalette`
 - **Issue 6**: [ErrorBoundary.tsx:40-41](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ErrorBoundary.tsx#L40-L41) — ✅ Fixed (Invoked `clearPersistedWorkspace()` and removed `dbc_workspace_state_v1`)
 
-### Partition 5: Editor & File Components (Status: 1 Pending)
+### Partition 5: Editor & File Components (Status: ✅ Clean)
 - Files: `CodeEditor`, `FileExplorer`, `SearchModal`, `TerminalPanel`, `WelcomeTab`, `ShortcutsModal`
-- **Issue 7**: [CodeEditor.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) — Monaco editor settings (font, tabSize, theme) hardcoded and not connected to user preferences
+- **Issue 7**: [CodeEditor.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/CodeEditor.tsx) — ✅ Fixed (Monaco editor now receives dynamic `editorSettings` for font, tabSize, and custom themes)
 
 ### Partition 6: Database Components (Status: 1 Pending)
 - Files: `SqlQueryPanel`, `DbObjectExplorer`, `DbConnectionPanel`, etc.
 - **Issue 9**: [SqlQueryPanel.tsx:176-217](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L176-L217) — Export and tools dropdowns do not close on outside click
 
-### Partition 7: Modal & AI Components (Status: 1 Pending)
+### Partition 7: Modal & AI Components (Status: ✅ Clean)
 - Files: `MissionControl`, `SettingsModal`, `GitPanel`, etc.
-- **Issue 7 (continued)**: [SettingsModal.tsx:208-233](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx#L208-L233) — Theme options saved to state but never applied to editor or theme stylesheet
+- **Issue 7 (continued)**: [SettingsModal.tsx:208-233](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx#L208-L233) — ✅ Fixed (Themes defined in Monaco engine and synced to `data-theme` on document root)
