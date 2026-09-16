@@ -27,14 +27,34 @@ import {
   Trash2,
   Copy,
   Check,
+import {
+  Bot,
+  Send,
+  Sparkles,
+  Sliders,
+  Zap,
+  Cpu,
+  Clock,
+  DollarSign,
+  FileCode,
+  ShieldCheck,
+  CheckCircle2,
+  X,
+  Trash2,
+  Copy,
+  Check,
   User,
   ChevronDown,
   ChevronUp,
   CornerDownLeft,
   ArrowRight,
   Flame,
-  Database
+  Database,
+  Brain,
+  Server
 } from 'lucide-react';
+import { specializedAgents, AgentPersonaId, SPECIALIZED_PERSONAS } from '../lib/agent/specializedAgents';
+import { dbMemory } from '../lib/db/dbMemory';
 
 interface MissionControlProps {
   activeFilePath?: string;
@@ -46,6 +66,8 @@ interface MissionControlProps {
   onOpenRouterConfig?: () => void;
   onOpenRouterTrace?: () => void;
   onOpenAgentTrace?: (sessionId?: string) => void;
+  onOpenDbMemory?: () => void;
+  onOpenMcpServer?: () => void;
   onClose?: () => void;
   onLogTerminal?: (msg: string) => void;
 }
@@ -56,7 +78,7 @@ const INITIAL_GREETING: ChatMessage = {
   id: 'msg-welcome',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   role: 'assistant',
-  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P0 Agentic Database Mode** with **Typed DB Tools** & **Query Firewall**:\n- **DB Agent Runtime**: Multi-turn ReAct with \`introspect_schema\`, \`sample_table_data\`, \`explain_query\`, \`suggest_indexes\`.\n- **Query Firewall**: Real-time risk scoring, blast radius estimation, and human approval gating.\n- **Full-Fidelity Execution Traces**: Flamegraph breakdown and tool step replay.\n\nType a prompt below or pick a trigger to begin!`,
+  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P1 Specialized Database Agent Mode** with **Domain Memory** & **MCP Server**:\n- **Specialized Personas**: DBA Optimizer, Schema Architect, Data Analyst, Security Auditor.\n- **Database Memory**: Domain context, table semantics, and business invariant policies.\n- **Query Firewall & Traces**: Risk scoring (0-100), blast radius estimator, and full flamegraph.\n- **MCP Protocol**: Standardized JSON-RPC 2.0 interface for Claude Desktop & Cursor.\n\nChoose an agent persona above or click a recommended trigger below to begin!`,
   status: 'success'
 };
 
