@@ -22,6 +22,9 @@ interface TopMenuBarProps {
   onOpenDatabase?: () => void;
   onOpenDbMemory?: () => void;
   onOpenMcpServer?: () => void;
+  onOpenLineage?: () => void;
+  onOpenBranchManager?: () => void;
+  onOpenOptimizer?: () => void;
 }
 
 export const TopMenuBar: React.FC<TopMenuBarProps> = ({
@@ -43,6 +46,9 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onOpenDatabase,
   onOpenDbMemory,
   onOpenMcpServer,
+  onOpenLineage,
+  onOpenBranchManager,
+  onOpenOptimizer,
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -228,6 +234,24 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
                 <button onClick={() => handleAction(onOpenMcpServer)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-purple-300">
                   <span>MCP Server Protocol Hub</span>
                   <span className="text-[10px] text-slate-400">⌘⇧M</span>
+                </button>
+              )}
+              {onOpenLineage && (
+                <button onClick={() => handleAction(onOpenLineage)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-cyan-300">
+                  <span>Data Lineage & Blast DAG</span>
+                  <span className="text-[10px] text-slate-400">⌘⇧L</span>
+                </button>
+              )}
+              {onOpenBranchManager && (
+                <button onClick={() => handleAction(onOpenBranchManager)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-purple-300">
+                  <span>Sandbox & Branch Manager</span>
+                  <span className="text-[10px] text-slate-400">⌘⌥B</span>
+                </button>
+              )}
+              {onOpenOptimizer && (
+                <button onClick={() => handleAction(onOpenOptimizer)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-yellow-300">
+                  <span>Performance Optimizer</span>
+                  <span className="text-[10px] text-slate-400">⌘⇧O</span>
                 </button>
               )}
             </div>
