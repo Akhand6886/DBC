@@ -10,6 +10,7 @@ import {
 } from '../lib/types';
 import { previewDeveloperIntent, executeRoutedPrompt } from '../lib/router/routerEngine';
 import { DEFAULT_ROUTER_CONFIG } from '../lib/router/intentClassifier';
+import { dbAgentRuntime } from '../lib/agent/dbAgentRuntime';
 import {
   Bot,
   Send,
@@ -30,7 +31,9 @@ import {
   ChevronDown,
   ChevronUp,
   CornerDownLeft,
-  ArrowRight
+  ArrowRight,
+  Flame,
+  Database
 } from 'lucide-react';
 
 interface MissionControlProps {
@@ -42,6 +45,7 @@ interface MissionControlProps {
   onExecutePlan?: (plan: AgentExecutionPlan) => void;
   onOpenRouterConfig?: () => void;
   onOpenRouterTrace?: () => void;
+  onOpenAgentTrace?: (sessionId?: string) => void;
   onClose?: () => void;
   onLogTerminal?: (msg: string) => void;
 }
@@ -52,7 +56,7 @@ const INITIAL_GREETING: ChatMessage = {
   id: 'msg-welcome',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   role: 'assistant',
-  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI analyze your developer requests using **Confidence-Based Dual-Path Routing**:\n- **Confidence ≥ 80%**: Dispatched to instant deterministic compilers (LSP, Tree-sitter AST, Prettier) at **~3ms latency & $0.00 cost**.\n- **Confidence < 80%**: Escalated to **Agentic LLMs** for deep semantic synthesis and multi-file reasoning.\n\nType a prompt below or pick a quick trigger to begin!`,
+  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P0 Agentic Database Mode** with **Typed DB Tools** & **Query Firewall**:\n- **DB Agent Runtime**: Multi-turn ReAct with \`introspect_schema\`, \`sample_table_data\`, \`explain_query\`, \`suggest_indexes\`.\n- **Query Firewall**: Real-time risk scoring, blast radius estimation, and human approval gating.\n- **Full-Fidelity Execution Traces**: Flamegraph breakdown and tool step replay.\n\nType a prompt below or pick a trigger to begin!`,
   status: 'success'
 };
 
@@ -65,6 +69,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   onExecutePlan,
   onOpenRouterConfig,
   onOpenRouterTrace,
+  onOpenAgentTrace,
   onClose,
   onLogTerminal,
 }) => {
@@ -73,6 +78,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTriggers, setShowTriggers] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isDbMode, setIsDbMode] = useState(true);
 
   // Chat message history with localStorage persistence
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
@@ -127,7 +133,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || isProcessing) return;
 
@@ -146,6 +152,44 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     setMessages((prev) => [...prev, userMessage]);
     setPrompt('');
     setIsProcessing(true);
+
+    const isDbRelated = isDbMode || /\b(select|from|table|index|schema|column|database|query|explain|migrate|migration|drop|delete|update|truncate|insert)\b/i.test(trimmedPrompt);
+
+    if (isDbRelated) {
+      try {
+        const agentRes = await dbAgentRuntime.runAgent({
+          prompt: trimmedPrompt,
+          provider,
+        });
+
+        if (onLogTerminal) {
+          onLogTerminal(`[DBC Agent Runtime]: Completed ReAct loop in ${agentRes.totalDurationMs}ms with tools [${agentRes.toolsExecuted.join(', ')}]`);
+        }
+
+        const assistantMsgId = `msg-${Date.now()}-assistant`;
+        const assistantMessage: ChatMessage = {
+          id: assistantMsgId,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          role: 'assistant',
+          content: agentRes.replyText,
+          routePath: 'AGENTIC_LLM_PATH',
+          provider,
+          confidenceScore: 94,
+          executionTimeMs: agentRes.totalDurationMs,
+          tokenCostUSD: agentRes.totalCostUSD,
+          logMessage: `Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}`,
+          explanation: `DB Agent Runtime executed ${agentRes.toolsExecuted.length} typed database tool(s).`,
+          status: 'success'
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch (err: any) {
+        if (onLogTerminal) onLogTerminal(`[DBC DB Agent Error]: ${err.message}`);
+      } finally {
+        setIsProcessing(false);
+      }
+      return;
+    }
 
     const isFast = routePreview?.isFastPath ?? true;
     const simDelay = isFast ? 90 : 750;
@@ -239,6 +283,30 @@ export const MissionControl: React.FC<MissionControlProps> = ({
             <Trash2 className="h-3.5 w-3.5" />
           </button>
 
+          {/* P0 DB Agent Mode Toggle */}
+          <button
+            onClick={() => setIsDbMode(!isDbMode)}
+            title="Toggle Database Agent Runtime Mode"
+            className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 border transition ${
+              isDbMode
+                ? 'bg-blue-600 text-white border-blue-400'
+                : 'bg-[#1e1e1e] text-slate-400 border-[#3c3c3c] hover:text-white'
+            }`}
+          >
+            <Database className="w-3 h-3" />
+            <span>DB Agent</span>
+          </button>
+
+          {onOpenAgentTrace && (
+            <button
+              onClick={() => onOpenAgentTrace()}
+              title="Open Agent Execution Trace (Flamegraph)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-amber-400 hover:text-amber-300 transition"
+            >
+              <Flame className="h-3.5 w-3.5" />
+            </button>
+          )}
+
           {/* Model Provider Selector */}
           <select
             value={provider}
@@ -272,7 +340,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         >
           <span className="flex items-center space-x-1">
             <Sparkles className="h-3 w-3 text-yellow-400" />
-            <span>Quick Intent Triggers</span>
+            <span>P0 DB Agent & Intent Triggers</span>
           </span>
           {showTriggers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
@@ -280,11 +348,12 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         {showTriggers && (
           <div className="px-2.5 pb-2 flex flex-wrap gap-1">
             {[
-              { label: 'Rename users table', q: 'rename table users to app_users' },
-              { label: 'Format SQL', q: 'format sql query' },
-              { label: 'Run Test Suite', q: 'run test suite' },
-              { label: 'Extract Helper View', q: 'extract function getUserAuditView' },
-              { label: 'Optimize Slow Scan', q: 'implement index to fix slow query scan on users' }
+              { label: 'Introspect Schema', q: 'introspect active database schema and sample data' },
+              { label: 'Suggest Indexes', q: 'analyze slow query on users and suggest optimal indexes' },
+              { label: 'Generate Migration', q: 'generate migration to add metadata column to users' },
+              { label: 'Safe Execution', q: 'SELECT * FROM users LIMIT 10;' },
+              { label: 'Firewall Warning', q: 'DELETE FROM users;' },
+              { label: 'Format SQL', q: 'format sql query' }
             ].map((item, idx) => (
               <button
                 key={idx}
@@ -393,24 +462,6 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
                     <div className="flex items-center space-x-1">
                       <button
-                        onClick={() => handleCopy(msg.content, msg.id)}
-                        className="px-2 py-1 rounded bg-[#1e1e1e] hover:bg-[#3c3c3c] text-slate-300 hover:text-white flex items-center space-x-1 border border-[#3c3c3c] transition-colors"
-                        title="Copy message text"
-                      >
-                        {copiedId === msg.id ? (
-                          <>
-                            <Check className="h-3 w-3 text-emerald-400" />
-                            <span className="text-[10px]">Copied</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3 w-3" />
-                            <span className="text-[10px]">Copy</span>
-                          </>
-                        )}
-                      </button>
-
-                      <button
                         onClick={() => {
                           if (msg.diffCheck && msg.proposedContent) {
                             onApplyPatch(msg.proposedContent, msg.diffCheck);
@@ -423,6 +474,38 @@ export const MissionControl: React.FC<MissionControlProps> = ({
                         <ArrowRight className="h-3 w-3" />
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {/* Observability & Trace Action for Assistant */}
+                {!isUser && (
+                  <div className="pt-1.5 border-t border-[#333333] flex items-center justify-between text-[10px]">
+                    {onOpenAgentTrace ? (
+                      <button
+                        onClick={() => onOpenAgentTrace()}
+                        className="text-amber-400 hover:text-amber-300 font-semibold flex items-center gap-1 transition hover:underline"
+                      >
+                        <Flame className="w-3 h-3 text-amber-400" />
+                        <span>View Execution Trace & Flamegraph</span>
+                      </button>
+                    ) : <span />}
+
+                    <button
+                      onClick={() => handleCopy(msg.content, msg.id)}
+                      className="px-2 py-0.5 rounded bg-[#1e1e1e] hover:bg-[#3c3c3c] text-slate-400 hover:text-white flex items-center gap-1 border border-[#333333] transition"
+                    >
+                      {copiedId === msg.id ? (
+                        <>
+                          <Check className="h-2.5 w-2.5 text-emerald-400" />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-2.5 w-2.5" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 )}
               </div>
