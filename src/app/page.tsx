@@ -799,6 +799,7 @@ export default function Home() {
         onOpenLineage={() => setIsLineageOpen(true)}
         onOpenBranchManager={() => setIsBranchManagerOpen(true)}
         onOpenOptimizer={() => setIsOptimizerOpen(true)}
+        onOpenCollab={() => setIsCollabOpen(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -927,6 +928,7 @@ export default function Home() {
               onOpenLineage={() => setIsLineageOpen(true)}
               onOpenBranchManager={() => setIsBranchManagerOpen(true)}
               onOpenOptimizer={() => setIsOptimizerOpen(true)}
+              onOpenCollab={() => setIsCollabOpen(true)}
               onClose={() => setShowMissionControl(false)}
               onLogTerminal={handleLogTerminal}
             />
@@ -1006,6 +1008,15 @@ export default function Home() {
           addToast('success', 'Applied query optimization patch');
         }}
         onLogTerminal={handleLogTerminal}
+      />
+      <CollaborativeSessionModal
+        isOpen={isCollabOpen}
+        onClose={() => setIsCollabOpen(false)}
+        onExecuteSql={(sql) => {
+          handleLogTerminal(`[Collab Studio Executed]: ${sql}`);
+          addToast('success', 'Executed proposal from council session');
+          window.dispatchEvent(new CustomEvent('dbc-execute-sql', { detail: { sql } }));
+        }}
       />
       </div>
     </ErrorBoundary>
