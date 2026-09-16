@@ -179,23 +179,23 @@ async function runTests() {
   });
   const toolsList = toolsRes.result?.tools || [];
   assert(
-    toolsList.length === 7,
-    `MCP tools/list returns all 7 typed DB tools (${toolsList.map((t: any) => t.name).join(', ')})`
+    toolsList.length === 6,
+    `MCP tools/list returns all 6 typed DB tools (${toolsList.map((t: any) => t.name).join(', ')})`
   );
 
-  // MCP tools/call (introspect_schema)
+  // MCP tools/call (dbc_introspect_schema)
   const callRes = await mcpServer.handleRequest({
     jsonrpc: '2.0',
     id: 4,
     method: 'tools/call',
     params: {
-      name: 'introspect_schema',
-      arguments: { includeForeignKeys: true }
+      name: 'dbc_introspect_schema',
+      arguments: {}
     }
   });
   assert(
     callRes.result?.content?.[0]?.text?.includes('users') && callRes.result?.content?.[0]?.text?.includes('roles'),
-    'MCP tools/call for introspect_schema returned formatted table schema'
+    'MCP tools/call for dbc_introspect_schema returned formatted table schema'
   );
 
   // MCP resources/list & resources/read
@@ -205,18 +205,18 @@ async function runTests() {
     method: 'resources/list'
   });
   assert(
-    resourcesRes.result?.resources?.[0]?.uri === 'db://main/schema',
-    'MCP resources/list exposes db://main/schema resource URI'
+    resourcesRes.result?.resources?.some((r: any) => r.uri === 'db://schema'),
+    'MCP resources/list exposes db://schema resource URI'
   );
 
   const readRes = await mcpServer.handleRequest({
     jsonrpc: '2.0',
     id: 6,
     method: 'resources/read',
-    params: { uri: 'db://main/schema' }
+    params: { uri: 'db://schema' }
   });
   assert(
-    readRes.result?.contents?.[0]?.text?.includes('Table: users'),
+    readRes.result?.contents?.[0]?.text?.includes('users') && readRes.result?.contents?.[0]?.text?.includes('roles'),
     'MCP resources/read successfully returned database schema resource contents'
   );
 
@@ -235,10 +235,10 @@ async function runTests() {
   const activePlugin = driverRegistry.getActivePlugin();
   assert(activePlugin.id === 'duckdb', 'Active driver plugin switched to DuckDB OLAP');
 
-  const duckdbCaps = activePlugin.getCapabilities();
+  const duckdbCaps = activePlugin.capabilities;
   assert(
-    duckdbCaps.parquetExport === true && duckdbCaps.supportsReturning === true,
-    'DuckDB driver reports parquetExport and supportsReturning capabilities'
+    duckdbCaps.isColumnarOLAP === true && duckdbCaps.supportsTransactions === true,
+    'DuckDB driver reports isColumnarOLAP=true and supportsTransactions=true capabilities'
   );
 
   // Connect & Query DuckDB driver
@@ -252,28 +252,28 @@ async function runTests() {
   const customMockPlugin: DbDriverPlugin = {
     id: 'snowflake_mock',
     name: 'Snowflake Enterprise Warehouse (Mock)',
+    dialect: 'postgres',
     version: '2.4.0',
+    description: 'Cloud data warehouse plugin',
     capabilities: {
-      dryRunSimulation: true,
-      transactionRollback: true,
-      queryExplain: true,
-      vectorSearch: false,
-      parquetExport: true,
-      distributedTracing: true,
-      supportsReturning: true,
-      maxBatchInsertRows: 100000
+      supportsTransactions: true,
+      supportsSavepoints: true,
+      supportsExplainAnalyze: true,
+      supportsIndexAdvisor: false,
+      supportsColumnDrop: true,
+      supportsFullOuterJoin: true,
+      isColumnarOLAP: true
     },
-    connect: async () => ({ success: true }),
+    connect: async () => ({ success: true, message: 'Connected' }),
     disconnect: async () => {},
-    introspectSchema: async () => ({ tables: [] }),
+    introspectSchema: async () => [],
     executeQuery: async (sql: string) => ({
+      success: true,
+      columns: ['warehouse', 'status'],
       rows: [{ warehouse: 'COMPUTE_WH', status: 'READY' }],
       rowCount: 1,
       executionTimeMs: 12
-    }),
-    explainQuery: async () => 'SNOWFLAKE COST ESTIMATOR',
-    validateSyntax: (sql: string) => ({ valid: true, dialect: 'snowflake_mock' }),
-    getCapabilities: function() { return this.capabilities; }
+    })
   };
 
   driverRegistry.registerPlugin(customMockPlugin);
