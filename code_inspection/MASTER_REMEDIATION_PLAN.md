@@ -94,7 +94,7 @@ Phase 1 focuses on bugs that cause **data corruption, infinite UI lockouts, race
 ### Summary Matrix: Phase 1
 | ID | Subsystem | File & Lines | Defect Summary | Severity |
 |---|---|---|---|:---:|
-| **P6-F1** | Monaco Editor | [`SqlQueryPanel.tsx:107-111`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L107-L111), [`page.tsx:287-293`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L287-L293) | Double query execution on `⌘↵` | 🔴 Critical |
+| **P6-F1** | Monaco Editor | [`SqlQueryPanel.tsx:107-111`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SqlQueryPanel.tsx#L107-L111), [`page.tsx:287-293`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L287-L293) | Double query execution on `⌘↵` | ✅ **Resolved** |
 | **P6-F2** | Monaco Editor | [`page.tsx:275-279`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L275-L279) | Global `⌘F` listener hijacks Monaco in-file search | 🔴 Critical |
 | **P7-F1** | Terminal Panel | [`TerminalPanel.tsx:18-25`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/TerminalPanel.tsx#L18-L25), [`page.tsx:811`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L811) | Clear button permanently freezes terminal output | 🔴 Critical |
 | **P7-F2** | Rust Sidecar | [`astIndexer.ts:12-20`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L12-L20), [`page.tsx:450-466`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L450-L466) | 85% of AST symbols point to fictional files (dead links) | 🔴 Critical |
