@@ -436,13 +436,6 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           </div>
         )}
       </div>
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* Main Conversation & History Thread */}
       <div
