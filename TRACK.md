@@ -10,21 +10,16 @@
 
 *Only ONE task may reside here at any time. When this task finishes its verification criteria, move it to Completed and pull exactly ONE task from NEXT.*
 
-### [Task] Project Architecture Reorganization & Modal Decoupling
-- **Goal:** Group 40 flat components into 6 domain directories (`shell/`, `editor/`, `dbms/`, `agents/`, `modals/`, `ui/`), decouple `page.tsx` using `<ModalHost />`, and establish a single-track workflow.
+### [Task] P7-F2: Align Sidecar AST Paths with Workspace
+- **Goal:** Fix `src/lib/sidecar/astIndexer.ts` so symbol locations resolve against actual workspace file paths (`src/lib/...`, `src/components/...`) rather than fictional mock paths.
 - **Sub-Steps:**
-  - [x] Create domain subdirectories and move all 40 component files with git history.
-  - [x] Build `<ModalHost />` centralized dialog dispatcher.
-  - [x] Create backwards-compatible `src/components/index.ts` barrel.
-  - [x] Refactor `src/app/page.tsx` to eliminate 18 individual modal booleans and replace 75+ lines of modal JSX with `<ModalHost />`.
-  - [x] Validate TypeScript compilation (`npx tsc --noEmit`) — 0 errors.
-  - [x] Run 108/108 automated test suites across P0-P3 — 100% passing.
-  - [ ] Update documentation (`docs/ARCHITECTURE.md`, `README.md`, `code_inspection/MASTER_REMEDIATION_PLAN.md`).
-  - [ ] Git commit the structural reorganization.
+  - [ ] Inspect existing `AST_INDEX_FIXTURE` in `src/lib/sidecar/astIndexer.ts`.
+  - [ ] Align symbol paths with real workspace files (`src/lib/db/sqlDriver.ts`, `src/components/dbms/SqlQueryPanel.tsx`, etc.).
+  - [ ] Verify `SidecarInspectorModal` symbol jump handler in `src/app/page.tsx` resolves correctly to existing files.
+  - [ ] Validate with `npx tsc --noEmit`.
 - **Verification Criteria:**
+  - Clicking any symbol in `SidecarInspectorModal` successfully opens an existing workspace file tab without dead links.
   - `npx tsc --noEmit` exits with 0.
-  - All 4 test scripts in `scripts/` pass with 100% success rate.
-  - All documentation accurately reflects the domain architecture.
 
 ---
 
@@ -32,15 +27,15 @@
 
 *Ordered queue for upcoming sprints. Do not start until NOW is marked done.*
 
-1. **P7-F2: Align Sidecar AST Paths with Workspace**
-   - *Scope:* Fix `src/lib/sidecar/astIndexer.ts` symbol locations to resolve against actual workspace file paths instead of fictional paths.
-   - *Target Files:* [`src/lib/sidecar/astIndexer.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts), [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx)
-2. **P3-F1: Table Editor Row Index Desync on Sort/Filter**
+1. **P3-F1: Table Editor Row Index Desync on Sort/Filter**
    - *Scope:* Ensure edits in `TableDataEditor.tsx` apply to the underlying primary key rather than the filtered visual row index.
    - *Target Files:* [`src/components/dbms/TableDataEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/TableDataEditor.tsx)
-3. **P3-F2: Persist Inline Query Result Cell Edits**
+2. **P3-F2: Persist Inline Query Result Cell Edits**
    - *Scope:* Wire double-click inline cell edits in `SqlQueryPanel.tsx` to generate and execute an `UPDATE` statement in the SQL driver.
    - *Target Files:* [`src/components/dbms/SqlQueryPanel.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/SqlQueryPanel.tsx)
+3. **P2-F1: Editor Buffer Revert on Diff Rejection**
+   - *Scope:* When user clicks Reject on a shadow diff check, explicitly restore editor buffer to pre-diff snapshot.
+   - *Target Files:* [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx)
 
 ---
 
