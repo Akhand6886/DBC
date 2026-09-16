@@ -4,7 +4,7 @@
 
 export interface PlanNode {
   id: string;
-  nodeType: 'Seq Scan' | 'Index Scan' | 'Hash Join' | 'Nested Loop' | 'Sort' | 'Aggregate';
+  nodeType: 'Seq Scan' | 'Index Scan' | 'Hash Join' | 'Nested Loop' | 'Sort' | 'Aggregate' | 'Filter';
   tableName?: string;
   cost: number;
   actualTimeMs: number;
@@ -53,7 +53,7 @@ export function analyzeQueryPlan(sql: string): ExplainPlanAnalysis {
           actualTimeMs: 12.1,
           rows: 100,
           isBottleneck: false
-        } as any
+        }
       ]
     };
 
