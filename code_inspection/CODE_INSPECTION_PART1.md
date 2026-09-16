@@ -23,27 +23,45 @@ The DBC platform is organized into 7 functional subsystems:
 
 # 🔬 Detailed Inspection: Part 1 — Confidence-Based Dual-Path Routing System
 
+```text
+                          Incoming Developer Request
+                                       │
+                                       ▼
+                       Intent Classifier & Confidence Engine
+                                       │
+                      ┌────────────────┴────────────────┐
+                      ▼                                 ▼
+             Confidence ≥ 80%                  Confidence < 80%
+          [Deterministic Fast Path]           [Agentic LLM Escalation]
+                      │                                 │
+           ┌──────────┴──────────┐            ┌─────────┴─────────┐
+           ▼                     ▼            ▼                   ▼
+    LSP Refactoring     Tree-sitter AST    LLM Reasoning      Multi-Agent
+      (Rename/Fix)      Structural Search  (BYOK Model)       Subagent Task
+           │                     │            │                   │
+           └──────────┬──────────┘            └─────────┬─────────┘
+                      │                                 │
+                      ▼                                 ▼
+                 ~3ms Latency                     ~800ms Latency
+               $0.00 Token Cost                  Model Cost Burn
+```
+
 ```mermaid
-flowchart TD
-    Prompt["Developer Prompt: Q"] --> Preview["Live Gauge (previewDeveloperIntent)"]
-    Prompt --> Classifier["classifyDeveloperIntent(Q, file, config)"]
-    Classifier --> PatternCheck["Pattern Scorer: S_pat (Regex Rules)"]
-    Classifier --> AmbiguityCheck["Ambiguity Evaluator: P_ambiguity"]
-    PatternCheck --> Formula["Score = 0.6*S_pat + 0.4*S_lsp - P_ambiguity"]
-    AmbiguityCheck --> Formula
+graph TD
+    Prompt["Developer Prompt"] --> Preview["Live Gauge Preview"]
+    Prompt --> Classifier["Intent Classifier"]
+    Classifier --> Scoring["Confidence Calculation: 0.6*S_pat + 0.4*S_lsp - Penalty"]
+    Scoring --> Decision{"Confidence Check"}
 
-    Formula --> Threshold{"Score >= Threshold (Default: 80%)?"}
+    Decision -- "Score >= 80% (Fast Path)" --> FastPath["DETERMINISTIC FAST PATH"]
+    FastPath --> FastEngine["LSP / Formatter / Tree-sitter (~3ms, $0.00)"]
 
-    Threshold -- "Yes (Score >= 80)" --> FastPath["DETERMINISTIC_FAST_PATH"]
-    FastPath --> DetExec["runDeterministicAction"]
-    DetExec --> FastRules["LSP Rename / References / Formatter / Tree-sitter (~2-5ms, $0.00)"]
+    Decision -- "Score < 80% (Escalate)" --> LLMPath["AGENTIC LLM PATH"]
+    LLMPath --> LLMEngine["BYOK LLM Reasoning (~800ms, $0.0035)"]
 
-    Threshold -- "No (Score < 80)" --> LLMPath["AGENTIC_LLM_PATH"]
-    LLMPath --> LLMExec["runLLMReasoning / byokClient (~800ms, $0.0035)"]
-
-    FastRules --> DiffGen["ShadowDiffCheck Generator"]
-    LLMExec --> DiffGen
-    DiffGen --> History["Record Plan in Analytics & Shadow History"]
+    FastEngine --> ShadowDiff["Shadow Workspace Diff & Verification"]
+    LLMEngine --> ShadowDiff
+    ShadowDiff --> Analytics["Record in Analytics & History"]
 ```
 
 ---
