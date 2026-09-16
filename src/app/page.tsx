@@ -913,6 +913,9 @@ export default function Home() {
               }}
               onOpenDbMemory={() => setIsDbMemoryOpen(true)}
               onOpenMcpServer={() => setIsMcpServerOpen(true)}
+              onOpenLineage={() => setIsLineageOpen(true)}
+              onOpenBranchManager={() => setIsBranchManagerOpen(true)}
+              onOpenOptimizer={() => setIsOptimizerOpen(true)}
               onClose={() => setShowMissionControl(false)}
               onLogTerminal={handleLogTerminal}
             />
@@ -974,6 +977,24 @@ export default function Home() {
       <McpServerModal
         isOpen={isMcpServerOpen}
         onClose={() => setIsMcpServerOpen(false)}
+      />
+      <DataLineageModal
+        isOpen={isLineageOpen}
+        onClose={() => setIsLineageOpen(false)}
+      />
+      <BranchManagerModal
+        isOpen={isBranchManagerOpen}
+        onClose={() => setIsBranchManagerOpen(false)}
+        onLogTerminal={handleLogTerminal}
+      />
+      <PerformanceOptimizerModal
+        isOpen={isOptimizerOpen}
+        onClose={() => setIsOptimizerOpen(false)}
+        onApplySql={(sql) => {
+          handleLogTerminal(`[Optimizer Patch Applied]: ${sql}`);
+          addToast('success', 'Applied query optimization patch');
+        }}
+        onLogTerminal={handleLogTerminal}
       />
       </div>
     </ErrorBoundary>
