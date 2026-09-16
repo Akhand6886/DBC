@@ -74,7 +74,7 @@ export default function Home() {
     anthropic: '',
     gemini: '',
     ollama: 'http://localhost:11434',
-    nvidia: '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'
+    nvidia: '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'
   });
 
   const [editorSettings, setEditorSettings] = useState({
@@ -164,7 +164,7 @@ export default function Home() {
         if (parsed.ollama) byokClient.setEndpoint('ollama', parsed.ollama);
         if (parsed.nvidia) byokClient.setApiKey('nvidia', parsed.nvidia);
       } else {
-        byokClient.setApiKey('nvidia', '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');
+        byokClient.setApiKey('nvidia', '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');
       }
       const savedSettings = localStorage.getItem('dbc_editor_settings');
       if (savedSettings) {
@@ -218,14 +218,21 @@ export default function Home() {
   // ─── Save Settings Handler ─────────────────────────────────────────
   const handleSaveSettings = (newSettings: any) => {
     if (newSettings.keys) {
-      setByokKeys(newSettings.keys);
+      // Sanitize keys: filter out empty string entries before saving (Issue 11)
+      const sanitizedKeys: Record<string, string> = {};
+      for (const [provider, keyVal] of Object.entries(newSettings.keys)) {
+        if (typeof keyVal === 'string' && keyVal.trim() !== '') {
+          sanitizedKeys[provider] = keyVal.trim();
+        }
+      }
+      setByokKeys(sanitizedKeys);
       try {
-        localStorage.setItem('dbc_byok_keys', JSON.stringify(newSettings.keys));
-        if (newSettings.keys.openai) byokClient.setApiKey('openai', newSettings.keys.openai);
-        if (newSettings.keys.anthropic) byokClient.setApiKey('anthropic', newSettings.keys.anthropic);
-        if (newSettings.keys.gemini) byokClient.setApiKey('gemini', newSettings.keys.gemini);
-        if (newSettings.keys.ollama) byokClient.setEndpoint('ollama', newSettings.keys.ollama);
-        if (newSettings.keys.nvidia) byokClient.setApiKey('nvidia', newSettings.keys.nvidia);
+        localStorage.setItem('dbc_byok_keys', JSON.stringify(sanitizedKeys));
+        if (sanitizedKeys.openai) byokClient.setApiKey('openai', sanitizedKeys.openai);
+        if (sanitizedKeys.anthropic) byokClient.setApiKey('anthropic', sanitizedKeys.anthropic);
+        if (sanitizedKeys.gemini) byokClient.setApiKey('gemini', sanitizedKeys.gemini);
+        if (sanitizedKeys.ollama) byokClient.setEndpoint('ollama', sanitizedKeys.ollama);
+        if (sanitizedKeys.nvidia) byokClient.setApiKey('nvidia', sanitizedKeys.nvidia);
       } catch (e) {
         console.error('Error saving keys to localStorage', e);
       }
@@ -473,30 +480,89 @@ export default function Home() {
     setOpenFiles((prev) => prev.map((f) => (f.id === activeFile.id ? updatedFile : f)));
   };
 
-  const handleAddFile = (fileName: string) => {
+  const handleAddFile = (fileName: string, targetDir?: string) => {
+    // Determine target directory from explicit targetDir parameter, or currently active file/folder
+    let parentPath = targetDir ?? '';
+    if (!parentPath && activeFile) {
+      if (activeFile.isFolder) {
+        parentPath = activeFile.path;
+      } else {
+        const lastSlash = activeFile.path.lastIndexOf('/');
+        if (lastSlash > -1) {
+          parentPath = activeFile.path.substring(0, lastSlash);
+        }
+      }
+    }
+
+    const filePath = parentPath ? `${parentPath}/${fileName}` : fileName;
     const newFile: FileNode = {
       id: `file-${Date.now()}`,
       name: fileName,
-      path: `queries/${fileName}`,
+      path: filePath,
       language: fileName.endsWith('.sql') ? 'sql' : fileName.endsWith('.rs') ? 'rust' : fileName.endsWith('.json') ? 'json' : 'typescript',
       content: fileName.endsWith('.sql') ? `-- ${fileName}\nSELECT * FROM users;\n` : `// ${fileName}\n`
     };
-    setWorkspaceFiles((prev) => [...prev, newFile]);
+
+    if (parentPath) {
+      const insertIntoTree = (nodes: FileNode[]): FileNode[] =>
+        nodes.map(node => {
+          if (node.isFolder && node.path === parentPath) {
+            return { ...node, isOpen: true, children: [...(node.children || []), newFile] };
+          }
+          if (node.isFolder && node.children) {
+            return { ...node, children: insertIntoTree(node.children) };
+          }
+          return node;
+        });
+      setWorkspaceFiles((prev) => insertIntoTree(prev));
+    } else {
+      setWorkspaceFiles((prev) => [...prev, newFile]);
+    }
+
     handleSelectFile(newFile);
-    addToast('success', `Created ${fileName}`);
+    addToast('success', `Created ${filePath}`);
   };
 
-  const handleAddFolder = (folderName: string) => {
+  const handleAddFolder = (folderName: string, targetDir?: string) => {
+    let parentPath = targetDir ?? '';
+    if (!parentPath && activeFile) {
+      if (activeFile.isFolder) {
+        parentPath = activeFile.path;
+      } else {
+        const lastSlash = activeFile.path.lastIndexOf('/');
+        if (lastSlash > -1) {
+          parentPath = activeFile.path.substring(0, lastSlash);
+        }
+      }
+    }
+
+    const folderPath = parentPath ? `${parentPath}/${folderName}` : folderName;
     const newFolder: FileNode = {
       id: `folder-${Date.now()}`,
       name: folderName,
-      path: folderName,
+      path: folderPath,
       isFolder: true,
       isOpen: true,
       children: []
     };
-    setWorkspaceFiles((prev) => [...prev, newFolder]);
-    addToast('success', `Created folder ${folderName}`);
+
+    if (parentPath) {
+      const insertIntoTree = (nodes: FileNode[]): FileNode[] =>
+        nodes.map(node => {
+          if (node.isFolder && node.path === parentPath) {
+            return { ...node, isOpen: true, children: [...(node.children || []), newFolder] };
+          }
+          if (node.isFolder && node.children) {
+            return { ...node, children: insertIntoTree(node.children) };
+          }
+          return node;
+        });
+      setWorkspaceFiles((prev) => insertIntoTree(prev));
+    } else {
+      setWorkspaceFiles((prev) => [...prev, newFolder]);
+    }
+
+    addToast('success', `Created folder ${folderPath}`);
   };
 
   const handleRenameFile = (fileId: string, newName: string) => {
