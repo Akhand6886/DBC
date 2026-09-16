@@ -278,9 +278,8 @@ export class CollaborativeSessionManager {
           resourceType: 'TABLE',
           targetName: 'users',
           heldByParticipantId: 'agent-dba',
-          mode: 'SHARED_READ',
-          acquiredAt: '16:00:00',
-          expiresAt: '16:30:00',
+          acquiredAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 1800000).toISOString(),
           purpose: 'Profiling sequential scan cost and buffer pool utilization'
         }
       ],
