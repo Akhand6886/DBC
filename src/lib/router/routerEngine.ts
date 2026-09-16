@@ -52,6 +52,7 @@ export interface ExecuteRouteResult {
   diffCheck: ShadowDiffCheck;
   proposedContent: string;
   logMessage: string;
+  replyText: string;
 }
 
 /**
@@ -73,18 +74,21 @@ export function executeRoutedPrompt({
   let executionTimeMs = 3;
   let tokenCostUSD = 0.0;
   let logMessage = '';
+  let replyText = '';
 
   if (isFastPath) {
     const res = runDeterministicAction(intent, currentContent);
     proposedContent = res.proposedContent;
     executionTimeMs = res.executionTimeMs;
     logMessage = `⚡ [Fast-Path Router | ${intent.confidenceScore}%]: ${res.logMessage} (0.00 cost, ${executionTimeMs}ms)`;
+    replyText = res.replyText;
   } else {
     const res = runLLMReasoning(intent, currentContent, provider);
     proposedContent = res.proposedContent;
     executionTimeMs = res.executionTimeMs;
     tokenCostUSD = res.tokenCostUSD;
     logMessage = `🧠 [LLM Escalation | ${intent.confidenceScore}%]: ${res.logMessage} ($${tokenCostUSD.toFixed(4)}, ${executionTimeMs}ms)`;
+    replyText = res.replyText;
   }
 
   const patchId = `patch-${Date.now().toString(36)}`;
@@ -117,5 +121,5 @@ export function executeRoutedPrompt({
     modelProvider: provider
   };
 
-  return { plan, diffCheck, proposedContent, logMessage };
+  return { plan, diffCheck, proposedContent, logMessage, replyText };
 }

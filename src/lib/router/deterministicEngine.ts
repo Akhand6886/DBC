@@ -3,7 +3,7 @@ import { CodeIntent } from '../types';
 export function runDeterministicAction(
   intent: CodeIntent,
   currentContent: string
-): { proposedContent: string; executionTimeMs: number; logMessage: string } {
+): { proposedContent: string; executionTimeMs: number; logMessage: string; replyText: string } {
   const startTime = Date.now();
   let proposedContent = currentContent;
   let logMessage = '';
@@ -25,8 +25,16 @@ export function runDeterministicAction(
   } else if (intent.actionType === 'TREE_SITTER_REFACTOR') {
     proposedContent = currentContent + '\n\n// Extracted helper function via Tree-sitter AST\nfunction helperCheck() {\n  return true;\n}';
     logMessage = `Tree-sitter AST: Extracted block into standalone helper function.`;
+  } else {
+    logMessage = `Deterministic Engine: Processed fast-path compiler transformation.`;
   }
 
   const executionTimeMs = Math.floor(Math.random() * 3) + 2; // ~2-5ms
-  return { proposedContent, executionTimeMs, logMessage };
+  const replyText = `⚡ **Fast-Path Compiler Action**:
+- **Action Type**: \`${intent.actionType}\`
+- **Confidence Score**: ${intent.confidenceScore}% (≥ Threshold)
+- **Result**: ${logMessage}
+- **Cost & Latency**: $0.00 (Local Compiler) • ~${executionTimeMs}ms`;
+
+  return { proposedContent, executionTimeMs, logMessage, replyText };
 }

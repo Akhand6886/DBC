@@ -84,3 +84,21 @@ export interface SystemMetrics {
   totalCostSavedUSD: number;
   shadowVerificationsPassed: number;
 }
+
+export interface ChatMessage {
+  id: string;
+  timestamp: string;
+  role: 'user' | 'assistant';
+  content: string;
+  routePath?: RouterPath;
+  provider?: LLMProvider;
+  confidenceScore?: number;
+  executionTimeMs?: number;
+  tokenCostUSD?: number;
+  explanation?: string;
+  logMessage?: string;
+  diffCheck?: ShadowDiffCheck;
+  proposedContent?: string;
+  status?: 'success' | 'processing' | 'error';
+}
+
