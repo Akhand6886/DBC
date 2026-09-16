@@ -293,6 +293,21 @@ export class RealSqlDriverEngine {
             rows,
             executionTimeMs: Date.now() - startTime
           };
+        } else {
+          // Handle standalone scalar expressions without FROM: e.g. SELECT 42 as answer; or SELECT 1;
+          const scalarMatch = cleanSql.match(/^SELECT\s+([\s\S]+?);?$/i);
+          if (scalarMatch && !/FROM/i.test(cleanSql)) {
+            const expr = scalarMatch[1].trim();
+            const aliasMatch = expr.match(/^(.+?)\s+AS\s+([a-zA-Z0-9_]+)$/i);
+            const colName = aliasMatch ? aliasMatch[2] : 'result';
+            const rawVal = aliasMatch ? aliasMatch[1].trim() : expr;
+            const parsedVal = !isNaN(Number(rawVal)) ? Number(rawVal) : rawVal.replace(/^['"]|['"]$/g, '');
+            return {
+              columns: [colName],
+              rows: [{ [colName]: parsedVal }],
+              executionTimeMs: Date.now() - startTime
+            };
+          }
         }
       }
 
