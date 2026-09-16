@@ -287,6 +287,12 @@ export default function Home() {
       // ⌘Enter: Execute SQL query or Run test suite
       if (mod && (key === 'enter' || e.key === 'Enter')) {
         e.preventDefault();
+        const isMonacoFocused = typeof document !== 'undefined' && !!document.activeElement?.closest('.monaco-editor');
+        if (isMonacoFocused && activeView === 'database') {
+          // Handled directly inside Monaco's onKeyDown listener in SqlQueryPanel to prevent double execution
+          return;
+        }
+
         if (activeView === 'database') {
           handleLogTerminal('[DBC Engine]: Executed query via ⌘↵ shortcut.');
           if (executeSqlRef.current) {

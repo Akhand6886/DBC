@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
@@ -50,25 +50,35 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isDiffOpen, setIsDiffOpen] = useState(false);
   const [isExplainOpen, setIsExplainOpen] = useState(false);
+  const isRunningRef = useRef(false);
 
   const handleExecuteQuery = async (customQuery?: string): Promise<RealQueryResult> => {
-    const qStr = customQuery || query;
-    setIsRunning(true);
-    setQueryResult(null);
-    setPendingEdits({});
-
-    const result = await realSqlDriver.executeQuery(qStr);
-    setIsRunning(false);
-    setQueryResult(result);
-
-    if (onLogTerminal) {
-      if (result.error) {
-        onLogTerminal(`[DBC SQL Driver Error]: ${result.error}`);
-      } else {
-        onLogTerminal(`[DBC SQL Driver]: Executed SQL in ${result.executionTimeMs}ms.`);
-      }
+    if (isRunningRef.current) {
+      return { columns: [], rows: [], executionTimeMs: 0 };
     }
-    return result;
+    isRunningRef.current = true;
+    setIsRunning(true);
+
+    try {
+      const qStr = customQuery || query;
+      setQueryResult(null);
+      setPendingEdits({});
+
+      const result = await realSqlDriver.executeQuery(qStr);
+      setQueryResult(result);
+
+      if (onLogTerminal) {
+        if (result.error) {
+          onLogTerminal(`[DBC SQL Driver Error]: ${result.error}`);
+        } else {
+          onLogTerminal(`[DBC SQL Driver]: Executed SQL in ${result.executionTimeMs}ms.`);
+        }
+      }
+      return result;
+    } finally {
+      isRunningRef.current = false;
+      setIsRunning(false);
+    }
   };
 
   useEffect(() => {
@@ -327,8 +337,12 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
           onMount={(editor, monaco) => {
             defineMonacoThemes(monaco);
             monaco.editor.setTheme(getMonacoThemeName(editorSettings?.theme));
-            editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-              handleExecuteQuery();
+            editor.onKeyDown((e) => {
+              if ((e.ctrlKey || e.metaKey) && e.keyCode === monaco.KeyCode.Enter) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleExecuteQuery(editor.getValue());
+              }
             });
           }}
           theme={getMonacoThemeName(editorSettings?.theme)}
