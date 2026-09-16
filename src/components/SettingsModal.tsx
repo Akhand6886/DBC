@@ -154,12 +154,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] text-slate-300 font-bold">NVIDIA NIM API Key (Llama 3.1 / DeepSeek):</label>
+                <label className="text-[11px] text-slate-300 font-bold">NVIDIA NIM API Key (Kimi K3 / Llama 3.1):</label>
                 <input
                   type="password"
                   value={nvidiaKey}
                   onChange={(e) => setNvidiaKey(e.target.value)}
-                  placeholder="nvapi-..."
+                  placeholder="nvapi-Ms1-..."
                   className="w-full bg-ide-bg border border-ide-border rounded-lg p-2 text-xs text-slate-100 placeholder-slate-600 focus:outline-none focus:border-cyan-500/50"
                 />
               </div>
