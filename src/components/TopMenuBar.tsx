@@ -25,6 +25,7 @@ interface TopMenuBarProps {
   onOpenLineage?: () => void;
   onOpenBranchManager?: () => void;
   onOpenOptimizer?: () => void;
+  onOpenCollab?: () => void;
 }
 
 export const TopMenuBar: React.FC<TopMenuBarProps> = ({
@@ -49,6 +50,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onOpenLineage,
   onOpenBranchManager,
   onOpenOptimizer,
+  onOpenCollab,
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
