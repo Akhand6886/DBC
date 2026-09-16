@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Database, Link2Off, Check, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { Database, Link2Off, Check, AlertCircle, Plus, Trash2, Cpu } from 'lucide-react';
+import { driverRegistry } from '../lib/db/driverPluginApi';
 
 export interface DbConnection {
   id: string;
   name: string;
-  type: 'sqlite' | 'postgres' | 'mysql' | 'mongodb';
+  type: 'sqlite' | 'postgres' | 'mysql' | 'duckdb' | 'mongodb';
   connectionString: string;
   status: 'connected' | 'disconnected' | 'error';
 }
@@ -28,7 +29,7 @@ export const DbConnectionPanel: React.FC<DbConnectionPanelProps> = ({
 }) => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [name, setName] = useState('');
-  const [type, setType] = useState<'sqlite' | 'postgres' | 'mysql' | 'mongodb'>('sqlite');
+  const [type, setType] = useState<'sqlite' | 'postgres' | 'mysql' | 'duckdb' | 'mongodb'>('sqlite');
   const [connectionString, setConnectionString] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -41,15 +42,23 @@ export const DbConnectionPanel: React.FC<DbConnectionPanelProps> = ({
     }
   };
 
+  const handleSelectWithDriver = (conn: DbConnection) => {
+    onSelectConnection(conn.id);
+    if (conn.type !== 'mongodb') {
+      driverRegistry.setActivePlugin(conn.type);
+    }
+  };
+
   const getDbTypeBadge = (dbType: string) => {
     const colors: Record<string, string> = {
       sqlite: 'bg-[#007acc]/10 text-sky-400 border-[#007acc]/30',
       postgres: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30',
+      duckdb: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
       mysql: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
       mongodb: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
     };
     return (
-      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${colors[dbType]}`}>
+      <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded border ${colors[dbType] || colors.sqlite}`}>
         {dbType}
       </span>
     );
@@ -89,6 +98,7 @@ export const DbConnectionPanel: React.FC<DbConnectionPanelProps> = ({
           >
             <option value="sqlite">SQLite (Local)</option>
             <option value="postgres">PostgreSQL</option>
+            <option value="duckdb">DuckDB (Columnar OLAP)</option>
             <option value="mysql">MySQL</option>
             <option value="mongodb">MongoDB</option>
           </select>
@@ -129,7 +139,7 @@ export const DbConnectionPanel: React.FC<DbConnectionPanelProps> = ({
             return (
               <div
                 key={conn.id}
-                onClick={() => onSelectConnection(conn.id)}
+                onClick={() => handleSelectWithDriver(conn)}
                 className={`p-2.5 rounded-lg border cursor-pointer transition-all flex flex-col space-y-1.5 ${
                   isActive
                     ? 'border-[#007acc] bg-[#007acc]/10 text-white shadow'
