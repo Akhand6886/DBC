@@ -20,6 +20,7 @@
     "start": "next start",
     "lint": "next lint",
     "electron:dev": "concurrently \"next dev\" \"cross-env WAIT_UNTIL=3000 electron .\"",
+    "dist": "npm run dist:mac",
     "dist:mac": "next build && electron-builder --mac dmg",
     "dist:win": "next build && electron-builder --win nsis",
     "dist:all": "next build && electron-builder -mw"
