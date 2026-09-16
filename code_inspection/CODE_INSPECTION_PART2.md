@@ -1,5 +1,24 @@
 # Detailed Inspection: Part 2 — Verification, Shadow Buffers & Rollback Engine
 
+```text
+    ┌─────────────────────────── Speculative Shadow Lifecycle ───────────────────────────┐
+    │                                                                                    │
+    │   [ AI / Fast-Path ]                                                               │
+    │           │                                                                        │
+    │           ▼                                                                        │
+    │   [ Generate Speculative Patch ] ──► Status: 'PENDING'                             │
+    │           │                                                                        │
+    │           ├──────────────────────────────┬─────────────────────────────┐           │
+    │           ▼                              ▼                             ▼           │
+    │   User: [Accept Patch]           User: [Reject Patch]          User: [Drawer]      │
+    │           │                              │                             │           │
+    │           ▼                              ▼                             ▼           │
+    │   Status: 'ACCEPTED'             Revert originalContent        Inspect Diff Preview│
+    │   Keep in Workspace              Status: 'REJECTED'            1-Click Restore     │
+    │                                                                Status: 'ROLLED_BACK│
+    └────────────────────────────────────────────────────────────────────────────────────┘
+```
+
 ```mermaid
 sequenceDiagram
     participant User as Developer / Editor
@@ -10,22 +29,22 @@ sequenceDiagram
 
     MC->>Shadow: verifyAndCreateShadowDiff(file, orig, proposed)
     Shadow->>Shadow: Diff calculation & Bracket check
-    Shadow-->>MC: ShadowDiffCheck { id: SNAP-XXX, status: 'PENDING' }
+    Shadow-->>MC: ShadowDiffCheck (SNAP-ID, status: PENDING)
     MC->>Page: handleApplyPatch(proposed, diffCheck)
     Page->>User: Renders inline green banner: [Reject Patch] [Accept Patch]
-    Page->>Page: Appends diffCheck to shadowHistory[]
+    Page->>Page: Appends diffCheck to shadowHistory
     
-    alt User clicks "Accept Patch"
+    alt User clicks Accept Patch
         User->>Page: onAcceptDiff()
-        Page->>Page: Status updated to 'ACCEPTED', banner dismissed
-    else User clicks "Reject Patch"
+        Page->>Page: Status updated to ACCEPTED, banner dismissed
+    else User clicks Reject Patch
         User->>Page: onRejectDiff()
         Page->>User: Reverts content back to originalContent
-        Page->>Page: Status updated to 'REJECTED'
+        Page->>Page: Status updated to REJECTED
     else User inspects via Drawer
         User->>Drawer: Opens Shadow Verification Drawer
         Drawer->>User: Renders unified colored diff
-        User->>Page: onRollback(snapshot) -> 1-Click Restore
+        User->>Page: onRollback (1-Click Restore)
         Page->>Page: Reverts exact targetFile to snapshot.originalContent
     end
 ```
