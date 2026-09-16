@@ -39,6 +39,7 @@ import { AgentTraceDrawer } from '../components/AgentTraceDrawer';
 import { DbMemoryModal } from '../components/DbMemoryModal';
 import { McpServerModal } from '../components/McpServerModal';
 import { DataLineageModal } from '../components/DataLineageModal';
+import { BranchManagerModal } from '../components/BranchManagerModal';
 import { PerformanceOptimizerModal } from '../components/PerformanceOptimizerModal';
 import { CollaborativeSessionModal } from '../components/CollaborativeSessionModal';
 
@@ -287,6 +288,7 @@ export default function Home() {
         else if (isRouterTraceOpen) setIsRouterTraceOpen(false);
         else if (inspectTable) setInspectTable(null);
         else if (editingTable) setEditingTable(null);
+        else if (isCollabOpen) setIsCollabOpen(false);
         else if (showMissionControl) setShowMissionControl(false);
         return;
       }
