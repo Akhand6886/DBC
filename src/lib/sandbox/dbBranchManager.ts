@@ -137,6 +137,10 @@ export class DbBranchManager {
     return Array.from(this.branches.values());
   }
 
+  public getAllBranches(): DatabaseBranch[] {
+    return this.getBranches();
+  }
+
   public getActiveBranch(): DatabaseBranch {
     return this.branches.get(this.activeBranchId) || this.branches.get('main')!;
   }
@@ -156,6 +160,7 @@ export class DbBranchManager {
   ): DatabaseBranch {
     const parent = this.branches.get(fromBranchId) || this.getActiveBranch();
     const id = name.toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const actuallySandbox = isSandbox || name.startsWith('sandbox/') || name.toLowerCase().includes('sandbox');
 
     const newBranch: DatabaseBranch = {
       id,
@@ -164,7 +169,7 @@ export class DbBranchManager {
       parentBranchId: parent.id,
       createdAt: new Date().toLocaleDateString(),
       isMain: false,
-      isSandbox,
+      isSandbox: actuallySandbox,
       tables: JSON.parse(JSON.stringify(parent.tables)),
       data: JSON.parse(JSON.stringify(parent.data))
     };
@@ -209,7 +214,7 @@ export class DbBranchManager {
   /**
    * Execute SQL directly against an isolated branch's tables and rows.
    */
-  public executeInBranch(branchId: string, sql: string): RealQueryResult {
+  public executeInBranch(branchId: string, sql: string): RealQueryResult & { success: boolean } {
     const branch = this.branches.get(branchId);
     if (!branch) throw new Error(`Branch '${branchId}' does not exist.`);
 
@@ -238,6 +243,7 @@ export class DbBranchManager {
         this.notify();
 
         return {
+          success: true,
           columns: [],
           rows: [],
           affectedRows: 0,
@@ -266,6 +272,7 @@ export class DbBranchManager {
           this.notify();
 
           return {
+            success: true,
             columns: [],
             rows: [],
             affectedRows: 1,
@@ -284,6 +291,7 @@ export class DbBranchManager {
         const cols = branch.tables[tableName]?.columns.map(c => c.name) || (rows[0] ? Object.keys(rows[0]) : []);
 
         return {
+          success: true,
           columns: cols,
           rows,
           executionTimeMs: Date.now() - startTime
@@ -300,6 +308,7 @@ export class DbBranchManager {
         branch.data[tableName] = [];
         this.notify();
         return {
+          success: true,
           columns: [],
           rows: [],
           affectedRows: prevCount,
@@ -309,6 +318,7 @@ export class DbBranchManager {
     }
 
     return {
+      success: true,
       columns: [],
       rows: [],
       executionTimeMs: Date.now() - startTime
