@@ -36,8 +36,10 @@ import { TableInspectorModal } from '../components/TableInspectorModal';
 import { DbObjectExplorer } from '../components/DbObjectExplorer';
 import { TableDataEditor } from '../components/TableDataEditor';
 import { AgentTraceDrawer } from '../components/AgentTraceDrawer';
+import { DbMemoryModal } from '../components/DbMemoryModal';
+import { McpServerModal } from '../components/McpServerModal';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame, Brain, Server } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -64,6 +66,8 @@ export default function Home() {
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
   const [isAgentTraceOpen, setIsAgentTraceOpen] = useState(false);
   const [selectedTraceSessionId, setSelectedTraceSessionId] = useState<string | undefined>(undefined);
+  const [isDbMemoryOpen, setIsDbMemoryOpen] = useState(false);
+  const [isMcpServerOpen, setIsMcpServerOpen] = useState(false);
 
   // BYOK Keys & Editor Settings State
   const [byokKeys, setByokKeys] = useState<{
@@ -343,6 +347,20 @@ export default function Home() {
         return;
       }
 
+      // ⌘⇧K: Database Memory & Business Invariant Policies (P1)
+      if (mod && e.shiftKey && key === 'k') {
+        e.preventDefault();
+        setIsDbMemoryOpen(prev => !prev);
+        return;
+      }
+
+      // ⌘⇧M: MCP Server Protocol Hub (P1)
+      if (mod && e.shiftKey && key === 'm') {
+        e.preventDefault();
+        setIsMcpServerOpen(prev => !prev);
+        return;
+      }
+
       // ⌘,: Settings & BYOK
       if (mod && key === ',') {
         e.preventDefault();
@@ -439,6 +457,8 @@ export default function Home() {
     { id: 'router-config', label: 'Router Thresholds & Fast-Path Rules', category: 'router', shortcut: '⌘⇧R', icon: <Sliders className="h-4 w-4 text-[#007acc]" />, handler: () => setIsRouterConfigOpen(true) },
     { id: 'router-trace', label: 'Inspect Last Router Execution Trace', category: 'router', icon: <FileCode className="h-4 w-4 text-emerald-400" />, handler: () => setIsRouterTraceOpen(true) },
     { id: 'agent-trace', label: 'Agent Execution Trace & Flamegraph (P0)', category: 'router', shortcut: '⌘⇧T', icon: <Flame className="h-4 w-4 text-amber-400" />, handler: () => setIsAgentTraceOpen(true) },
+    { id: 'db-memory', label: 'Database Memory & Business Invariant Policies (P1)', category: 'action', shortcut: '⌘⇧K', icon: <Brain className="h-4 w-4 text-emerald-400" />, handler: () => setIsDbMemoryOpen(true) },
+    { id: 'mcp-server', label: 'Model Context Protocol (MCP) Server Hub (P1)', category: 'action', shortcut: '⌘⇧M', icon: <Server className="h-4 w-4 text-purple-400" />, handler: () => setIsMcpServerOpen(true) },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
     { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <FileCode className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
     { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
