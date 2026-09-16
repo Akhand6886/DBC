@@ -436,18 +436,7 @@ export class DbAgentRuntime {
     let replyText = '';
 
     // Step 2: Route to appropriate DB tools based on intent
-    if (promptLower.includes('schema') || promptLower.includes('table') || promptLower.includes('column')) {
-      toolsExecuted.push('introspect_schema');
-      const schemaRes = await this.executeTool('introspect_schema', { tableName: params.activeTableName }, session.id);
-      
-      toolsExecuted.push('sample_table_data');
-      const sampleRes = await this.executeTool('sample_table_data', { tableName: 'users', limit: 3 }, session.id);
-
-      replyText = `### Database Schema & Sample Inspection\n\nI introspected your active database schema. Found **${(schemaRes.data || []).length} tables**:\n` +
-        schemaRes.data.map((t: any) => `- **\`${t.name}\`**: ${t.columns.map((c: any) => `${c.name} (${c.type})`).join(', ')}`).join('\n') +
-        `\n\nSampled **${sampleRes.data?.totalSampled || 0} rows** from \`users\` table to confirm data types.`;
-
-    } else if (promptLower.includes('index') || promptLower.includes('slow') || promptLower.includes('optimize')) {
+    if (promptLower.includes('index') || promptLower.includes('slow') || promptLower.includes('optimize')) {
       toolsExecuted.push('explain_query');
       const explainRes = await this.executeTool('explain_query', { sql: 'SELECT * FROM users WHERE role_id = 1;' }, session.id);
 
@@ -471,6 +460,17 @@ export class DbAgentRuntime {
         `**Forward Migration (UP)**:\n\`\`\`sql\n${migRes.data.upSql}\n\`\`\`\n\n` +
         `**Rollback Script (DOWN)**:\n\`\`\`sql\n${migRes.data.downSql}\n\`\`\`\n\n` +
         `**Safety Notes**:\n` + migRes.data.safetyNotes.map((n: string) => `- ${n}`).join('\n');
+
+    } else if (promptLower.includes('schema') || promptLower.includes('table') || promptLower.includes('column')) {
+      toolsExecuted.push('introspect_schema');
+      const schemaRes = await this.executeTool('introspect_schema', { tableName: params.activeTableName }, session.id);
+      
+      toolsExecuted.push('sample_table_data');
+      const sampleRes = await this.executeTool('sample_table_data', { tableName: 'users', limit: 3 }, session.id);
+
+      replyText = `### Database Schema & Sample Inspection\n\nI introspected your active database schema. Found **${(schemaRes.data || []).length} tables**:\n` +
+        schemaRes.data.map((t: any) => `- **\`${t.name}\`**: ${t.columns.map((c: any) => `${c.name} (${c.type})`).join(', ')}`).join('\n') +
+        `\n\nSampled **${sampleRes.data?.totalSampled || 0} rows** from \`users\` table to confirm data types.`;
 
     } else if (promptLower.includes('delete') || promptLower.includes('drop') || promptLower.includes('truncate') || promptLower.includes('update')) {
       // Potentially dangerous query flow — triggers firewall and approval checks!

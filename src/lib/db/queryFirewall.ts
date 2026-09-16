@@ -299,7 +299,7 @@ export class QueryFirewallEngine {
     const tables = new Set<string>();
 
     // FROM / JOIN / UPDATE / INTO / TABLE extraction
-    const fromMatches = sql.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO|TABLE)\s+([a-zA-Z0-9_]+)/gi);
+    const fromMatches = Array.from(sql.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO|TABLE)\s+([a-zA-Z0-9_]+)/gi));
     for (const match of fromMatches) {
       if (match[1]) {
         tables.add(match[1].toLowerCase());

@@ -52,7 +52,7 @@ export class TransactionManager {
    */
   public dryRun(sql: string): DryRunResult {
     const startTime = Date.now();
-    const cleanSql = sql.trim();
+    const cleanSql = sql.trim().replace(/;+$/, '');
 
     // Determine target table
     const targetTables = this.extractTargetTables(cleanSql);
@@ -200,7 +200,7 @@ export class TransactionManager {
    * and saving a rollback snapshot to the history stack.
    */
   public async executeWithSnapshot(sql: string): Promise<{ result: RealQueryResult; snapshot?: RollbackSnapshot }> {
-    const cleanSql = sql.trim();
+    const cleanSql = sql.trim().replace(/;+$/, '');
     const isMutating = /^(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE)\b/i.test(cleanSql);
 
     if (!isMutating) {
@@ -328,7 +328,7 @@ export class TransactionManager {
 
   private extractTargetTables(sql: string): string[] {
     const tables = new Set<string>();
-    const matches = sql.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO|TABLE)\s+([a-zA-Z0-9_]+)/gi);
+    const matches = Array.from(sql.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO|TABLE)\s+([a-zA-Z0-9_]+)/gi));
     for (const m of matches) {
       if (m[1]) tables.add(m[1].toLowerCase());
     }
