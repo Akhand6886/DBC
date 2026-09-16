@@ -278,6 +278,7 @@ export class CollaborativeSessionManager {
           resourceType: 'TABLE',
           targetName: 'users',
           heldByParticipantId: 'agent-dba',
+          mode: 'SHARED_READ',
           acquiredAt: new Date().toISOString(),
           expiresAt: new Date(Date.now() + 1800000).toISOString(),
           purpose: 'Profiling sequential scan cost and buffer pool utilization'
@@ -650,7 +651,10 @@ export class CollaborativeSessionManager {
 
     // Clean expired locks
     const now = Date.now();
-    session.locks = session.locks.filter(l => new Date(l.expiresAt).getTime() > now);
+    session.locks = session.locks.filter(l => {
+      const exp = new Date(l.expiresAt).getTime();
+      return !isNaN(exp) ? exp > now : true;
+    });
 
     // Check conflicts:
     // EXCLUSIVE_WRITE conflicts with any existing lock on target
@@ -676,8 +680,8 @@ export class CollaborativeSessionManager {
       targetName: cleanTarget,
       heldByParticipantId: participantId,
       mode,
-      acquiredAt: new Date().toLocaleTimeString(),
-      expiresAt: new Date(now + ttlMs).toLocaleTimeString(),
+      acquiredAt: new Date().toISOString(),
+      expiresAt: new Date(now + ttlMs).toISOString(),
       purpose
     };
 
@@ -723,7 +727,10 @@ export class CollaborativeSessionManager {
     const session = this.sessions.get(sessionId);
     if (!session) return [];
     const now = Date.now();
-    return session.locks.filter(l => new Date(l.expiresAt).getTime() > now);
+    return session.locks.filter(l => {
+      const exp = new Date(l.expiresAt).getTime();
+      return !isNaN(exp) ? exp > now : true;
+    });
   }
 
   // ---------------------------------------------------------------------------
