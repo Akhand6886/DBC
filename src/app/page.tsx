@@ -647,6 +647,10 @@ export default function Home() {
     setTerminalLogs((prev) => [...prev, msg]);
   };
 
+  const handleClearTerminal = () => {
+    setTerminalLogs([]);
+  };
+
   const handleApplyPatch = (newContent: string, diffCheck: ShadowDiffCheck) => {
     handleContentChange(newContent);
     setActiveDiff(diffCheck);
@@ -820,7 +824,11 @@ export default function Home() {
             )}
 
             {showTerminal && (
-              <TerminalPanel logs={terminalLogs} onRunTests={handleRunTestSuite} />
+              <TerminalPanel
+                logs={terminalLogs}
+                onRunTests={handleRunTestSuite}
+                onClearLogs={handleClearTerminal}
+              />
             )}
           </div>
         )}

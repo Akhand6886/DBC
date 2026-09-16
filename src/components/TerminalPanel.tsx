@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Terminal as TerminalIcon, Play, Trash2, X, ChevronUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface TerminalPanelProps {
@@ -15,13 +15,19 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
   onClearLogs,
 }) => {
   const [activeTab, setActiveTab] = useState<'terminal' | 'output' | 'problems' | 'debug'>('terminal');
-  const [localLogs, setLocalLogs] = useState<string[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const displayLogs = localLogs.length > 0 ? localLogs : logs;
+  // Auto-scroll to bottom when new logs are added
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const handleClear = () => {
-    setLocalLogs(['Terminal output cleared.']);
-    if (onClearLogs) onClearLogs();
+    if (onClearLogs) {
+      onClearLogs();
+    }
   };
 
   return (
@@ -77,14 +83,21 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
       </div>
 
       {/* Terminal Content Area */}
-      <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] space-y-1 bg-[#1e1e1e] text-[#cccccc]">
+      <div
+        ref={scrollRef}
+        className="flex-1 overflow-y-auto p-3 font-mono text-[11px] space-y-1 bg-[#1e1e1e] text-[#cccccc]"
+      >
         {activeTab === 'problems' ? (
           <div className="flex items-center space-x-2 text-emerald-400 pt-2">
             <CheckCircle2 className="h-4 w-4" />
             <span>No problems or diagnostics detected in workspace files.</span>
           </div>
+        ) : logs.length === 0 ? (
+          <div className="text-slate-500 italic py-1">
+            Terminal output cleared. Ready.
+          </div>
         ) : (
-          displayLogs.map((log, idx) => (
+          logs.map((log, idx) => (
             <div key={idx} className="flex items-start space-x-2 leading-relaxed">
               <span className="text-[#007acc] font-bold select-none">&gt;</span>
               <span className="break-all">{log}</span>
