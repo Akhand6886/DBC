@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode } from 'lucide-react';
+import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode, ShieldAlert, ShieldCheck, RotateCcw } from 'lucide-react';
 import { TableCreatorModal } from './TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from './SchemaDiffModal';
 import { ExplainPlanModal } from './ExplainPlanModal';
+import { HumanApprovalModal } from './HumanApprovalModal';
 import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
+import { queryFirewall, RiskAssessment } from '../lib/db/queryFirewall';
+import { transactionManager, RollbackSnapshot, DryRunResult } from '../lib/db/transactionManager';
 import { downloadExportFile, ExportOptions } from '../lib/db/dataExporter';
 import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../lib/monacoThemes';
 
@@ -44,6 +47,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   // Dropdown states
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [isTransactionsOpen, setIsTransactionsOpen] = useState(false);
 
   // Modals state
   const [isTableCreatorOpen, setIsTableCreatorOpen] = useState(false);
@@ -52,7 +56,40 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   const [isExplainOpen, setIsExplainOpen] = useState(false);
   const isRunningRef = useRef(false);
 
-  const handleExecuteQuery = async (customQuery?: string): Promise<RealQueryResult> => {
+  // P0: Firewall & Transaction States
+  const [pendingApproval, setPendingApproval] = useState<{
+    assessment: RiskAssessment;
+    dryRunResult: DryRunResult | null;
+    sqlToExecute: string;
+  } | null>(null);
+  const [rollbackHistory, setRollbackHistory] = useState<RollbackSnapshot[]>(() => transactionManager.getHistory());
+
+  // Real-time Query Firewall live risk assessment as user types
+  const liveRisk = useMemo(() => {
+    if (!query.trim()) return null;
+    const known = realSqlDriver.introspectSchema().map(t => t.name);
+    return queryFirewall.evaluateQuery(query, known);
+  }, [query]);
+
+  const handleExecuteQuery = async (customQuery?: string, skipApproval = false): Promise<RealQueryResult> => {
+    const qStr = (customQuery || query).trim();
+    if (!qStr) return { columns: [], rows: [], executionTimeMs: 0 };
+
+    const known = realSqlDriver.introspectSchema().map(t => t.name);
+    const assessment = queryFirewall.evaluateQuery(qStr, known);
+
+    if (assessment.isBlocked) {
+      const err = `[Query Firewall BLOCKED]: ${assessment.violations.join('; ')}`;
+      if (onLogTerminal) onLogTerminal(err);
+      return { columns: [], rows: [], executionTimeMs: 0, error: err };
+    }
+
+    if (!skipApproval && assessment.requiresApproval) {
+      const dryRes = transactionManager.dryRun(qStr);
+      setPendingApproval({ assessment, dryRunResult: dryRes, sqlToExecute: qStr });
+      return { columns: [], rows: [], executionTimeMs: 0 };
+    }
+
     if (isRunningRef.current) {
       return { columns: [], rows: [], executionTimeMs: 0 };
     }
@@ -60,24 +97,34 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     setIsRunning(true);
 
     try {
-      const qStr = customQuery || query;
       setQueryResult(null);
       setPendingEdits({});
 
-      const result = await realSqlDriver.executeQuery(qStr);
+      const { result, snapshot } = await transactionManager.executeWithSnapshot(qStr);
       setQueryResult(result);
+      setRollbackHistory(transactionManager.getHistory());
 
       if (onLogTerminal) {
         if (result.error) {
           onLogTerminal(`[DBC SQL Driver Error]: ${result.error}`);
         } else {
-          onLogTerminal(`[DBC SQL Driver]: Executed SQL in ${result.executionTimeMs}ms.`);
+          onLogTerminal(`[DBC SQL Driver]: Executed SQL in ${result.executionTimeMs}ms${snapshot ? ` (Snapshot: ${snapshot.id})` : ''}.`);
         }
       }
       return result;
     } finally {
       isRunningRef.current = false;
       setIsRunning(false);
+    }
+  };
+
+  const handleRollbackSnapshot = (snapshotId: string) => {
+    const ok = transactionManager.rollbackSnapshot(snapshotId);
+    if (ok) {
+      setRollbackHistory(transactionManager.getHistory());
+      if (onLogTerminal) onLogTerminal(`[DBC Transaction Manager]: Restored snapshot ${snapshotId} via inverted transaction rollback.`);
+      if (onRefreshSchema) onRefreshSchema();
+      handleExecuteQuery(undefined, true);
     }
   };
 
