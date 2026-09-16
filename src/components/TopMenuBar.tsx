@@ -256,6 +256,12 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
                   <span className="text-[10px] text-slate-400">⌘⇧O</span>
                 </button>
               )}
+              {onOpenCollab && (
+                <button onClick={() => handleAction(onOpenCollab)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-emerald-300">
+                  <span>Collaborative Agent Sessions</span>
+                  <span className="text-[10px] text-slate-400">⌘⌥C</span>
+                </button>
+              )}
             </div>
           )}
         </div>
