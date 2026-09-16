@@ -367,6 +367,27 @@ export default function Home() {
         return;
       }
 
+      // ⌘⇧L: Data Lineage & Downstream Blast Radius DAG (P2)
+      if (mod && e.shiftKey && key === 'l') {
+        e.preventDefault();
+        setIsLineageOpen(prev => !prev);
+        return;
+      }
+
+      // ⌘⌥B: Database Sandbox & Branch Manager (P2)
+      if (mod && e.altKey && key === 'b') {
+        e.preventDefault();
+        setIsBranchManagerOpen(prev => !prev);
+        return;
+      }
+
+      // ⌘⇧O: Agent Performance Optimizer (P2)
+      if (mod && e.shiftKey && key === 'o') {
+        e.preventDefault();
+        setIsOptimizerOpen(prev => !prev);
+        return;
+      }
+
       // ⌘,: Settings & BYOK
       if (mod && key === ',') {
         e.preventDefault();
@@ -465,6 +486,9 @@ export default function Home() {
     { id: 'agent-trace', label: 'Agent Execution Trace & Flamegraph (P0)', category: 'router', shortcut: '⌘⇧T', icon: <Flame className="h-4 w-4 text-amber-400" />, handler: () => setIsAgentTraceOpen(true) },
     { id: 'db-memory', label: 'Database Memory & Business Invariant Policies (P1)', category: 'action', shortcut: '⌘⇧K', icon: <Brain className="h-4 w-4 text-emerald-400" />, handler: () => setIsDbMemoryOpen(true) },
     { id: 'mcp-server', label: 'Model Context Protocol (MCP) Server Hub (P1)', category: 'action', shortcut: '⌘⇧M', icon: <Server className="h-4 w-4 text-purple-400" />, handler: () => setIsMcpServerOpen(true) },
+    { id: 'data-lineage', label: 'Data Lineage & Downstream Blast DAG (P2)', category: 'action', shortcut: '⌘⇧L', icon: <Share2 className="h-4 w-4 text-cyan-400" />, handler: () => setIsLineageOpen(true) },
+    { id: 'branch-manager', label: 'Database Sandbox & Branch Manager (P2)', category: 'action', shortcut: '⌘⌥B', icon: <GitBranch className="h-4 w-4 text-purple-400" />, handler: () => setIsBranchManagerOpen(true) },
+    { id: 'perf-optimizer', label: 'Agent Performance Optimizer (P2)', category: 'action', shortcut: '⌘⇧O', icon: <Zap className="h-4 w-4 text-yellow-400" />, handler: () => setIsOptimizerOpen(true) },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
     { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <FileCode className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
     { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
@@ -761,6 +785,9 @@ export default function Home() {
         }}
         onOpenDbMemory={() => setIsDbMemoryOpen(true)}
         onOpenMcpServer={() => setIsMcpServerOpen(true)}
+        onOpenLineage={() => setIsLineageOpen(true)}
+        onOpenBranchManager={() => setIsBranchManagerOpen(true)}
+        onOpenOptimizer={() => setIsOptimizerOpen(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
