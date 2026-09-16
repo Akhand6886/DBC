@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AgentExecutionPlan, SystemMetrics } from '../lib/types';
+import { AgentExecutionPlan, SystemMetrics } from '../../lib/types';
 import {
   Zap,
   Cpu,

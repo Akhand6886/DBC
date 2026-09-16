@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Network, Table, Key } from 'lucide-react';
-import { realSqlDriver, IntrospectedTable } from '../lib/db/sqlDriver';
+import { realSqlDriver, IntrospectedTable } from '../../lib/db/sqlDriver';
 
 interface SchemaVisualizerProps {
   connectionType: string;

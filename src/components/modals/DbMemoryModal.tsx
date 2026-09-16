@@ -6,7 +6,7 @@ import {
   DomainBusinessRule,
   TableBusinessAnnotation,
   LearnedQueryPattern
-} from '../lib/db/dbMemory';
+} from '../../lib/db/dbMemory';
 import {
   Brain,
   X,

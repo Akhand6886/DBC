@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import { ToastProvider } from '../components/ToastProvider';
+import { ToastProvider } from '../components/ui/ToastProvider';
 
 export const metadata: Metadata = {
   title: 'Agentic AI IDE | Database Management & Dual-Path Router',

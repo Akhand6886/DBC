@@ -91,3 +91,55 @@ Unlike traditional AI IDEs that route every user action through an LLM, the Agen
 | **Codebase Indexing Sidecar** | **Rust** (`.rs`) | Tree-sitter AST Parser, LanceDB / sqlite-vec vector store, ONNX local embeddings | Parsing 100k+ lines of code into symbol graphs and executing vector similarity searches is compute-heavy. Rust provides zero-cost abstractions, sub-10ms latency without Garbage Collection (GC) pauses, and compiles to a lightweight native binary (`agentic-indexer`). |
 | **Browser Automation Agent** | **TypeScript** / Node.js | Playwright / Chrome DevTools Protocol (CDP) | Standard, battle-tested web frontend visual verification and screenshot feedback loops for web development tasks. |
 
+---
+
+## 6. Frontend Component & Domain Architecture
+
+The presentation layer is organized into six strictly segregated domain namespaces within `src/components/`, preventing monolithic accumulation in any single module:
+
+```text
+src/components/
+├── shell/          # Core IDE frame, activity chrome, and status
+│   ├── TopMenuBar.tsx, ActivityBar.tsx, StatusBar.tsx, TerminalPanel.tsx, ErrorBoundary.tsx
+├── editor/         # Monaco editor integration and workspace file navigation
+│   ├── CodeEditor.tsx, FileExplorer.tsx, WelcomeTab.tsx
+├── dbms/           # Specialized DBMS Studio vertical
+│   ├── SqlQueryPanel.tsx, TableDataEditor.tsx, DbObjectExplorer.tsx, DbConnectionPanel.tsx,
+│   └── DbPerformanceMonitor.tsx, DataExportWizard.tsx, SchemaVisualizer.tsx
+├── agents/         # AI orchestrator views, traces, and multi-agent sessions
+│   ├── MissionControl.tsx, AgentTraceDrawer.tsx, CollaborativeSessionModal.tsx,
+│   └── ShadowVerificationDrawer.tsx, SidecarInspectorModal.tsx, AnalyticsPanel.tsx
+├── modals/         # Dialogs, inspectors, tools, and centralized modal dispatcher
+│   ├── ModalHost.tsx (Centralized Dialog Registry), SettingsModal.tsx, ShortcutsModal.tsx,
+│   ├── CommandPalette.tsx, SearchModal.tsx, BranchManagerModal.tsx, DataLineageModal.tsx,
+│   ├── McpServerModal.tsx, DbMemoryModal.tsx, ExplainPlanModal.tsx, TableInspectorModal.tsx,
+│   ├── TableCreatorModal.tsx, SchemaDiffModal.tsx, HumanApprovalModal.tsx, etc.
+├── ui/             # Reusable UI primitives and notifications
+│   └── ToastProvider.tsx
+└── index.ts        # Comprehensive barrel export ensuring full backwards compatibility
+```
+
+---
+
+## 7. Decoupled Modal Management (`<ModalHost />`)
+
+To prevent the application root (`src/app/page.tsx`) from becoming an unwieldy "God Component", modal rendering is decoupled through a single dynamic dispatcher:
+
+- **State Model:** Rather than maintaining $18+$ separate boolean flags (`isSettingsOpen`, `isBranchManagerOpen`, etc.), the shell tracks a single active state:
+  ```typescript
+  const [activeModal, setActiveModal] = useState<ActiveModalState | null>(null);
+  ```
+- **ModalHost Component:** `src/components/modals/ModalHost.tsx` acts as the exclusive dialog host. It intercepts keyboard dismissals (`Escape`), manages backdrop overlays, passes required runtime props, and renders only the currently active dialog.
+- **Benefits:** Eliminates 300+ lines of clutter and state boilerplate from the root page, isolates modal render lifecycles, and makes adding new modals a 1-file change.
+
+---
+
+## 8. Single-Track Engineering Workflow (`TRACK.md`)
+
+To eliminate cognitive overload and task-jumping in a complex multi-disciplinary IDE, engineering execution adheres to the **Single-Track Protocol**:
+
+1. **WIP = 1:** Developers work on strictly **ONE** active task under `🟢 NOW` in [TRACK.md](file:///Users/alpha/Desktop/antigavity/DBC/TRACK.md).
+2. **Parking Lot Discipline:** Any unexpected issues, optimizations, or feature ideas discovered mid-task are recorded in the `🔴 PARKING LOT` and deferred until the active task is verified.
+3. **Vertical Slice Completion:** Features must be delivered end-to-end (Engine -> UI -> Tests -> Documentation) before advancing to the next queued item.
+
+

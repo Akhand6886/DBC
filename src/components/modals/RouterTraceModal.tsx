@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { AgentExecutionPlan } from '../lib/types';
+import { AgentExecutionPlan } from '../../lib/types';
 import { FileCode, X, Zap, Cpu, Clock, ShieldCheck, DollarSign, Check, Copy } from 'lucide-react';
 
 interface RouterTraceModalProps {

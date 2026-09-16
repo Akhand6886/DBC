@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RiskAssessment } from '../lib/db/queryFirewall';
-import { DryRunResult } from '../lib/db/transactionManager';
+import { RiskAssessment } from '../../lib/db/queryFirewall';
+import { DryRunResult } from '../../lib/db/transactionManager';
 import {
   ShieldAlert,
   AlertTriangle,

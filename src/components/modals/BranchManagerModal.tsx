@@ -5,7 +5,7 @@ import {
   dbBranchManager,
   DatabaseBranch,
   BranchDiff
-} from '../lib/sandbox/dbBranchManager';
+} from '../../lib/sandbox/dbBranchManager';
 import {
   GitBranch,
   GitMerge,

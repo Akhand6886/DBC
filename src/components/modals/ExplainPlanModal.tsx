@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { Activity, AlertCircle, CheckCircle2, Sparkles, X, PlusCircle, ArrowDown } from 'lucide-react';
-import { analyzeQueryPlan, PlanNode } from '../lib/db/explainAnalyzer';
+import { analyzeQueryPlan, PlanNode } from '../../lib/db/explainAnalyzer';
 
 interface ExplainPlanModalProps {
   query: string;

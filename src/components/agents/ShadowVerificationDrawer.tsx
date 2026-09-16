@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ShadowDiffCheck } from '../lib/types';
+import { ShadowDiffCheck } from '../../lib/types';
 import { ShieldCheck, RotateCcw, X, FileCode, CheckCircle2, AlertTriangle, Layers } from 'lucide-react';
 
 interface ShadowVerificationDrawerProps {

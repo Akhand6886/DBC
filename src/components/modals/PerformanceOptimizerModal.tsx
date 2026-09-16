@@ -5,7 +5,7 @@ import {
   agentOptimizer,
   PerformanceRecommendation,
   QueryOptimizationAnalysis
-} from '../lib/optimizer/agentPerformanceOptimizer';
+} from '../../lib/optimizer/agentPerformanceOptimizer';
 import {
   Zap,
   CheckCircle2,

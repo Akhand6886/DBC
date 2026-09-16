@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileNode } from '../lib/types';
+import { FileNode } from '../../lib/types';
 import { Search, Replace, FileCode, X, ArrowRight } from 'lucide-react';
 
 interface SearchModalProps {

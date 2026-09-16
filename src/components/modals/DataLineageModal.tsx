@@ -7,7 +7,7 @@ import {
   LineageEdge,
   LineageNodeType,
   BlastImpactAssessment
-} from '../lib/lineage/dataLineageEngine';
+} from '../../lib/lineage/dataLineageEngine';
 import {
   GitFork,
   X,

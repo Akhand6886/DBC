@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { RouterConfig } from '../lib/types';
+import { RouterConfig } from '../../lib/types';
 import { Sliders, Zap, Check, X, ShieldCheck, Cpu } from 'lucide-react';
 
 interface RouterConfigModalProps {

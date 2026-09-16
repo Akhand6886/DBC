@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Table, Key, Shield, Code, X, Copy, Check, Eye, Database } from 'lucide-react';
-import { realSqlDriver } from '../lib/db/sqlDriver';
+import { realSqlDriver } from '../../lib/db/sqlDriver';
 
 interface TableInspectorModalProps {
   tableName: string;

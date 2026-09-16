@@ -2,8 +2,8 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { FileNode, ShadowDiffCheck } from '../lib/types';
-import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../lib/monacoThemes';
+import { FileNode, ShadowDiffCheck } from '../../lib/types';
+import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../../lib/monacoThemes';
 import { X, Check, FileCode, ShieldAlert, Sparkles } from 'lucide-react';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {

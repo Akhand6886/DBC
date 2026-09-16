@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { rustSidecar, SymbolLocation } from '../lib/sidecar/astIndexer';
+import { rustSidecar, SymbolLocation } from '../../lib/sidecar/astIndexer';
 import { Cpu, Search, FileCode, ArrowRight, X, Layers, Database, Sparkles } from 'lucide-react';
 
 interface SidecarInspectorModalProps {

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Database, Link2Off, Check, AlertCircle, Plus, Trash2, Cpu } from 'lucide-react';
-import { driverRegistry } from '../lib/db/driverPluginApi';
+import { driverRegistry } from '../../lib/db/driverPluginApi';
 
 export interface DbConnection {
   id: string;

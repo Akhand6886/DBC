@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { GitCompare, AlertTriangle, ShieldCheck, Copy, Check, X, ArrowRight, Play } from 'lucide-react';
-import { computeSchemaDiff } from '../lib/db/schemaDiffer';
-import { realSqlDriver } from '../lib/db/sqlDriver';
+import { computeSchemaDiff } from '../../lib/db/schemaDiffer';
+import { realSqlDriver } from '../../lib/db/sqlDriver';
 
 interface SchemaDiffModalProps {
   onClose: () => void;

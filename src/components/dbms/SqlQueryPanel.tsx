@@ -3,16 +3,16 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode, ShieldAlert, ShieldCheck, RotateCcw } from 'lucide-react';
-import { TableCreatorModal } from './TableCreatorModal';
+import { TableCreatorModal } from '../modals/TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
-import { SchemaDiffModal } from './SchemaDiffModal';
-import { ExplainPlanModal } from './ExplainPlanModal';
-import { HumanApprovalModal } from './HumanApprovalModal';
-import { realSqlDriver, RealQueryResult } from '../lib/db/sqlDriver';
-import { queryFirewall, RiskAssessment } from '../lib/db/queryFirewall';
-import { transactionManager, RollbackSnapshot, DryRunResult } from '../lib/db/transactionManager';
-import { downloadExportFile, ExportOptions } from '../lib/db/dataExporter';
-import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../lib/monacoThemes';
+import { SchemaDiffModal } from '../modals/SchemaDiffModal';
+import { ExplainPlanModal } from '../modals/ExplainPlanModal';
+import { HumanApprovalModal } from '../modals/HumanApprovalModal';
+import { realSqlDriver, RealQueryResult } from '../../lib/db/sqlDriver';
+import { queryFirewall, RiskAssessment } from '../../lib/db/queryFirewall';
+import { transactionManager, RollbackSnapshot, DryRunResult } from '../../lib/db/transactionManager';
+import { downloadExportFile, ExportOptions } from '../../lib/db/dataExporter';
+import { EditorSettings, defineMonacoThemes, getMonacoThemeName } from '../../lib/monacoThemes';
 
 const Editor = dynamic(() => import('@monaco-editor/react').then(mod => mod.default), {
   ssr: false,

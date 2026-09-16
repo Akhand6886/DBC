@@ -2,7 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Trash2, Copy, Check } from 'lucide-react';
-import { clearPersistedWorkspace } from '../lib/workspacePersistence';
+import { clearPersistedWorkspace } from '../../lib/workspacePersistence';
 
 interface Props {
   children: ReactNode;

@@ -4,44 +4,33 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FileNode, ShadowDiffCheck, RouterConfig, AgentExecutionPlan, SystemMetrics } from '../lib/types';
 import { INITIAL_WORKSPACE } from '../lib/initialWorkspace';
 import { DEFAULT_ROUTER_CONFIG } from '../lib/router/intentClassifier';
-import { ActivityBar, ActivityView } from '../components/ActivityBar';
-import { FileExplorer } from '../components/FileExplorer';
-import { CodeEditor } from '../components/CodeEditor';
-import { TerminalPanel } from '../components/TerminalPanel';
-import { MissionControl } from '../components/MissionControl';
-import { AnalyticsPanel } from '../components/AnalyticsPanel';
-import { StatusBar } from '../components/StatusBar';
-import { SearchModal } from '../components/SearchModal';
-import { SettingsModal } from '../components/SettingsModal';
-import { ShadowVerificationDrawer } from '../components/ShadowVerificationDrawer';
-import { SidecarInspectorModal } from '../components/SidecarInspectorModal';
-import { BrowserPreviewModal } from '../components/BrowserPreviewModal';
-import { GitPanel } from '../components/GitPanel';
-import { CommandPalette, PaletteAction } from '../components/CommandPalette';
-import { WelcomeTab } from '../components/WelcomeTab';
-import { TopMenuBar } from '../components/TopMenuBar';
-import { useToast } from '../components/ToastProvider';
-import { RouterConfigModal } from '../components/RouterConfigModal';
-import { RouterTraceModal } from '../components/RouterTraceModal';
-import { ShortcutsModal } from '../components/ShortcutsModal';
-import { ErrorBoundary } from '../components/ErrorBoundary';
+import {
+  // Shell Domain
+  ActivityBar, ActivityView,
+  StatusBar,
+  TerminalPanel,
+  TopMenuBar,
+  ErrorBoundary,
+  // Editor Domain
+  CodeEditor,
+  FileExplorer,
+  WelcomeTab,
+  // DBMS Domain
+  DbConnectionPanel, DbConnection,
+  SqlQueryPanel,
+  DbPerformanceMonitor,
+  DbObjectExplorer,
+  TableDataEditor,
+  // Agents Domain
+  MissionControl,
+  AnalyticsPanel,
+  // Modals & UI Domain
+  ModalHost, ModalType, ActiveModalState,
+  PaletteAction,
+  useToast,
+} from '../components';
 import { loadPersistedWorkspace, savePersistedWorkspace, findFileNodeById, flattenFileNodes } from '../lib/workspacePersistence';
 import { byokClient } from '../lib/agent/byokClient';
-
-// DBMS Studio & Editor Imports
-import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
-import { SqlQueryPanel } from '../components/SqlQueryPanel';
-import { DbPerformanceMonitor } from '../components/DbPerformanceMonitor';
-import { TableInspectorModal } from '../components/TableInspectorModal';
-import { DbObjectExplorer } from '../components/DbObjectExplorer';
-import { TableDataEditor } from '../components/TableDataEditor';
-import { AgentTraceDrawer } from '../components/AgentTraceDrawer';
-import { DbMemoryModal } from '../components/DbMemoryModal';
-import { McpServerModal } from '../components/McpServerModal';
-import { DataLineageModal } from '../components/DataLineageModal';
-import { BranchManagerModal } from '../components/BranchManagerModal';
-import { PerformanceOptimizerModal } from '../components/PerformanceOptimizerModal';
-import { CollaborativeSessionModal } from '../components/CollaborativeSessionModal';
 
 import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame, Brain, Server, Share2, GitFork, TrendingUp, Users } from 'lucide-react';
 
@@ -55,27 +44,40 @@ export default function Home() {
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
   const [openFiles, setOpenFiles] = useState<FileNode[]>(initialFile ? [initialFile] : []);
   
-  // Modal & Drawer states
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-  const [isVerificationOpen, setIsVerificationOpen] = useState(false);
-  const [isSidecarOpen, setIsSidecarOpen] = useState(false);
-  const [isBrowserOpen, setIsBrowserOpen] = useState(false);
-  const [isGitOpen, setIsGitOpen] = useState(false);
-  const [isPaletteOpen, setIsPaletteOpen] = useState(false);
+  // Layout states
   const [showWelcome, setShowWelcome] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
-  const [isAgentTraceOpen, setIsAgentTraceOpen] = useState(false);
   const [selectedTraceSessionId, setSelectedTraceSessionId] = useState<string | undefined>(undefined);
-  const [isDbMemoryOpen, setIsDbMemoryOpen] = useState(false);
-  const [isMcpServerOpen, setIsMcpServerOpen] = useState(false);
-  const [isLineageOpen, setIsLineageOpen] = useState(false);
-  const [isBranchManagerOpen, setIsBranchManagerOpen] = useState(false);
-  const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
-  const [isCollabOpen, setIsCollabOpen] = useState(false);
+
+  // Unified Modal & Drawer State
+  const [activeModal, setActiveModal] = useState<ActiveModalState | null>(null);
+  const openModal = (type: ModalType, payload?: any) => setActiveModal({ type, payload });
+  const closeModal = () => setActiveModal(null);
+
+  // Modal helper aliases for backwards compatibility
+  const setIsSearchOpen = (open: boolean) => setActiveModal(open ? { type: 'search' } : null);
+  const setIsSettingsOpen = (open: boolean) => setActiveModal(open ? { type: 'settings' } : null);
+  const setIsShortcutsOpen = (open: boolean) => setActiveModal(open ? { type: 'shortcuts' } : null);
+  const setIsVerificationOpen = (open: boolean) => setActiveModal(open ? { type: 'verification' } : null);
+  const setIsSidecarOpen = (open: boolean) => setActiveModal(open ? { type: 'sidecar' } : null);
+  const setIsBrowserOpen = (open: boolean) => setActiveModal(open ? { type: 'browser' } : null);
+  const setIsGitOpen = (open: boolean) => setActiveModal(open ? { type: 'git' } : null);
+  const setIsPaletteOpen = (open: boolean) => setActiveModal(open ? { type: 'palette' } : null);
+  const setIsAgentTraceOpen = (open: boolean, sessionId?: string) => {
+    if (sessionId) setSelectedTraceSessionId(sessionId);
+    setActiveModal(open ? { type: 'agentTrace', payload: sessionId || selectedTraceSessionId } : null);
+  };
+  const setIsDbMemoryOpen = (open: boolean) => setActiveModal(open ? { type: 'dbMemory' } : null);
+  const setIsMcpServerOpen = (open: boolean) => setActiveModal(open ? { type: 'mcpServer' } : null);
+  const setIsLineageOpen = (open: boolean) => setActiveModal(open ? { type: 'dataLineage' } : null);
+  const setIsBranchManagerOpen = (open: boolean) => setActiveModal(open ? { type: 'branchManager' } : null);
+  const setIsOptimizerOpen = (open: boolean) => setActiveModal(open ? { type: 'optimizer' } : null);
+  const setIsCollabOpen = (open: boolean) => setActiveModal(open ? { type: 'collab' } : null);
+  const setIsRouterConfigOpen = (open: boolean) => setActiveModal(open ? { type: 'routerConfig' } : null);
+  const setIsRouterTraceOpen = (open: boolean) => setActiveModal(open ? { type: 'routerTrace' } : null);
+  const setInspectTable = (tableName: string | null) => setActiveModal(tableName ? { type: 'tableInspector', payload: tableName } : null);
 
   // BYOK Keys & Editor Settings State
   const [byokKeys, setByokKeys] = useState<{
@@ -100,7 +102,6 @@ export default function Home() {
   });
 
   // Table Inspector & Data Editor state
-  const [inspectTable, setInspectTable] = useState<string | null>(null);
   const [editingTable, setEditingTable] = useState<string | null>(null);
 
   // Database State
@@ -122,8 +123,6 @@ export default function Home() {
 
   // Router & UI State
   const [routerConfig, setRouterConfig] = useState<RouterConfig>(DEFAULT_ROUTER_CONFIG);
-  const [isRouterConfigOpen, setIsRouterConfigOpen] = useState(false);
-  const [isRouterTraceOpen, setIsRouterTraceOpen] = useState(false);
   const [showMissionControl, setShowMissionControl] = useState(false);
   const [showPerfMonitor, setShowPerfMonitor] = useState(false);
 
@@ -276,27 +275,25 @@ export default function Home() {
 
       // Escape: Dismiss active modal / drawer / inspector
       if (e.key === 'Escape') {
-        if (isPaletteOpen) setIsPaletteOpen(false);
-        else if (isShortcutsOpen) setIsShortcutsOpen(false);
-        else if (isSearchOpen) setIsSearchOpen(false);
-        else if (isSettingsOpen) setIsSettingsOpen(false);
-        else if (isVerificationOpen) setIsVerificationOpen(false);
-        else if (isSidecarOpen) setIsSidecarOpen(false);
-        else if (isBrowserOpen) setIsBrowserOpen(false);
-        else if (isGitOpen) setIsGitOpen(false);
-        else if (isRouterConfigOpen) setIsRouterConfigOpen(false);
-        else if (isRouterTraceOpen) setIsRouterTraceOpen(false);
-        else if (inspectTable) setInspectTable(null);
-        else if (editingTable) setEditingTable(null);
-        else if (isCollabOpen) setIsCollabOpen(false);
-        else if (showMissionControl) setShowMissionControl(false);
+        if (activeModal) {
+          setActiveModal(null);
+          return;
+        }
+        if (editingTable) {
+          setEditingTable(null);
+          return;
+        }
+        if (showMissionControl) {
+          setShowMissionControl(false);
+          return;
+        }
         return;
       }
 
       // ⌘/ or ⌘?: Keyboard Shortcuts Cheat Sheet
       if (mod && (key === '/' || key === '?')) {
         e.preventDefault();
-        setIsShortcutsOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'shortcuts' ? null : { type: 'shortcuts' }));
         return;
       }
 
@@ -325,7 +322,7 @@ export default function Home() {
       // ⌘P or ⌘K or ⌘⇧P: Command Palette / Quick Open
       if ((mod && key === 'p') || (mod && key === 'k')) {
         e.preventDefault();
-        setIsPaletteOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'palette' ? null : { type: 'palette' }));
         return;
       }
 
@@ -359,42 +356,42 @@ export default function Home() {
       // ⌘⇧K: Database Memory & Business Invariant Policies (P1)
       if (mod && e.shiftKey && key === 'k') {
         e.preventDefault();
-        setIsDbMemoryOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'dbMemory' ? null : { type: 'dbMemory' }));
         return;
       }
 
       // ⌘⇧M: MCP Server Protocol Hub (P1)
       if (mod && e.shiftKey && key === 'm') {
         e.preventDefault();
-        setIsMcpServerOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'mcpServer' ? null : { type: 'mcpServer' }));
         return;
       }
 
       // ⌘⇧L: Data Lineage & Downstream Blast Radius DAG (P2)
       if (mod && e.shiftKey && key === 'l') {
         e.preventDefault();
-        setIsLineageOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'dataLineage' ? null : { type: 'dataLineage' }));
         return;
       }
 
       // ⌘⌥B: Database Sandbox & Branch Manager (P2)
       if (mod && e.altKey && key === 'b') {
         e.preventDefault();
-        setIsBranchManagerOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'branchManager' ? null : { type: 'branchManager' }));
         return;
       }
 
       // ⌘⇧O: Agent Performance Optimizer (P2)
       if (mod && e.shiftKey && key === 'o') {
         e.preventDefault();
-        setIsOptimizerOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'optimizer' ? null : { type: 'optimizer' }));
         return;
       }
 
       // ⌘⌥C: Collaborative Agent Sessions (P3)
       if (mod && e.altKey && key === 'c') {
         e.preventDefault();
-        setIsCollabOpen(prev => !prev);
+        setActiveModal(prev => (prev?.type === 'collab' ? null : { type: 'collab' }));
         return;
       }
 
@@ -461,17 +458,7 @@ export default function Home() {
   }, [
     activeFile,
     activeView,
-    isPaletteOpen,
-    isShortcutsOpen,
-    isSearchOpen,
-    isSettingsOpen,
-    isVerificationOpen,
-    isSidecarOpen,
-    isBrowserOpen,
-    isGitOpen,
-    isRouterConfigOpen,
-    isRouterTraceOpen,
-    inspectTable,
+    activeModal,
     editingTable,
     showMissionControl,
     addToast
@@ -945,74 +932,32 @@ export default function Home() {
         onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
       />
 
-      {isSearchOpen && <SearchModal files={workspaceFiles} onSelectFile={handleSelectFile} onClose={() => setIsSearchOpen(false)} onReplaceAll={handleReplaceAll} />}
-      {isSettingsOpen && (
-        <SettingsModal
-          initialKeys={byokKeys}
-          initialSettings={editorSettings}
-          onClose={() => setIsSettingsOpen(false)}
-          onSaveSettings={handleSaveSettings}
-        />
-      )}
-      {isShortcutsOpen && <ShortcutsModal onClose={() => setIsShortcutsOpen(false)} />}
-      {isVerificationOpen && <ShadowVerificationDrawer history={shadowHistory} onRollback={handleRollbackSnapshot} onClose={() => setIsVerificationOpen(false)} />}
-      {isSidecarOpen && <SidecarInspectorModal onJumpToSymbol={handleJumpToSymbol} onClose={() => setIsSidecarOpen(false)} />}
-      {isBrowserOpen && <BrowserPreviewModal onClose={() => setIsBrowserOpen(false)} onLogTerminal={handleLogTerminal} />}
-      {isGitOpen && <GitPanel onClose={() => setIsGitOpen(false)} onLogTerminal={handleLogTerminal} />}
-      {isPaletteOpen && <CommandPalette actions={paletteActions} onClose={() => setIsPaletteOpen(false)} />}
-      {inspectTable && <TableInspectorModal tableName={inspectTable} onClose={() => setInspectTable(null)} />}
-      {isRouterConfigOpen && (
-        <RouterConfigModal
-          config={routerConfig}
-          onSaveConfig={(newCfg) => {
-            setRouterConfig(newCfg);
-            addToast('success', `Router threshold updated to ${newCfg.confidenceThreshold}%`);
-            handleLogTerminal(`[Router Config]: Fast-Path confidence threshold set to ${newCfg.confidenceThreshold}%`);
-          }}
-          onClose={() => setIsRouterConfigOpen(false)}
-        />
-      )}
-      {isRouterTraceOpen && (
-        <RouterTraceModal
-          plan={lastExecutionPlan}
-          onClose={() => setIsRouterTraceOpen(false)}
-        />
-      )}
-      <AgentTraceDrawer
-        isOpen={isAgentTraceOpen}
-        onClose={() => setIsAgentTraceOpen(false)}
-        selectedSessionId={selectedTraceSessionId}
-      />
-      <DbMemoryModal
-        isOpen={isDbMemoryOpen}
-        onClose={() => setIsDbMemoryOpen(false)}
-      />
-      <McpServerModal
-        isOpen={isMcpServerOpen}
-        onClose={() => setIsMcpServerOpen(false)}
-      />
-      <DataLineageModal
-        isOpen={isLineageOpen}
-        onClose={() => setIsLineageOpen(false)}
-      />
-      <BranchManagerModal
-        isOpen={isBranchManagerOpen}
-        onClose={() => setIsBranchManagerOpen(false)}
+      <ModalHost
+        activeModal={activeModal}
+        onClose={closeModal}
+        workspaceFiles={workspaceFiles}
+        onSelectFile={handleSelectFile}
+        onReplaceAll={handleReplaceAll}
+        byokKeys={byokKeys}
+        editorSettings={editorSettings}
+        onSaveSettings={handleSaveSettings}
+        paletteActions={paletteActions}
+        shadowHistory={shadowHistory}
+        onRollbackSnapshot={handleRollbackSnapshot}
+        onJumpToSymbol={handleJumpToSymbol}
+        routerConfig={routerConfig}
+        onSaveRouterConfig={(newCfg) => {
+          setRouterConfig(newCfg);
+          addToast('success', `Router threshold updated to ${newCfg.confidenceThreshold}%`);
+          handleLogTerminal(`[Router Config]: Fast-Path confidence threshold set to ${newCfg.confidenceThreshold}%`);
+        }}
+        lastExecutionPlan={lastExecutionPlan || undefined}
         onLogTerminal={handleLogTerminal}
-      />
-      <PerformanceOptimizerModal
-        isOpen={isOptimizerOpen}
-        onClose={() => setIsOptimizerOpen(false)}
-        onApplySql={(sql) => {
+        onApplyOptimizerSql={(sql) => {
           handleLogTerminal(`[Optimizer Patch Applied]: ${sql}`);
           addToast('success', 'Applied query optimization patch');
         }}
-        onLogTerminal={handleLogTerminal}
-      />
-      <CollaborativeSessionModal
-        isOpen={isCollabOpen}
-        onClose={() => setIsCollabOpen(false)}
-        onExecuteSql={(sql) => {
+        onExecuteCollabSql={(sql) => {
           handleLogTerminal(`[Collab Studio Executed]: ${sql}`);
           addToast('success', 'Executed proposal from council session');
           window.dispatchEvent(new CustomEvent('dbc-execute-sql', { detail: { sql } }));

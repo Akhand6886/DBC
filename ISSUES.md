@@ -67,4 +67,11 @@
 ### Partition 7: Modal & AI Components (Status: ✅ Clean)
 - Files: `MissionControl`, `SettingsModal`, `GitPanel`, etc.
 - **Issue 7 (continued)**: [SettingsModal.tsx:208-233](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx#L208-L233) — ✅ Fixed (Themes defined in Monaco engine and synced to `data-theme` on document root)
-- **NVIDIA NIM BYOK**: [SettingsModal.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SettingsModal.tsx) & [MissionControl.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/MissionControl.tsx) — Added direct support for NVIDIA NIM Moonshot Kimi-K3 reasoning model.
+- **NVIDIA NIM BYOK**: [SettingsModal.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/modals/SettingsModal.tsx) & [MissionControl.tsx](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx) — Added direct support for NVIDIA NIM Moonshot Kimi-K3 reasoning model.
+
+### Partition 8: Domain Restructuring & Modal Decoupling (Status: ✅ Complete)
+- **Domain Reorganization**: Grouped 40 component files into 6 domains (`shell/`, `editor/`, `dbms/`, `agents/`, `modals/`, `ui/`) with a backwards-compatible `src/components/index.ts` barrel export.
+- **Modal Decoupling (`ModalHost.tsx`)**: Consolidated 18 individual `useState(false)` flags in `src/app/page.tsx` into a single `activeModal` dispatcher and `<ModalHost />` component, eliminating 300+ lines of clutter.
+- **Single-Track Focus Anchor (`TRACK.md`)**: Instituted the `WIP = 1` Single-Track development protocol and idea parking lot.
+- **Verification**: Zero TypeScript errors (`npx tsc --noEmit`) and 108/108 automated subsystem tests passing.
+

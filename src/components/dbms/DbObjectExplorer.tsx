@@ -17,7 +17,7 @@ import {
   Search,
   X
 } from 'lucide-react';
-import { realSqlDriver } from '../lib/db/sqlDriver';
+import { realSqlDriver } from '../../lib/db/sqlDriver';
 import { DbConnection } from './DbConnectionPanel';
 
 interface DbObjectExplorerProps {

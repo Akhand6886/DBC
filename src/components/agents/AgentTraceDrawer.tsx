@@ -6,7 +6,7 @@ import {
   TraceSession,
   TraceStep,
   StepType
-} from '../lib/agent/agentTrace';
+} from '../../lib/agent/agentTrace';
 import {
   Activity,
   X,

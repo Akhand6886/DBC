@@ -7,10 +7,10 @@ import {
   RouterConfig,
   AgentExecutionPlan,
   ChatMessage
-} from '../lib/types';
-import { previewDeveloperIntent, executeRoutedPrompt } from '../lib/router/routerEngine';
-import { DEFAULT_ROUTER_CONFIG } from '../lib/router/intentClassifier';
-import { dbAgentRuntime } from '../lib/agent/dbAgentRuntime';
+} from '../../lib/types';
+import { previewDeveloperIntent, executeRoutedPrompt } from '../../lib/router/routerEngine';
+import { DEFAULT_ROUTER_CONFIG } from '../../lib/router/intentClassifier';
+import { dbAgentRuntime } from '../../lib/agent/dbAgentRuntime';
 import {
   Bot,
   Send,
@@ -40,9 +40,9 @@ import {
   GitBranch,
   Users
 } from 'lucide-react';
-import { specializedAgents, AgentPersonaId, SPECIALIZED_PERSONAS } from '../lib/agent/specializedAgents';
-import { dbMemory } from '../lib/db/dbMemory';
-import { dbBranchManager } from '../lib/sandbox/dbBranchManager';
+import { specializedAgents, AgentPersonaId, SPECIALIZED_PERSONAS } from '../../lib/agent/specializedAgents';
+import { dbMemory } from '../../lib/db/dbMemory';
+import { dbBranchManager } from '../../lib/sandbox/dbBranchManager';
 
 interface MissionControlProps {
   activeFilePath?: string;

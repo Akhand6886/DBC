@@ -10,7 +10,7 @@ import {
   ResourceLock,
   SessionEvent,
   ChatMessage
-} from '../lib/collaboration/collaborativeSession';
+} from '../../lib/collaboration/collaborativeSession';
 
 interface CollaborativeSessionModalProps {
   isOpen: boolean;

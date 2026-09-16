@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Download, X, Check, FileSpreadsheet, FileJson, Database, FileText, Code } from 'lucide-react';
-import { ExportOptions } from '../lib/db/dataExporter';
+import { ExportOptions } from '../../lib/db/dataExporter';
 
 interface DataExportWizardProps {
   onClose: () => void;

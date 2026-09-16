@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FileNode } from '../lib/types';
+import { FileNode } from '../../lib/types';
 import { Folder, FolderOpen, FileCode, FileText, Plus, Trash2, ChevronRight, ChevronDown, Edit2, Copy, FilePlus, FolderPlus } from 'lucide-react';
 
 interface FileExplorerProps {

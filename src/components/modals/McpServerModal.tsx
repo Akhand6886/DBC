@@ -14,7 +14,7 @@ import {
   ExternalLink,
   Code2
 } from 'lucide-react';
-import { MCP_SERVER_INFO } from '../lib/mcp/mcpServer';
+import { MCP_SERVER_INFO } from '../../lib/mcp/mcpServer';
 
 interface McpServerModalProps {
   isOpen: boolean;

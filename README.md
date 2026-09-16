@@ -496,3 +496,50 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 npm run build
 npm start
 ```
+
+---
+
+# 📁 Codebase Architecture & Directory Map
+
+The presentation and runtime layers are structured into clean, modular domain boundaries:
+
+```text
+DBC/
+├── TRACK.md                     # Single-Track Engineering Workflow Anchor (WIP=1)
+├── ISSUES.md                    # Inspection findings & issue tracker
+├── docs/                        # Architecture blueprints & roadmaps
+├── scripts/                     # Automated subsystem validation suites (108 tests)
+└── src/
+    ├── app/
+    │   ├── layout.tsx           # Global shell & ToastProvider
+    │   ├── page.tsx             # Lean layout coordinator (< 300 lines)
+    │   └── globals.css          # Theme tokens & typography
+    ├── components/
+    │   ├── shell/               # Core IDE chrome (TopMenuBar, StatusBar, TerminalPanel)
+    │   ├── editor/              # Code workspace (CodeEditor, FileExplorer, WelcomeTab)
+    │   ├── dbms/                # DBMS Studio (SqlQueryPanel, TableDataEditor, etc.)
+    │   ├── agents/              # Multi-agent studio (MissionControl, AgentTraceDrawer, etc.)
+    │   ├── modals/              # ModalHost.tsx centralized dispatcher & dialogs
+    │   ├── ui/                  # Notification primitives (ToastProvider)
+    │   └── index.ts             # Backwards-compatible barrel export
+    └── lib/
+        ├── agent/               # ReAct runtime, specialized personas, BYOK client
+        ├── db/                  # SQL driver, query firewall, transaction rollback
+        ├── router/              # Intent classifier & deterministic engine
+        ├── sandbox/             # Branch manager & isolated databases
+        ├── lineage/             # AST query parser & dependency DAG
+        ├── collaboration/       # Multi-agent council, distributed locks, consensus
+        ├── mcp/                 # Model Context Protocol JSON-RPC 2.0 server
+        └── optimizer/           # B-Tree index advisor & benchmark simulator
+```
+
+---
+
+# 🎯 Engineering Workflow & Single-Track Protocol
+
+To prevent cognitive fragmentation and context-switching, this repository adheres to the **Single-Track Protocol** documented in [TRACK.md](file:///Users/alpha/Desktop/antigavity/DBC/TRACK.md):
+
+1. **WIP = 1:** Developers and agents work on strictly **ONE** task at a time under `🟢 NOW`.
+2. **Parking Lot Discipline:** Any auxiliary ideas or bugs discovered while working are added to the `🔴 PARKING LOT` and deferred.
+3. **No Redundant Full Builds:** Intermediate checks use `npx tsc --noEmit` and targeted test scripts. Full builds are only run for release verification.
+

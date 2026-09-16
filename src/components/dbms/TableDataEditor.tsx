@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Table, Plus, Trash2, Save, ArrowUpDown, Search, X, Inbox } from 'lucide-react';
-import { realSqlDriver } from '../lib/db/sqlDriver';
+import { realSqlDriver } from '../../lib/db/sqlDriver';
 
 interface TableDataEditorProps {
   tableName: string;

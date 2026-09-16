@@ -1,5 +1,5 @@
 import { FileNode } from './types';
-import { DbConnection } from '../components/DbConnectionPanel';
+import { DbConnection } from '../components/dbms/DbConnectionPanel';
 
 const STORAGE_KEY = 'dbc_workspace_state_v1';
 
