@@ -156,7 +156,7 @@ export const AgentTraceDrawer: React.FC<AgentTraceDrawerProps> = ({
           <div className="bg-[#252526] border border-[#333333] rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold text-white truncate max-w-sm">
-                "{currentSession.prompt}"
+                &quot;{currentSession.prompt}&quot;
               </span>
               <span className="px-2 py-0.5 rounded text-[11px] font-mono uppercase font-semibold bg-emerald-900/50 text-emerald-300 border border-emerald-500/30">
                 {currentSession.status}
