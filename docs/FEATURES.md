@@ -164,3 +164,85 @@ Score >= Threshold      Score < Threshold
 - **Workspace State Persistence (`workspacePersistence.ts`):** Debounced auto-save and hydration of workspace file modifications, active file tabs, database connections, and custom configurations using structured local storage caching.
 - **Electron Security Hardening (`electron/main.js`):** Restricts navigation to trusted local protocols (`app://`, `http://localhost:3000`), denies unauthorized window creation, exposes sandboxed contextBridge APIs, and enables secure scheme privileges.
 - **Automated Linting Compliance (`.eslintrc.json`):** Verified Next.js core web vitals and React hooks rules with zero linting warnings or errors.
+
+---
+
+### 12. Agent Runtime, Typed DB Tools & Query Firewall (🔴 P0)
+- **Typed DB Tool Contracts (`src/lib/agent/dbAgentTypes.ts`):** 7 typed tools with parameter validation: `introspect_schema`, `sample_table_data`, `execute_query`, `explain_query`, `suggest_indexes`, `generate_migration`, and `validate_syntax`.
+- **Autonomous ReAct Agent Runtime (`src/lib/agent/dbAgentRuntime.ts`):** Multi-turn ReAct execution loop cycling through `Thought -> Action -> Observation -> Final Answer` with structured tool calling and execution logging.
+- **Query Firewall & Risk Engine (`src/lib/db/queryFirewall.ts`):**
+  - Continuous risk scoring (0 to 100) across safety tiers: `SAFE`, `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL`.
+  - Structural AST parsing catching tautological `WHERE 1=1` conditions, unconstrained `DELETE`/`UPDATE` operations, and destructive schema operations (`DROP TABLE`, `TRUNCATE`).
+  - Blast radius estimation computing affected tables, projected row mutations, and schema impact.
+- **Virtual Transaction Simulation & Inverted Rollback Engine (`src/lib/db/transactionManager.ts`):**
+  - Dry-run simulation estimating exact mutation impact before touching disk.
+  - Automated inverted rollback SQL generator synthesizing inverse DML operations (`DELETE` for `INSERT`, inverted `UPDATE`, inverse `INSERT` for `DELETE`).
+  - Point-in-time snapshot restoration stack (`restoreSnapshot`).
+  - `HumanApprovalModal` safety gate requiring exact `CONFIRM` typing for `CRITICAL` risk operations.
+- **Agent Observability Trace & Latency Flamegraph (`src/lib/agent/agentTrace.ts` & `AgentTraceDrawer.tsx`):**
+  - Full-fidelity trace logger recording every step duration, input arguments, tool observations, and thought process.
+  - Interactive flamegraph drawer (`⌘⇧T`) with step-level latency breakdown and JSON trace export.
+
+---
+
+### 13. Database Memory, Specialized Personas & MCP Server (🟠 P1)
+- **Database Memory & Business Invariant Policies (`src/lib/db/dbMemory.ts` & `DbMemoryModal.tsx`):**
+  - **Domain Invariant Rules:** Mandatory and recommended business rules (e.g. `rule-admin-protect`, `rule-soft-delete`, `rule-unbounded-select`).
+  - **Semantic Dictionary:** Annotates tables and columns with domain meaning, business ownership teams, and compliance tags (`isPii: true`).
+  - **Learned Query Patterns:** Automatically tracks and indexes common join keys, frequent filter predicates, and verified composite indexes.
+  - **Semantic Context Injection:** Dynamically injects relevant business invariants directly into agent prompts.
+  - Accessible via `⌘⇧K`.
+- **4 Specialized Database Agent Personas (`src/lib/agent/specializedAgents.ts`):**
+  - ⚡ **DBA Optimizer (`dba_optimizer`):** Focuses on query plan analysis, B-Tree index synthesis, and buffer cache optimization.
+  - 🏗️ **Schema Architect (`schema_architect`):** Focuses on zero-downtime migrations (`UP`/`DOWN`), 3NF normalization, and constraint integrity.
+  - 📊 **Data Analyst (`data_analyst`):** Focuses on multi-table aggregations, window functions, and cohort analysis.
+  - 🛡️ **Security Auditor (`security_auditor`):** Focuses on query firewall policies, PII protection, and SQL injection vulnerability audits.
+- **Model Context Protocol (MCP) Server (`src/lib/mcp/mcpServer.ts` & `app/api/mcp/route.ts`):**
+  - Standards-compliant JSON-RPC 2.0 protocol endpoint at `/api/mcp` for direct integration into Claude Desktop, Cursor, and external LLM IDEs (`⌘⇧M`).
+  - Declares 6 typed tools (`dbc_execute_query`, `dbc_introspect_schema`, `dbc_explain_query`, `dbc_suggest_indexes`, `dbc_generate_migration`, `dbc_get_business_memory`) and resources (`db://schema`, `db://memory`).
+- **Universal Driver / Plugin Architecture (`src/lib/db/driverPluginApi.ts`):**
+  - Extensible driver interface with capability matrix (`isColumnarOLAP`, `supportsTransactions`, `supportsExplainAnalyze`, `supportsIndexAdvisor`).
+  - Built-in adapters: SQLite, DuckDB (columnar OLAP), PostgreSQL, and MySQL.
+
+---
+
+### 14. Data Lineage, Database Sandboxing & Performance Optimizer (🟡 P2)
+- **Relational Data Lineage Engine (`src/lib/lineage/dataLineageEngine.ts` & `DataLineageModal.tsx`):**
+  - Directed Acyclic Graph (DAG) connecting tables, views, downstream executive reports, and ETL pipeline jobs (`⌘⇧L`).
+  - SQL AST lineage parser (`parseSqlLineage`) extracting source tables, target objects, and transformation types (`JOIN`, `AGGREGATE`, `FILTER`, `FOREIGN_KEY`).
+  - Downstream blast radius impact evaluation (`analyzeBlastImpact`) flagging breaking changes and remediation paths before executing DDL.
+- **Database Sandboxing & Copy-on-Write Branch Execution (`src/lib/sandbox/dbBranchManager.ts` & `BranchManagerModal.tsx`):**
+  - Git-like copy-on-write isolated database branching (`main`, `sandbox/*`, `feature/*`) (`⌘⌥B`).
+  - Zero-risk speculative sandboxing (`executeInSandbox`) ensuring `main` remains untouched during agent experiments.
+  - Branch schema and row count diffing (`diffBranches`) and 1-click merge into `main` (`mergeBranch`).
+- **Agent Performance Optimizer & Index Advisor (`src/lib/optimizer/agentPerformanceOptimizer.ts` & `PerformanceOptimizerModal.tsx`):**
+  - Sequential scan bottleneck detector flagging unindexed filter predicates (`⌘⇧O`).
+  - Automated index advisor synthesizing B-Tree composite indexes.
+  - Query rewrite planner flattening nested subqueries into hash joins.
+  - Virtual benchmark simulator measuring latency drops (ms) and buffer read reductions.
+
+---
+
+### 15. Collaborative Multi-Agent Sessions & Governance Council (🟢 P3)
+- **Collaborative Session Workspace (`src/lib/collaboration/collaborativeSession.ts` & `CollaborativeSessionModal.tsx`):**
+  - Multi-agent rooms hosting human operator + all 4 specialized AI agents with live presence dots (`ONLINE`, `THINKING`, `BUSY`) (`⌘⌥C`).
+  - Unified turn-taking chat timeline with mention parser (`@dba`, `@architect`, `@analyst`, `@security`) triggering autonomous expert replies.
+- **Agent-to-Agent Delegation Bus:**
+  - Structured sub-task handoffs between specialists with typed payloads and autonomous `DelegationVerdict` return objects (`approved`, `confidence`, `findings`).
+- **Cooperative Distributed Lock Manager:**
+  - Resource locks (`EXCLUSIVE_WRITE`, `SHARED_READ`) on tables and schemas preventing concurrent write collisions.
+  - Automatic TTL expiration and 1-click lock release.
+- **Peer Review Consensus Engine:**
+  - Structured SQL proposal cards with multi-agent voting thresholds (e.g. 2 peer sign-offs) before 1-click execution.
+- **Shared Blackboard Scratchpad & Event Sourcing Replay Engine:**
+  - Shared collaborative markdown scratchpad for joint hypotheses and migration checklists.
+  - Chronological immutable event store recording all actions, delegations, locks, and proposals with JSON archive export.
+
+---
+
+### 16. Exhaustive Automated Test Verification (108 / 108 Tests)
+- **🔴 P0 Test Suite (`scripts/test-p0-subsystems.ts`):** 25/25 tests passing (Tools, ReAct runtime, Query Firewall, Transactions, Traces).
+- **🟠 P1 Test Suite (`scripts/test-p1-subsystems.ts`):** 27/27 tests passing (Database Memory, 4 Personas, MCP Server, Driver Plugin Matrix).
+- **🟡 P2 Test Suite (`scripts/test-p2-subsystems.ts`):** 25/25 tests passing (Lineage DAG, Blast Radius, Sandbox Branching, Optimizer).
+- **🟢 P3 Test Suite (`scripts/test-p3-subsystems.ts`):** 31/31 tests passing (Council Rooms, Delegation Bus, Lock Manager, Consensus, Event Replay).
+- **Grand Total:** **108 / 108 tests passing (100%)** with clean Next.js production builds (`npm run build`).
