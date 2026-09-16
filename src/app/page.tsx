@@ -753,6 +753,8 @@ export default function Home() {
           setActiveView('database');
           setEditingTable(null);
         }}
+        onOpenDbMemory={() => setIsDbMemoryOpen(true)}
+        onOpenMcpServer={() => setIsMcpServerOpen(true)}
       />
 
       <div className="flex-1 flex overflow-hidden">
@@ -876,6 +878,8 @@ export default function Home() {
                 setSelectedTraceSessionId(sessionId);
                 setIsAgentTraceOpen(true);
               }}
+              onOpenDbMemory={() => setIsDbMemoryOpen(true)}
+              onOpenMcpServer={() => setIsMcpServerOpen(true)}
               onClose={() => setShowMissionControl(false)}
               onLogTerminal={handleLogTerminal}
             />
@@ -929,6 +933,14 @@ export default function Home() {
         isOpen={isAgentTraceOpen}
         onClose={() => setIsAgentTraceOpen(false)}
         selectedSessionId={selectedTraceSessionId}
+      />
+      <DbMemoryModal
+        isOpen={isDbMemoryOpen}
+        onClose={() => setIsDbMemoryOpen(false)}
+      />
+      <McpServerModal
+        isOpen={isMcpServerOpen}
+        onClose={() => setIsMcpServerOpen(false)}
       />
       </div>
     </ErrorBoundary>
