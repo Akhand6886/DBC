@@ -20,6 +20,8 @@ interface TopMenuBarProps {
   onOpenShortcuts?: () => void;
   onRunTests?: () => void;
   onOpenDatabase?: () => void;
+  onOpenDbMemory?: () => void;
+  onOpenMcpServer?: () => void;
 }
 
 export const TopMenuBar: React.FC<TopMenuBarProps> = ({
@@ -39,6 +41,8 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
   onOpenShortcuts,
   onRunTests,
   onOpenDatabase,
+  onOpenDbMemory,
+  onOpenMcpServer,
 }) => {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
 
@@ -212,6 +216,18 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
                 <button onClick={() => handleAction(onOpenDatabase)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-cyan-300">
                   <span>Switch to DBMS Studio</span>
                   <span className="text-[10px] text-slate-400">DB</span>
+                </button>
+              )}
+              {onOpenDbMemory && (
+                <button onClick={() => handleAction(onOpenDbMemory)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-emerald-300">
+                  <span>Database Memory & Rules</span>
+                  <span className="text-[10px] text-slate-400">⌘⇧K</span>
+                </button>
+              )}
+              {onOpenMcpServer && (
+                <button onClick={() => handleAction(onOpenMcpServer)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between text-purple-300">
+                  <span>MCP Server Protocol Hub</span>
+                  <span className="text-[10px] text-slate-400">⌘⇧M</span>
                 </button>
               )}
             </div>
