@@ -37,7 +37,8 @@ import {
   Brain,
   Server,
   Share2,
-  GitBranch
+  GitBranch,
+  Users
 } from 'lucide-react';
 import { specializedAgents, AgentPersonaId, SPECIALIZED_PERSONAS } from '../lib/agent/specializedAgents';
 import { dbMemory } from '../lib/db/dbMemory';
@@ -58,6 +59,7 @@ interface MissionControlProps {
   onOpenLineage?: () => void;
   onOpenBranchManager?: () => void;
   onOpenOptimizer?: () => void;
+  onOpenCollab?: () => void;
   onClose?: () => void;
   onLogTerminal?: (msg: string) => void;
 }
@@ -68,7 +70,7 @@ const INITIAL_GREETING: ChatMessage = {
   id: 'msg-welcome',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   role: 'assistant',
-  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P2 Full Autonomous DBMS Studio Mode** with **Lineage, Branching & Optimization**:\n- **Data Lineage DAG (⌘⇧L)**: Column-level pipeline tracking & downstream blast radius evaluation.\n- **Database Sandboxing (⌘⌥B)**: Isolated copy-on-write branches with zero-risk agent mutation testing.\n- **Agent Performance Optimizer (⌘⇧O)**: Automated sequential scan detection and index advisor.\n- **Specialized DB Personas**: DBA Optimizer, Schema Architect, Data Analyst, Security Auditor.\n- **Query Firewall & MCP**: Real-time risk gate, rollback stack, and external Claude Desktop connectivity.\n\nChoose an agent persona or click a trigger below to begin!`,
+  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P3 Collaborative DBMS Studio Mode**:\n- **Collaborative Agent Sessions (⌘⌥C)**: Multi-agent rooms, delegation handoffs, distributed locks & consensus.\n- **Data Lineage DAG (⌘⇧L)**: Column-level pipeline tracking & downstream blast radius evaluation.\n- **Database Sandboxing (⌘⌥B)**: Isolated copy-on-write branches with zero-risk agent mutation testing.\n- **Agent Performance Optimizer (⌘⇧O)**: Automated sequential scan detection and index advisor.\n- **Specialized DB Personas**: DBA Optimizer, Schema Architect, Data Analyst, Security Auditor.\n- **Query Firewall & MCP**: Real-time risk gate, rollback stack, and external Claude Desktop connectivity.\n\nChoose an agent persona or click a trigger below to begin!`,
   status: 'success'
 };
 
@@ -87,6 +89,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   onOpenLineage,
   onOpenBranchManager,
   onOpenOptimizer,
+  onOpenCollab,
   onClose,
   onLogTerminal,
 }) => {
@@ -367,6 +370,17 @@ export const MissionControl: React.FC<MissionControlProps> = ({
               className="p-1 hover:bg-[#3c3c3c] rounded text-yellow-400 hover:text-yellow-300 transition"
             >
               <Zap className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* P3 Collaborative Sessions */}
+          {onOpenCollab && (
+            <button
+              onClick={onOpenCollab}
+              title="Multi-Agent Collaborative Sessions Studio (⌘⌥C)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-emerald-400 hover:text-emerald-300 transition flex items-center gap-1"
+            >
+              <Users className="h-3.5 w-3.5" />
             </button>
           )}
 
