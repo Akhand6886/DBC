@@ -38,8 +38,11 @@ import { TableDataEditor } from '../components/TableDataEditor';
 import { AgentTraceDrawer } from '../components/AgentTraceDrawer';
 import { DbMemoryModal } from '../components/DbMemoryModal';
 import { McpServerModal } from '../components/McpServerModal';
+import { DataLineageModal } from '../components/DataLineageModal';
+import { BranchManagerModal } from '../components/BranchManagerModal';
+import { PerformanceOptimizerModal } from '../components/PerformanceOptimizerModal';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame, Brain, Server } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame, Brain, Server, Share2, GitFork, TrendingUp } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -68,6 +71,9 @@ export default function Home() {
   const [selectedTraceSessionId, setSelectedTraceSessionId] = useState<string | undefined>(undefined);
   const [isDbMemoryOpen, setIsDbMemoryOpen] = useState(false);
   const [isMcpServerOpen, setIsMcpServerOpen] = useState(false);
+  const [isLineageOpen, setIsLineageOpen] = useState(false);
+  const [isBranchManagerOpen, setIsBranchManagerOpen] = useState(false);
+  const [isOptimizerOpen, setIsOptimizerOpen] = useState(false);
 
   // BYOK Keys & Editor Settings State
   const [byokKeys, setByokKeys] = useState<{
