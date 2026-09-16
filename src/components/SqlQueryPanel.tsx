@@ -144,6 +144,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
       }
       window.removeEventListener('dbc-execute-sql', handleGlobalExec);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, onRegisterExecute]);
 
   const handleCellDoubleClick = (rowIdx: number, colName: string) => {
@@ -360,6 +361,93 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             )}
           </div>
 
+          {/* Transactions & 1-Click Rollback Dropdown */}
+          <div className="relative">
+            {isTransactionsOpen && (
+              <div
+                className="fixed inset-0 z-20 bg-transparent cursor-default"
+                onClick={() => setIsTransactionsOpen(false)}
+              />
+            )}
+            <button
+              onClick={() => {
+                setIsTransactionsOpen(!isTransactionsOpen);
+                setIsToolsMenuOpen(false);
+                setIsExportMenuOpen(false);
+              }}
+              className="text-slate-300 hover:text-white px-2 sm:px-3 py-1.5 rounded-lg hover:bg-[#2d2d2d] border border-[#3c3c3c] flex items-center space-x-1 sm:space-x-1.5 transition-all active:scale-95 text-[11px] relative z-20"
+            >
+              <RotateCcw className="h-3.5 w-3.5 text-blue-400" />
+              <span className="hidden sm:inline">Rollbacks</span>
+              {rollbackHistory.length > 0 && (
+                <span className="bg-blue-500/30 text-blue-300 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                  {rollbackHistory.length}
+                </span>
+              )}
+            </button>
+
+            {isTransactionsOpen && (
+              <div className="absolute right-0 mt-1.5 w-80 bg-[#252526] border border-[#3c3c3c] rounded-xl shadow-2xl p-2 z-30 space-y-1.5 max-h-72 overflow-y-auto">
+                <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-[#333333] flex justify-between items-center">
+                  <span>Transaction Undo Snapshots</span>
+                  <span className="text-blue-400">{rollbackHistory.length} recorded</span>
+                </div>
+                {rollbackHistory.length === 0 ? (
+                  <div className="p-3 text-center text-slate-500 text-[11px]">
+                    No mutating transactions yet. Snapshots are auto-recorded on UPDATE/DELETE/DDL.
+                  </div>
+                ) : (
+                  rollbackHistory.map((snap) => (
+                    <div key={snap.id} className="p-2 rounded bg-[#1e1e1e] border border-[#333333] space-y-1">
+                      <div className="flex justify-between items-center text-[10px]">
+                        <span className="font-mono text-slate-400">{snap.timestamp}</span>
+                        <span className={`px-1.5 py-0.5 rounded font-bold text-[9px] ${
+                          snap.status === 'ROLLED_BACK' ? 'bg-amber-900/50 text-amber-300' : 'bg-emerald-900/50 text-emerald-300'
+                        }`}>
+                          {snap.status}
+                        </span>
+                      </div>
+                      <div className="font-mono text-slate-200 truncate text-[11px]">
+                        {snap.description}
+                      </div>
+                      <div className="flex justify-between items-center pt-1 border-t border-[#2a2a2a] text-[10px]">
+                        <span className="text-slate-400">{snap.affectedRowCount} row(s) affected</span>
+                        {snap.status !== 'ROLLED_BACK' && (
+                          <button
+                            onClick={() => handleRollbackSnapshot(snap.id)}
+                            className="px-2 py-0.5 rounded bg-blue-600 hover:bg-blue-500 text-white font-medium flex items-center gap-1 text-[10px] transition"
+                          >
+                            <RotateCcw className="w-2.5 h-2.5" /> Rollback
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Live Query Firewall Risk Score Badge */}
+          {liveRisk && (
+            <div
+              title={liveRisk.violations.join(' ') || liveRisk.warnings.join(' ') || 'Safe query'}
+              className={`px-2 py-1 rounded-lg text-[10px] font-semibold flex items-center gap-1 border transition-all ${
+                liveRisk.level === 'CRITICAL' ? 'bg-red-900/40 text-red-300 border-red-500/40' :
+                liveRisk.level === 'HIGH' ? 'bg-amber-900/40 text-amber-300 border-amber-500/40' :
+                liveRisk.level === 'MEDIUM' ? 'bg-yellow-900/40 text-yellow-300 border-yellow-500/40' :
+                'bg-emerald-900/30 text-emerald-300 border-emerald-500/30'
+              }`}
+            >
+              {liveRisk.level === 'SAFE' || liveRisk.level === 'LOW' ? (
+                <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <ShieldAlert className="w-3 h-3 text-amber-400" />
+              )}
+              <span className="hidden sm:inline">Firewall:</span> {liveRisk.level} ({liveRisk.score})
+            </div>
+          )}
+
           {/* Primary Action Button: Run Query */}
           <button
             onClick={() => handleExecuteQuery()}
@@ -518,6 +606,20 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         <DataExportWizard
           onClose={() => setIsExportOpen(false)}
           onExport={(options) => handleExportFormat(options.format)}
+        />
+      )}
+
+      {/* Human Approval Gate Modal */}
+      {pendingApproval && (
+        <HumanApprovalModal
+          assessment={pendingApproval.assessment}
+          dryRunResult={pendingApproval.dryRunResult}
+          onApprove={() => {
+            const sql = pendingApproval.sqlToExecute;
+            setPendingApproval(null);
+            handleExecuteQuery(sql, true);
+          }}
+          onReject={() => setPendingApproval(null)}
         />
       )}
     </div>
