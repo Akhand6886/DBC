@@ -76,11 +76,14 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   onOpenRouterConfig,
   onOpenRouterTrace,
   onOpenAgentTrace,
+  onOpenDbMemory,
+  onOpenMcpServer,
   onClose,
   onLogTerminal,
 }) => {
   const [prompt, setPrompt] = useState('');
   const [provider, setProvider] = useState<LLMProvider>('anthropic');
+  const [selectedPersona, setSelectedPersona] = useState<AgentPersonaId>('dba_optimizer');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTriggers, setShowTriggers] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -163,13 +166,16 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
     if (isDbRelated) {
       try {
-        const agentRes = await dbAgentRuntime.runAgent({
-          prompt: trimmedPrompt,
+        const persona = specializedAgents.getPersona(selectedPersona);
+        const agentRes = await specializedAgents.runPersonaAgent(
+          selectedPersona,
+          trimmedPrompt,
           provider,
-        });
+          'users'
+        );
 
         if (onLogTerminal) {
-          onLogTerminal(`[DBC Agent Runtime]: Completed ReAct loop in ${agentRes.totalDurationMs}ms with tools [${agentRes.toolsExecuted.join(', ')}]`);
+          onLogTerminal(`[DBC Specialized Agent - ${persona.badge}]: Completed ReAct loop in ${agentRes.totalDurationMs}ms with tools [${agentRes.toolsExecuted.join(', ')}]`);
         }
 
         const assistantMsgId = `msg-${Date.now()}-assistant`;
@@ -180,11 +186,11 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           content: agentRes.replyText,
           routePath: 'AGENTIC_LLM_PATH',
           provider,
-          confidenceScore: 94,
+          confidenceScore: 96,
           executionTimeMs: agentRes.totalDurationMs,
           tokenCostUSD: agentRes.totalCostUSD,
-          logMessage: `Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}`,
-          explanation: `DB Agent Runtime executed ${agentRes.toolsExecuted.length} typed database tool(s).`,
+          logMessage: `[${persona.badge}]: Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}`,
+          explanation: `${persona.name} executed ${agentRes.toolsExecuted.length} typed database tool(s) with context from Database Memory.`,
           status: 'success'
         };
 
@@ -289,6 +295,28 @@ export const MissionControl: React.FC<MissionControlProps> = ({
             <Trash2 className="h-3.5 w-3.5" />
           </button>
 
+          {/* P1 DB Memory Hub */}
+          {onOpenDbMemory && (
+            <button
+              onClick={onOpenDbMemory}
+              title="Database Memory & Domain Invariant Rules (P1)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-emerald-400 hover:text-emerald-300 transition"
+            >
+              <Brain className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* P1 MCP Server Hub */}
+          {onOpenMcpServer && (
+            <button
+              onClick={onOpenMcpServer}
+              title="Model Context Protocol (MCP) Server Hub (P1)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-purple-400 hover:text-purple-300 transition"
+            >
+              <Server className="h-3.5 w-3.5" />
+            </button>
+          )}
+
           {/* P0 DB Agent Mode Toggle */}
           <button
             onClick={() => setIsDbMode(!isDbMode)}
@@ -338,6 +366,37 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         </div>
       </div>
 
+      {/* P1 Specialized Agent Persona Selector */}
+      {isDbMode && (
+        <div className="px-3 py-1.5 bg-[#202020] border-b border-[#3c3c3c] flex items-center justify-between gap-1 shrink-0">
+          <div className="flex items-center space-x-1 text-[10px] text-slate-400 font-semibold uppercase tracking-wider shrink-0">
+            <Bot className="h-3 w-3 text-cyan-400" />
+            <span>Persona:</span>
+          </div>
+          <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar">
+            {(Object.keys(SPECIALIZED_PERSONAS) as AgentPersonaId[]).map((pId) => {
+              const p = SPECIALIZED_PERSONAS[pId];
+              const isSelected = selectedPersona === pId;
+              const shortName = pId === 'dba_optimizer' ? 'DBA' : pId === 'schema_architect' ? 'Schema' : pId === 'data_analyst' ? 'Analyst' : 'Security';
+              return (
+                <button
+                  key={pId}
+                  onClick={() => setSelectedPersona(pId)}
+                  title={`${p.name}: ${p.tagline}`}
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-all ${
+                    isSelected
+                      ? 'bg-[#007acc] text-white border-[#0098ff] font-bold shadow-xs'
+                      : 'bg-[#2d2d2d] text-slate-400 hover:text-white border-[#3c3c3c]'
+                  }`}
+                >
+                  {shortName}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Collapsible Quick Prompt Recommendations */}
       <div className="border-b border-[#3c3c3c] bg-[#1e1e1e]/40 shrink-0">
         <button
@@ -346,21 +405,23 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         >
           <span className="flex items-center space-x-1">
             <Sparkles className="h-3 w-3 text-yellow-400" />
-            <span>P0 DB Agent & Intent Triggers</span>
+            <span>
+              {isDbMode ? `${SPECIALIZED_PERSONAS[selectedPersona].badge} Triggers` : 'Router Fast-Path Triggers'}
+            </span>
           </span>
           {showTriggers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </button>
 
         {showTriggers && (
           <div className="px-2.5 pb-2 flex flex-wrap gap-1">
-            {[
-              { label: 'Introspect Schema', q: 'introspect active database schema and sample data' },
-              { label: 'Suggest Indexes', q: 'analyze slow query on users and suggest optimal indexes' },
-              { label: 'Generate Migration', q: 'generate migration to add metadata column to users' },
-              { label: 'Safe Execution', q: 'SELECT * FROM users LIMIT 10;' },
-              { label: 'Firewall Warning', q: 'DELETE FROM users;' },
-              { label: 'Format SQL', q: 'format sql query' }
-            ].map((item, idx) => (
+            {(isDbMode
+              ? SPECIALIZED_PERSONAS[selectedPersona].recommendedTriggers.map(t => ({ label: t.label, q: t.prompt }))
+              : [
+                  { label: 'Format SQL', q: 'format sql query' },
+                  { label: 'Optimize Query', q: 'optimize sql query' },
+                  { label: 'Fix Syntax', q: 'fix sql syntax errors' }
+                ]
+            ).map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => {
@@ -368,6 +429,13 @@ export const MissionControl: React.FC<MissionControlProps> = ({
                   textareaRef.current?.focus();
                 }}
                 className="text-[10px] bg-[#2d2d2d] hover:bg-[#3c3c3c] border border-[#3c3c3c] text-slate-300 px-1.5 py-0.5 rounded transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
               >
                 {item.label}
               </button>
