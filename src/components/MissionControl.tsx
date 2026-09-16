@@ -177,6 +177,16 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     if (isDbRelated) {
       try {
         const persona = specializedAgents.getPersona(selectedPersona);
+        
+        if (isSandboxMode) {
+          await dbBranchManager.executeInSandbox(`agent-${selectedPersona}`, async (branch) => {
+            return dbBranchManager.executeInBranch(branch.id, trimmedPrompt);
+          });
+          if (onLogTerminal) {
+            onLogTerminal(`[DBC Sandbox Isolation]: Executed speculative query inside isolated branch (0 Production Blast Radius).`);
+          }
+        }
+
         const agentRes = await specializedAgents.runPersonaAgent(
           selectedPersona,
           trimmedPrompt,
@@ -199,8 +209,8 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           confidenceScore: 96,
           executionTimeMs: agentRes.totalDurationMs,
           tokenCostUSD: agentRes.totalCostUSD,
-          logMessage: `[${persona.badge}]: Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}`,
-          explanation: `${persona.name} executed ${agentRes.toolsExecuted.length} typed database tool(s) with context from Database Memory.`,
+          logMessage: `[${persona.badge}]: Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}${isSandboxMode ? ' • Sandbox: ISOLATED' : ''}`,
+          explanation: `${persona.name} executed ${agentRes.toolsExecuted.length} typed database tool(s)${isSandboxMode ? ' inside an isolated copy-on-write Sandbox' : ''} with context from Database Memory.`,
           status: 'success'
         };
 
@@ -309,7 +319,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           {onOpenDbMemory && (
             <button
               onClick={onOpenDbMemory}
-              title="Database Memory & Domain Invariant Rules (P1)"
+              title="Database Memory & Domain Invariant Rules (⌘⇧K)"
               className="p-1 hover:bg-[#3c3c3c] rounded text-emerald-400 hover:text-emerald-300 transition"
             >
               <Brain className="h-3.5 w-3.5" />
@@ -320,12 +330,59 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           {onOpenMcpServer && (
             <button
               onClick={onOpenMcpServer}
-              title="Model Context Protocol (MCP) Server Hub (P1)"
+              title="Model Context Protocol (MCP) Server Hub (⌘⇧M)"
               className="p-1 hover:bg-[#3c3c3c] rounded text-purple-400 hover:text-purple-300 transition"
             >
               <Server className="h-3.5 w-3.5" />
             </button>
           )}
+
+          {/* P2 Data Lineage DAG */}
+          {onOpenLineage && (
+            <button
+              onClick={onOpenLineage}
+              title="Data Lineage & Downstream Blast Radius DAG (⌘⇧L)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-cyan-400 hover:text-cyan-300 transition"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* P2 Branch Manager */}
+          {onOpenBranchManager && (
+            <button
+              onClick={onOpenBranchManager}
+              title="Database Sandbox & Branch Manager (⌘⌥B)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-purple-400 hover:text-purple-300 transition"
+            >
+              <GitBranch className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* P2 Performance Optimizer */}
+          {onOpenOptimizer && (
+            <button
+              onClick={onOpenOptimizer}
+              title="Agent Performance Optimizer (⌘⇧O)"
+              className="p-1 hover:bg-[#3c3c3c] rounded text-yellow-400 hover:text-yellow-300 transition"
+            >
+              <Zap className="h-3.5 w-3.5" />
+            </button>
+          )}
+
+          {/* P2 Sandbox Isolation Toggle */}
+          <button
+            onClick={() => setIsSandboxMode(!isSandboxMode)}
+            title="Toggle Agent Speculative Sandbox (Zero Production Blast Radius)"
+            className={`px-1.5 py-0.5 rounded text-[10px] font-bold flex items-center gap-1 border transition ${
+              isSandboxMode
+                ? 'bg-purple-600 text-white border-purple-400 shadow-xs'
+                : 'bg-[#1e1e1e] text-slate-400 border-[#3c3c3c] hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-3 h-3" />
+            <span className="hidden sm:inline">Sandbox</span>
+          </button>
 
           {/* P0 DB Agent Mode Toggle */}
           <button
