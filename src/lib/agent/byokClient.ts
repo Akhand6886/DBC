@@ -18,7 +18,7 @@ export class BYOKClientAdapter {
     anthropic: { provider: 'anthropic', modelName: 'claude-3-5-sonnet-20241022' },
     gemini: { provider: 'gemini', modelName: 'gemini-1.5-pro' },
     ollama: { provider: 'ollama', endpoint: 'http://localhost:11434', modelName: 'llama3.1:70b' },
-    nvidia: { provider: 'nvidia', endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions', modelName: 'meta/llama-3.1-70b-instruct' }
+    nvidia: { provider: 'nvidia', endpoint: 'https://integrate.api.nvidia.com/v1/chat/completions', modelName: 'moonshotai/kimi-k3' }
   };
 
   public setApiKey(provider: LLMProvider, key: string) {
@@ -27,6 +27,10 @@ export class BYOKClientAdapter {
 
   public setEndpoint(provider: LLMProvider, endpoint: string) {
     this.configs[provider].endpoint = endpoint;
+  }
+
+  public setModel(provider: LLMProvider, modelName: string) {
+    this.configs[provider].modelName = modelName;
   }
 
   public getConfig(provider: LLMProvider): BYOKConfig {
@@ -217,21 +221,31 @@ export class BYOKClientAdapter {
     config: BYOKConfig, prompt: string, context: string, startTime: number
   ): Promise<{ responseText: string; tokensUsed: number; latencyMs: number }> {
     const endpoint = config.endpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
+    const model = config.modelName || 'moonshotai/kimi-k3';
+    const isReasoning = model.includes('kimi') || model.includes('deepseek-r1');
+
+    const bodyPayload: Record<string, any> = {
+      model,
+      messages: [
+        { role: 'system', content: `You are an elite SQL and database systems engineer. Context:\n${context}` },
+        { role: 'user', content: prompt }
+      ],
+      temperature: isReasoning ? 1 : 0.2,
+      max_tokens: isReasoning ? 16384 : 2048,
+    };
+
+    if (isReasoning) {
+      bodyPayload.reasoning_effort = 'max';
+      bodyPayload.seed = 0;
+    }
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${config.apiKey}`
       },
-      body: JSON.stringify({
-        model: config.modelName || 'meta/llama-3.1-70b-instruct',
-        messages: [
-          { role: 'system', content: `You are an elite SQL and database systems engineer. Context:\n${context}` },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 1024
-      })
+      body: JSON.stringify(bodyPayload)
     });
 
     if (!response.ok) {
@@ -241,11 +255,94 @@ export class BYOKClientAdapter {
 
     const data = await response.json();
     const latencyMs = Date.now() - startTime;
+    const choice = data.choices?.[0]?.message;
+    const responseText = choice?.content || choice?.reasoning_content || '// No response received.';
+
     return {
-      responseText: data.choices?.[0]?.message?.content || '// No response received.',
+      responseText,
       tokensUsed: data.usage?.total_tokens || 0,
       latencyMs
     };
+  }
+
+  /**
+   * Stream completion from NVIDIA NIM (supports streaming reasoning tokens and vision payloads)
+   */
+  public async *streamNvidia(
+    prompt: string,
+    context: string,
+    imageUrl?: string
+  ): AsyncGenerator<string, void, unknown> {
+    const config = this.configs.nvidia;
+    const endpoint = config.endpoint || 'https://integrate.api.nvidia.com/v1/chat/completions';
+    const model = config.modelName || 'moonshotai/kimi-k3';
+    const isReasoning = model.includes('kimi') || model.includes('deepseek-r1');
+
+    const userContent: any = imageUrl
+      ? [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: imageUrl } }
+        ]
+      : prompt;
+
+    const bodyPayload: Record<string, any> = {
+      model,
+      messages: [
+        { role: 'system', content: `You are an elite SQL and database systems engineer. Context:\n${context}` },
+        { role: 'user', content: userContent }
+      ],
+      temperature: isReasoning ? 1 : 0.2,
+      max_tokens: isReasoning ? 16384 : 2048,
+      stream: true
+    };
+
+    if (isReasoning) {
+      bodyPayload.reasoning_effort = 'max';
+      bodyPayload.seed = 0;
+    }
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${config.apiKey}`,
+        Accept: 'text/event-stream'
+      },
+      body: JSON.stringify(bodyPayload)
+    });
+
+    if (!response.ok || !response.body) {
+      const errText = await response.text();
+      throw new Error(`NVIDIA NIM HTTP ${response.status}: ${errText}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith(':')) continue;
+        if (trimmed === 'data: [DONE]') return;
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const parsed = JSON.parse(trimmed.slice(6));
+            const delta = parsed.choices?.[0]?.delta;
+            const chunk = delta?.content || delta?.reasoning_content || '';
+            if (chunk) yield chunk;
+          } catch {
+            // Ignore parse errors on incomplete chunks
+          }
+        }
+      }
+    }
   }
 
   // ─── Simulation Fallback (No API Key) ──────────────────────────────
