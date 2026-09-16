@@ -391,6 +391,13 @@ export default function Home() {
         return;
       }
 
+      // ⌘⌥C: Collaborative Agent Sessions (P3)
+      if (mod && e.altKey && key === 'c') {
+        e.preventDefault();
+        setIsCollabOpen(prev => !prev);
+        return;
+      }
+
       // ⌘,: Settings & BYOK
       if (mod && key === ',') {
         e.preventDefault();
