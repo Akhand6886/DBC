@@ -35,10 +35,13 @@ import {
   Flame,
   Database,
   Brain,
-  Server
+  Server,
+  Share2,
+  GitBranch
 } from 'lucide-react';
 import { specializedAgents, AgentPersonaId, SPECIALIZED_PERSONAS } from '../lib/agent/specializedAgents';
 import { dbMemory } from '../lib/db/dbMemory';
+import { dbBranchManager } from '../lib/sandbox/dbBranchManager';
 
 interface MissionControlProps {
   activeFilePath?: string;
@@ -52,6 +55,9 @@ interface MissionControlProps {
   onOpenAgentTrace?: (sessionId?: string) => void;
   onOpenDbMemory?: () => void;
   onOpenMcpServer?: () => void;
+  onOpenLineage?: () => void;
+  onOpenBranchManager?: () => void;
+  onOpenOptimizer?: () => void;
   onClose?: () => void;
   onLogTerminal?: (msg: string) => void;
 }
@@ -62,7 +68,7 @@ const INITIAL_GREETING: ChatMessage = {
   id: 'msg-welcome',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   role: 'assistant',
-  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P1 Specialized Database Agent Mode** with **Domain Memory** & **MCP Server**:\n- **Specialized Personas**: DBA Optimizer, Schema Architect, Data Analyst, Security Auditor.\n- **Database Memory**: Domain context, table semantics, and business invariant policies.\n- **Query Firewall & Traces**: Risk scoring (0-100), blast radius estimator, and full flamegraph.\n- **MCP Protocol**: Standardized JSON-RPC 2.0 interface for Claude Desktop & Cursor.\n\nChoose an agent persona above or click a recommended trigger below to begin!`,
+  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P2 Full Autonomous DBMS Studio Mode** with **Lineage, Branching & Optimization**:\n- **Data Lineage DAG (⌘⇧L)**: Column-level pipeline tracking & downstream blast radius evaluation.\n- **Database Sandboxing (⌘⌥B)**: Isolated copy-on-write branches with zero-risk agent mutation testing.\n- **Agent Performance Optimizer (⌘⇧O)**: Automated sequential scan detection and index advisor.\n- **Specialized DB Personas**: DBA Optimizer, Schema Architect, Data Analyst, Security Auditor.\n- **Query Firewall & MCP**: Real-time risk gate, rollback stack, and external Claude Desktop connectivity.\n\nChoose an agent persona or click a trigger below to begin!`,
   status: 'success'
 };
 
@@ -78,6 +84,9 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   onOpenAgentTrace,
   onOpenDbMemory,
   onOpenMcpServer,
+  onOpenLineage,
+  onOpenBranchManager,
+  onOpenOptimizer,
   onClose,
   onLogTerminal,
 }) => {
@@ -88,6 +97,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   const [showTriggers, setShowTriggers] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isDbMode, setIsDbMode] = useState(true);
+  const [isSandboxMode, setIsSandboxMode] = useState(false);
 
   // Chat message history with localStorage persistence
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
