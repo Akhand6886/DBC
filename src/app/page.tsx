@@ -35,8 +35,9 @@ import { DbPerformanceMonitor } from '../components/DbPerformanceMonitor';
 import { TableInspectorModal } from '../components/TableInspectorModal';
 import { DbObjectExplorer } from '../components/DbObjectExplorer';
 import { TableDataEditor } from '../components/TableDataEditor';
+import { AgentTraceDrawer } from '../components/AgentTraceDrawer';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -61,6 +62,8 @@ export default function Home() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [showTerminal, setShowTerminal] = useState(true);
   const [shadowHistory, setShadowHistory] = useState<ShadowDiffCheck[]>([]);
+  const [isAgentTraceOpen, setIsAgentTraceOpen] = useState(false);
+  const [selectedTraceSessionId, setSelectedTraceSessionId] = useState<string | undefined>(undefined);
 
   // BYOK Keys & Editor Settings State
   const [byokKeys, setByokKeys] = useState<{
@@ -435,6 +438,7 @@ export default function Home() {
     { id: 'analytics', label: 'Router Analytics Dashboard', category: 'router', icon: <BarChart2 className="h-4 w-4" />, handler: () => setActiveView('analytics') },
     { id: 'router-config', label: 'Router Thresholds & Fast-Path Rules', category: 'router', shortcut: '⌘⇧R', icon: <Sliders className="h-4 w-4 text-[#007acc]" />, handler: () => setIsRouterConfigOpen(true) },
     { id: 'router-trace', label: 'Inspect Last Router Execution Trace', category: 'router', icon: <FileCode className="h-4 w-4 text-emerald-400" />, handler: () => setIsRouterTraceOpen(true) },
+    { id: 'agent-trace', label: 'Agent Execution Trace & Flamegraph (P0)', category: 'router', shortcut: '⌘⇧T', icon: <Flame className="h-4 w-4 text-amber-400" />, handler: () => setIsAgentTraceOpen(true) },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
     { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <FileCode className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
     { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
@@ -848,6 +852,10 @@ export default function Home() {
               onExecutePlan={handleExecutePlan}
               onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
               onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
+              onOpenAgentTrace={(sessionId) => {
+                setSelectedTraceSessionId(sessionId);
+                setIsAgentTraceOpen(true);
+              }}
               onClose={() => setShowMissionControl(false)}
               onLogTerminal={handleLogTerminal}
             />
@@ -897,6 +905,11 @@ export default function Home() {
           onClose={() => setIsRouterTraceOpen(false)}
         />
       )}
+      <AgentTraceDrawer
+        isOpen={isAgentTraceOpen}
+        onClose={() => setIsAgentTraceOpen(false)}
+        selectedSessionId={selectedTraceSessionId}
+      />
       </div>
     </ErrorBoundary>
   );
