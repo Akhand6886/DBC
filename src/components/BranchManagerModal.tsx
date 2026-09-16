@@ -64,7 +64,7 @@ export const BranchManagerModal: React.FC<BranchManagerModalProps> = ({
       };
     }
     return dbBranchManager.diffBranches('main', selectedCompareBranchId);
-  }, [activeBranch, selectedCompareBranchId, branches]);
+  }, [activeBranch, selectedCompareBranchId]);
 
   if (!isOpen) return null;
 
