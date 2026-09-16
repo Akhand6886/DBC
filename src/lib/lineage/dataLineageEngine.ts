@@ -259,6 +259,14 @@ export class DataLineageEngine {
     this.edges.set(edge.id, edge);
   }
 
+  public getAllNodes(): LineageNode[] {
+    return Array.from(this.nodes.values());
+  }
+
+  public getAllEdges(): LineageEdge[] {
+    return Array.from(this.edges.values());
+  }
+
   public getGraph(): { nodes: LineageNode[]; edges: LineageEdge[] } {
     return {
       nodes: Array.from(this.nodes.values()),
@@ -298,6 +306,46 @@ export class DataLineageEngine {
     };
   }
 
+  public getDownstreamNodes(startNodeId: string): LineageNode[] {
+    return this.getDownstreamLineage(startNodeId).nodes;
+  }
+
+  /**
+   * Find all immediate and transitive upstream dependencies for a given node.
+   */
+  public getUpstreamLineage(startNodeId: string): { nodes: LineageNode[]; edges: LineageEdge[] } {
+    const visitedNodes = new Set<string>();
+    const collectedEdges = new Set<LineageEdge>();
+    const queue: string[] = [startNodeId.toLowerCase()];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      for (const edge of Array.from(this.edges.values())) {
+        if (edge.targetNodeId.toLowerCase() === current) {
+          collectedEdges.add(edge);
+          const source = edge.sourceNodeId.toLowerCase();
+          if (!visitedNodes.has(source)) {
+            visitedNodes.add(source);
+            queue.push(source);
+          }
+        }
+      }
+    }
+
+    const upstreamNodes = Array.from(visitedNodes)
+      .map(id => this.nodes.get(id))
+      .filter((n): n is LineageNode => !!n);
+
+    return {
+      nodes: upstreamNodes,
+      edges: Array.from(collectedEdges)
+    };
+  }
+
+  public getUpstreamNodes(startNodeId: string): LineageNode[] {
+    return this.getUpstreamLineage(startNodeId).nodes;
+  }
+
   /**
    * Evaluates the blast radius of dropping or modifying a table or column.
    */
@@ -335,6 +383,10 @@ export class DataLineageEngine {
         colEdges.forEach(e => {
           breakingChanges.push(`- Breaks downstream '${e.targetNodeId}' via ${e.transformation} operation (${e.description}).`);
         });
+      } else {
+        breakingChanges.push(
+          `Column '${targetTable}.${targetColumn}' modification alters table definition and triggers schema invalidation across downstream dependencies.`
+        );
       }
     } else {
       // Table level impact
@@ -465,3 +517,4 @@ export class DataLineageEngine {
 }
 
 export const dataLineage = new DataLineageEngine();
+export const dataLineageEngine = dataLineage;
