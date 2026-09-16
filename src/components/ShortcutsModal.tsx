@@ -36,7 +36,7 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
         { keys: ['⌘', 'W'], description: 'Close Active Editor Tab' },
         { keys: ['⌘', 'N'], description: 'Create New SQL Script File' },
         { keys: ['⌘', '⇧', 'F'], description: 'Global Workspace Search & Replace' },
-        { keys: ['⌘', 'F'], description: 'Search Current File / Workspace' },
+        { keys: ['⌘', 'F'], description: 'Find in Current File (or Workspace when unfocused)' },
       ]
     },
     {

@@ -313,8 +313,14 @@ export default function Home() {
         return;
       }
 
-      // ⌘⇧F or ⌘F: Global Search
+      // ⌘⇧F or ⌘F: Search (⌘F in Monaco allows native in-file Find; ⌘⇧F opens Workspace Search)
       if (mod && key === 'f') {
+        const isMonacoFocused = typeof document !== 'undefined' && !!document.activeElement?.closest('.monaco-editor');
+        if (!e.shiftKey && isMonacoFocused) {
+          // Allow Monaco's native in-file find widget to handle ⌘F
+          return;
+        }
+
         e.preventDefault();
         setIsSearchOpen(true);
         return;
