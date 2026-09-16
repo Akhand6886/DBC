@@ -499,6 +499,7 @@ export default function Home() {
     { id: 'data-lineage', label: 'Data Lineage & Downstream Blast DAG (P2)', category: 'action', shortcut: '⌘⇧L', icon: <Share2 className="h-4 w-4 text-cyan-400" />, handler: () => setIsLineageOpen(true) },
     { id: 'branch-manager', label: 'Database Sandbox & Branch Manager (P2)', category: 'action', shortcut: '⌘⌥B', icon: <GitBranch className="h-4 w-4 text-purple-400" />, handler: () => setIsBranchManagerOpen(true) },
     { id: 'perf-optimizer', label: 'Agent Performance Optimizer (P2)', category: 'action', shortcut: '⌘⇧O', icon: <Zap className="h-4 w-4 text-yellow-400" />, handler: () => setIsOptimizerOpen(true) },
+    { id: 'collaborative-sessions', label: 'Collaborative Multi-Agent Studio (P3)', category: 'action', shortcut: '⌘⌥C', icon: <Users className="h-4 w-4 text-emerald-400" />, handler: () => setIsCollabOpen(true) },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
     { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <FileCode className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
     { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
