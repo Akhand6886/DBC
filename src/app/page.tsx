@@ -29,7 +29,15 @@ import {
   PaletteAction,
   useToast,
 } from '../components';
-import { loadPersistedWorkspace, savePersistedWorkspace, findFileNodeById, flattenFileNodes } from '../lib/workspacePersistence';
+import {
+  loadPersistedWorkspace,
+  savePersistedWorkspace,
+  findFileNodeById,
+  flattenFileNodes,
+  saveDraftBuffer,
+  clearDraftBuffer,
+  getAllDraftBuffers
+} from '../lib/workspacePersistence';
 import { byokClient } from '../lib/agent/byokClient';
 
 import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame, Brain, Server, Share2, GitFork, TrendingUp, Users } from 'lucide-react';
@@ -183,6 +191,23 @@ export default function Home() {
       if (savedSettings) {
         setEditorSettings(JSON.parse(savedSettings));
       }
+
+      // ED-01: Rehydrate uncommitted draft buffers from previous session
+      const drafts = getAllDraftBuffers();
+      const draftPaths = Object.keys(drafts);
+      if (draftPaths.length > 0) {
+        setWorkspaceFiles((prev) => {
+          const applyDrafts = (nodes: FileNode[]): FileNode[] =>
+            nodes.map((n) => {
+              if (n.isFolder && n.children) return { ...n, children: applyDrafts(n.children) };
+              if (!n.isFolder && drafts[n.path]) {
+                return { ...n, content: drafts[n.path].content, isModified: true };
+              }
+              return n;
+            });
+          return applyDrafts(prev);
+        });
+      }
     } catch (e) {
       console.error('Error hydrating settings from localStorage', e);
     }
@@ -209,6 +234,18 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [workspaceFiles, activeFile, openFiles, connections, activeConnectionId]);
 
+  // ─── ED-01: Debounced Draft Buffer Persistence ──────────────────────
+  useEffect(() => {
+    if (activeFile && activeFile.isModified && typeof activeFile.content === 'string') {
+      const draftContent = activeFile.content;
+      const draftPath = activeFile.path;
+      const draftTimer = setTimeout(() => {
+        saveDraftBuffer(draftPath, draftContent);
+      }, 500);
+      return () => clearTimeout(draftTimer);
+    }
+  }, [activeFile?.path, activeFile?.content, activeFile?.isModified]);
+
   // ─── Save File Handler ─────────────────────────────────────────────
   const handleSaveActiveFile = () => {
     if (!activeFile) return;
@@ -224,6 +261,10 @@ export default function Home() {
         });
       return updateTree(prev);
     });
+
+    // Clear saved draft
+    clearDraftBuffer(cleanFile.path);
+
     addToast('success', `Saved ${cleanFile.name}`);
     handleLogTerminal(`[Workspace File System]: Saved ${cleanFile.path}`);
   };
