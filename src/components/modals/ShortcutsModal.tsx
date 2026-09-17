@@ -18,40 +18,45 @@ interface ShortcutCategory {
 }
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
+  // ED-04: Dynamic OS detection for platform-accurate glyphs
+  const isMac = typeof window !== 'undefined' ? /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || navigator.platform) : true;
+  const modKey = isMac ? '⌘' : 'Ctrl';
+  const shiftKey = isMac ? '⇧' : 'Shift';
+
   const shortcuts: ShortcutCategory[] = [
     {
       category: 'Navigation & View',
       items: [
-        { keys: ['⌘', 'P'], description: 'Open Command Palette / Quick File Open' },
-        { keys: ['⌘', '⇧', 'P'], description: 'Open Command Palette with Actions' },
-        { keys: ['⌘', 'B'], description: 'Toggle Primary Sidebar' },
-        { keys: ['⌘', 'J'], description: 'Toggle Bottom Terminal Panel' },
-        { keys: ['⌘', 'L'], description: 'Toggle AI Copilot Drawer' },
+        { keys: [modKey, 'P'], description: 'Open Command Palette / Quick File Open' },
+        { keys: [modKey, shiftKey, 'P'], description: 'Open Command Palette with Actions' },
+        { keys: [modKey, 'B'], description: 'Toggle Primary Sidebar' },
+        { keys: [modKey, 'J'], description: 'Toggle Bottom Terminal Panel' },
+        { keys: [modKey, 'L'], description: 'Toggle AI Copilot Drawer' },
       ]
     },
     {
       category: 'Editor & Files',
       items: [
-        { keys: ['⌘', 'S'], description: 'Save Active File to Workspace' },
-        { keys: ['⌘', 'W'], description: 'Close Active Editor Tab' },
-        { keys: ['⌘', 'N'], description: 'Create New SQL Script File' },
-        { keys: ['⌘', '⇧', 'F'], description: 'Global Workspace Search & Replace' },
-        { keys: ['⌘', 'F'], description: 'Find in Current File (or Workspace when unfocused)' },
+        { keys: [modKey, 'S'], description: 'Save Active File to Workspace' },
+        { keys: [modKey, 'W'], description: 'Close Active Editor Tab' },
+        { keys: [modKey, 'N'], description: 'Create New SQL Script File' },
+        { keys: [modKey, shiftKey, 'F'], description: 'Global Workspace Search & Replace' },
+        { keys: [modKey, 'F'], description: 'Find in Current File (or Workspace when unfocused)' },
       ]
     },
     {
       category: 'Execution & Database',
       items: [
-        { keys: ['⌘', '↵'], description: 'Execute Active SQL Query / Run Tests' },
-        { keys: ['⌘', '⇧', 'G'], description: 'Open Git Source Control Panel' },
-        { keys: ['⌘', '⇧', 'R'], description: 'Configure Router Confidence Thresholds' },
+        { keys: [modKey, '↵'], description: 'Execute Active SQL Query / Run Tests' },
+        { keys: [modKey, shiftKey, 'G'], description: 'Open Git Source Control Panel' },
+        { keys: [modKey, shiftKey, 'R'], description: 'Configure Router Confidence Thresholds' },
       ]
     },
     {
       category: 'General & Preferences',
       items: [
-        { keys: ['⌘', ','], description: 'Open Preferences & BYOK API Keys Manager' },
-        { keys: ['⌘', '/'], description: 'Open this Keyboard Shortcuts Cheat Sheet' },
+        { keys: [modKey, ','], description: 'Open Preferences & BYOK API Keys Manager' },
+        { keys: [modKey, '/'], description: 'Open this Keyboard Shortcuts Cheat Sheet' },
         { keys: ['Esc'], description: 'Dismiss Any Active Dialog or Drawer' },
       ]
     }
