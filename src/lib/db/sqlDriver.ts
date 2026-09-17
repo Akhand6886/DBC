@@ -135,11 +135,13 @@ export class RealSqlDriverEngine {
           const tableName = match[1].toLowerCase();
           const body = match[2];
 
-          const columnDefs = body.split(',').map(line => line.trim()).filter(line => line && !/^PRIMARY|^FOREIGN|^KEY|^CONSTRAINT/i.test(line));
+          // Split on commas not inside parentheses to preserve types like DECIMAL(10, 2) or VARCHAR(255)
+          const columnDefs = body.split(/,(?![^(]*\))/g).map(line => line.trim()).filter(line => line && !/^PRIMARY|^FOREIGN|^KEY|^CONSTRAINT/i.test(line));
           const columns: IntrospectedColumn[] = columnDefs.map(def => {
             const parts = def.split(/\s+/);
             const colName = parts[0];
-            const colType = parts[1] || 'TEXT';
+            const typeMatch = def.slice(colName.length).trim().match(/^([a-zA-Z]+(?:\s*\([^)]+\))?)/);
+            const colType = typeMatch ? typeMatch[1].replace(/\s*,\s*/g, ', ') : (parts[1] || 'TEXT');
             const isPk = /PRIMARY\s+KEY/i.test(def);
             const isFk = /REFERENCES/i.test(def);
             return { name: colName, type: colType.toUpperCase(), isPrimary: isPk, isForeign: isFk };
@@ -219,10 +221,27 @@ export class RealSqlDriverEngine {
 
               if (matching.length > 0) {
                 for (const m of matching) {
-                  joinedRows.push({ ...mainRow, ...m });
+                  const mergedRow: Record<string, any> = {};
+                  // Preserve main table columns with and without table prefix
+                  for (const [k, v] of Object.entries(mainRow)) {
+                    mergedRow[k] = v;
+                    mergedRow[`${mainTable}.${k}`] = v;
+                  }
+                  // Qualify joined table columns to prevent collisions (e.g. users.id vs roles.id)
+                  for (const [k, v] of Object.entries(m)) {
+                    mergedRow[`${joinTable}.${k}`] = v;
+                    if (!(k in mainRow)) {
+                      mergedRow[k] = v;
+                    }
+                  }
+                  joinedRows.push(mergedRow);
                 }
               } else if (/LEFT/i.test(joinMatch[0])) {
-                joinedRows.push({ ...mainRow });
+                const mergedRow: Record<string, any> = { ...mainRow };
+                for (const [k, v] of Object.entries(mainRow)) {
+                  mergedRow[`${mainTable}.${k}`] = v;
+                }
+                joinedRows.push(mergedRow);
               }
             }
             rows = joinedRows;
@@ -272,17 +291,20 @@ export class RealSqlDriverEngine {
             }
           } else {
             const requestedCols = rawCols.split(',').map(c => {
-              const aliasMatch = c.trim().match(/^(?:[a-zA-Z0-9_.]+\s+(?:AS\s+)?([a-zA-Z0-9_]+)|([a-zA-Z0-9_.]+))$/i);
-              const colName = aliasMatch ? (aliasMatch[1] || aliasMatch[2]) : c.trim();
-              const sourceCol = colName.split('.').pop()!;
-              return { display: colName, source: sourceCol };
+              const trimmed = c.trim();
+              const aliasMatch = trimmed.match(/^([a-zA-Z0-9_.]+)\s+(?:AS\s+)?([a-zA-Z0-9_]+)$/i);
+              if (aliasMatch) {
+                return { display: aliasMatch[2], source: aliasMatch[1] };
+              }
+              return { display: trimmed, source: trimmed };
             });
 
             columns = requestedCols.map(c => c.display);
             rows = rows.map(r => {
               const projected: Record<string, any> = {};
               for (const col of requestedCols) {
-                projected[col.display] = r[col.source] ?? r[col.display] ?? null;
+                const unqualifiedSource = col.source.split('.').pop()!;
+                projected[col.display] = r[col.source] ?? r[col.display] ?? r[unqualifiedSource] ?? null;
               }
               return projected;
             });
