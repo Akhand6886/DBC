@@ -10,15 +10,15 @@
 
 *Only ONE task may reside here at any time. When this task finishes its verification criteria, move it to Completed and pull exactly ONE task from NEXT.*
 
-### [Task] P7-F2: Align Sidecar AST Paths with Workspace
-- **Goal:** Fix `src/lib/sidecar/astIndexer.ts` so symbol locations resolve against actual workspace file paths (`src/lib/...`, `src/components/...`) rather than fictional mock paths.
+### [Task] P3-F1: Table Editor Row Index Desync on Sort/Filter
+- **Goal:** Ensure cell edits in `TableDataEditor.tsx` apply to the underlying primary key record rather than the visual filtered/sorted row index.
 - **Sub-Steps:**
-  - [ ] Inspect existing `AST_INDEX_FIXTURE` in `src/lib/sidecar/astIndexer.ts`.
-  - [ ] Align symbol paths with real workspace files (`src/lib/db/sqlDriver.ts`, `src/components/dbms/SqlQueryPanel.tsx`, etc.).
-  - [ ] Verify `SidecarInspectorModal` symbol jump handler in `src/app/page.tsx` resolves correctly to existing files.
+  - [ ] Inspect row index lookup in `TableDataEditor.tsx` during edits.
+  - [ ] Map edits directly by primary key (`row.id` or unique key) instead of array index.
+  - [ ] Verify sorting by column and filtering rows does not edit the wrong underlying data.
   - [ ] Validate with `npx tsc --noEmit`.
 - **Verification Criteria:**
-  - Clicking any symbol in `SidecarInspectorModal` successfully opens an existing workspace file tab without dead links.
+  - Editing a cell in a sorted/filtered table correctly mutates the target record in the database driver.
   - `npx tsc --noEmit` exits with 0.
 
 ---
@@ -27,15 +27,15 @@
 
 *Ordered queue for upcoming sprints. Do not start until NOW is marked done.*
 
-1. **P3-F1: Table Editor Row Index Desync on Sort/Filter**
-   - *Scope:* Ensure edits in `TableDataEditor.tsx` apply to the underlying primary key rather than the filtered visual row index.
-   - *Target Files:* [`src/components/dbms/TableDataEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/TableDataEditor.tsx)
-2. **P3-F2: Persist Inline Query Result Cell Edits**
+1. **P3-F2: Persist Inline Query Result Cell Edits**
    - *Scope:* Wire double-click inline cell edits in `SqlQueryPanel.tsx` to generate and execute an `UPDATE` statement in the SQL driver.
    - *Target Files:* [`src/components/dbms/SqlQueryPanel.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/SqlQueryPanel.tsx)
-3. **P2-F1: Editor Buffer Revert on Diff Rejection**
+2. **P2-F1: Editor Buffer Revert on Diff Rejection**
    - *Scope:* When user clicks Reject on a shadow diff check, explicitly restore editor buffer to pre-diff snapshot.
    - *Target Files:* [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx)
+3. **P5-F1: Sync File Paths on Rename**
+   - *Scope:* Ensure renaming a file or folder in `FileExplorer.tsx` recursively updates open tabs and parent path strings.
+   - *Target Files:* [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx), [`src/components/editor/FileExplorer.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/editor/FileExplorer.tsx)
 
 ---
 
@@ -43,7 +43,7 @@
 
 *Notice something while coding? Do NOT context-switch. Append it here with a timestamp and keep your attention on NOW.*
 
-- [ ] **Hardcoded Secrets Cleanup:** Move default NVIDIA key from `src/app/page.tsx:81` to an environment variable (`.env.local`).
+- [x] **Hardcoded Secrets Cleanup:** Removed default hardcoded NVIDIA key from `src/app/page.tsx`.
 - [ ] **Terminal Log Bounding:** Cap terminal log array in `page.tsx` to 500 lines to prevent long-session memory leaks (P7-F7).
 - [ ] **Monaco Dark Theme Polish:** Ensure custom Monaco token colors for SQL keywords match the official VS Code Dark+ theme token map.
 - [ ] **Agent Flamegraph Scroll Sensitivity:** Dampen wheel zoom sensitivity in `AgentTraceDrawer.tsx`.
@@ -81,6 +81,7 @@
 
 ## 📜 Completed Milestones
 
+- ✅ **2026-09-17:** Codebase Audit & Cleanup — Purged dead code (`fileTools.ts`, `terminalRunner.ts`), obsolete fork scripts, redundant inspection drafts, sanitized leaked API keys, and resolved P7-F2 (Sidecar AST workspace path alignment), P7-F4 (TopMenuBar Run Query wiring), P2-F6 (`viewMode` removal), and P4-F1 (Contextual LLM engine synthesis).
 - ✅ **2026-09-16:** Architecture Reorganization & Modal Decoupling — 40 components organized into 6 domains, `ModalHost` deployed, 108/108 tests verified green.
 - ✅ **Phase 6:** Agentic Runtime, Governance & Collaborative Council (108 tests passing).
 - ✅ **Phase 5:** Dedicated DBMS Studio & AI Schema Engineering.

@@ -20,6 +20,13 @@
 | 10 | `handleAddFile` always targets `queries/` path | ⚠️ Low | [`src/app/page.tsx:483-524`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L483-L524) & [`src/components/FileExplorer.tsx:8-200`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/FileExplorer.tsx#L8-L200) | ✅ **FIXED** | Target currently active directory/selected folder recursively with visual target indicators and inline quick-add buttons |
 | 11 | Empty API key string `''` persisted | ⚠️ Low | [`src/app/page.tsx:218-232`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L218-L232) | ✅ **FIXED** | Sanitize and filter out empty string keys before saving |
 | 12 | `explainAnalyzer` PlanNode type error (`'Filter'`) | ⚠️ Low | [`src/lib/db/explainAnalyzer.ts:7`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/explainAnalyzer.ts#L7) | ✅ **FIXED** | Added `'Filter'` to `PlanNode.nodeType` union; eliminated `as any` cast |
+| 13 | TopMenuBar "Execute SQL Query" phantom action | ⚠️ High | [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) & [`src/components/shell/TopMenuBar.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/shell/TopMenuBar.tsx) | ✅ **FIXED** | Wired `onRunQuery` to `executeSqlRef.current()` and `dbc-execute-sql` custom event fallback |
+| 14 | Hardcoded NVIDIA API key in initial state | ⚠️ High | [`src/app/page.tsx:91,176`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L91) | ✅ **FIXED** | Sanitized hardcoded key to empty string default in state and hydration fallback |
+| 15 | Unused `viewMode` state in `ShadowVerificationDrawer` | 💡 Low | [`src/components/agents/ShadowVerificationDrawer.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/ShadowVerificationDrawer.tsx) | ✅ **FIXED** | Removed unused state and setter |
+| 16 | Rust Sidecar AST symbols point to fictional files | 🔴 High | [`src/lib/sidecar/astIndexer.ts:12-25`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L12-L25) | ✅ **FIXED** | Aligned symbol paths to real workspace files (`src/index.ts`, `migrations/`, `queries/`, etc.) |
+| 17 | LLM reasoning engine replaces code with dummy mock | 🔴 High | [`src/lib/router/llmEngine.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/llmEngine.ts) | ✅ **FIXED** | Replaced hardcoded dummy mock with contextual code synthesis across SQL, TS, and JSON |
+| 18 | Orphaned dead code, obsolete fork scripts & drafts | 💡 Low | `src/lib/agent/fileTools.ts`, `terminalRunner.ts`, `build.sh`, etc. | ✅ **FIXED** | Deleted unused files, obsolete Code-OSS fork scripts, and superseded inspection drafts |
+
 
 ---
 

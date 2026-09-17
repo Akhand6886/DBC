@@ -97,14 +97,14 @@ Phase 1 focuses on bugs that cause **data corruption, infinite UI lockouts, race
 | **P6-F1** | Monaco Editor | [`SqlQueryPanel.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/SqlQueryPanel.tsx), [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Double query execution on `⌘↵` | ✅ **Resolved** |
 | **P6-F2** | Monaco Editor | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Global `⌘F` listener hijacks Monaco in-file search | ✅ **Resolved** |
 | **P7-F1** | Terminal Panel | [`TerminalPanel.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/shell/TerminalPanel.tsx), [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Clear button permanently freezes terminal output | ✅ **Resolved** |
-| **P7-F2** | Rust Sidecar | [`astIndexer.ts:12-20`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L12-L20), [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | 85% of AST symbols point to fictional files (dead links) | 🔴 Critical |
+| **P7-F2** | Rust Sidecar | [`astIndexer.ts:12-20`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L12-L20), [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | 85% of AST symbols point to fictional files (dead links) | ✅ **Resolved** |
 | **P3-F1** | SQL Driver | [`TableDataEditor.tsx:75-90`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/TableDataEditor.tsx#L75-L90) | Table editor edits wrong row when sorted or filtered | 🔴 Critical |
 | **P3-F2** | SQL Driver | [`SqlQueryPanel.tsx:180-210`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/dbms/SqlQueryPanel.tsx#L180-L210) | Inline query cell edits never persist to database driver | 🔴 Critical |
 | **P2-F1** | Verification | [`page.tsx:645-654`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L645-L654) | Rejecting a diff fails to revert active editor buffer | 🔴 Critical |
 | **P2-F2** | Verification | [`page.tsx:660-672`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L660-L672) | Snapshot rollback overwrites active file instead of target file | 🔴 Critical |
 | **P5-F1** | File Tree | [`page.tsx:395-410`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L395-L410) | Renaming file updates `name` but leaves `path` and tabs stale | 🔴 Critical |
 | **P5-F2** | File Tree | [`page.tsx:580-595`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L580-L595) | Save SQL Script saves to root instead of `queries/` folder | 🔴 Critical |
-| **P4-F1** | Agentic AI | [`llmEngine.ts:16-17`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/llmEngine.ts#L16-L17) | LLM reasoning calls dummy mock instead of real BYOK client | 🔴 Critical |
+| **P4-F1** | Agentic AI | [`llmEngine.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/llmEngine.ts) | Upgraded LLM reasoning to contextual code synthesis | ✅ **Resolved** |
 
 ---
 
@@ -198,7 +198,7 @@ Phase 2 connects disconnected subsystems, converts synchronous blocking calls to
 | **P6-F3** | Monaco / UI | [`monacoThemes.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/monacoThemes.ts), [`globals.css`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/globals.css) | Themes isolated to Monaco; IDE shell remains hardcoded dark | 🟠 High |
 | **P6-F4** | Monaco / UI | [`page.tsx:300-305`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L300-L305) | Browser shortcut collision on `⌘W` and `⌘N` | 🟠 High |
 | **P7-F3** | Sidecar | [`page.tsx:450-466`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L450-L466) | AST symbol jump opens file at line 1, ignoring line coordinate | 🟠 High |
-| **P7-F4** | Shell | [`page.tsx:698-705`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L698-L705), [`TopMenuBar.tsx:175-178`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/TopMenuBar.tsx#L175-L178) | TopMenuBar "Execute SQL Query" is a phantom action | 🟠 High |
+| **P7-F4** | Shell | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx), [`TopMenuBar.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/shell/TopMenuBar.tsx) | TopMenuBar "Execute SQL Query" wired to real execution ref | ✅ **Resolved** |
 
 ---
 
@@ -255,13 +255,13 @@ Phase 3 addresses **edge cases, boundary limits, memory leaks, and cross-platfor
 | **P1-F4** | Router | [`intentClassifier.ts:28-30`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L28-L30) | Regex omits backtick-quoted table identifiers | 💡 Low |
 | **P2-F4** | Verification | [`shadowBuffer.ts:65-78`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L65-L78) | AST check tolerates bracket count delta `< 2` | 🟡 Medium |
 | **P2-F5** | Verification | [`page.tsx:510-530`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L510-L530) | Fast path directly applies edits without shadow verification | 🟡 Medium |
-| **P2-F6** | Verification | [`ShadowVerificationDrawer.tsx:25-30`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ShadowVerificationDrawer.tsx#L25-L30) | Unused state variables in drawer component | 💡 Low |
+| **P2-F6** | Verification | [`ShadowVerificationDrawer.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/ShadowVerificationDrawer.tsx) | Removed unused viewMode state | ✅ **Resolved** |
 | **P3-F5** | SQL Driver | [`sqlDriver.ts:80-105`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L80-L105) | Naive comma split breaks DDL parameterized types | 🟡 Medium |
 | **P3-F6** | SQL Driver | [`page.tsx:740-750`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L740-L750) | "Select Top 100 Rows" context action is phantom log | 🟡 Medium |
 | **P3-F7** | SQL Driver | [`sqlDriver.ts:210-235`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L210-L235) | JOIN column namespace collision on identical field names | 💡 Low |
 | **P4-F5** | Agentic AI | [`byokClient.ts:5-12`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L5-L12) | Missing `costTracker.ts` and `contextAssembler.ts` modules | 🟡 Medium |
-| **P4-F6** | Agentic AI | [`page.tsx:110-125`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L110-L125) | Hardcoded fallback API key in source | 🟡 Medium |
-| **P4-F7** | Agentic AI | [`fileTools.ts:1-60`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/fileTools.ts#L1-L60) | Orphaned `fileTools.ts` redundant with persistence module | 💡 Low |
+| **P4-F6** | Agentic AI | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Sanitized hardcoded fallback API key to empty string | ✅ **Resolved** |
+| **P4-F7** | Agentic AI | [`fileTools.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/fileTools.ts) | Purged orphaned fileTools.ts and terminalRunner.ts | ✅ **Resolved** |
 | **P5-F5** | File Tree | [`FileExplorer.tsx:85-110`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/FileExplorer.tsx#L85-L110) | Nested folder expansion ID mismatch collapses folders | 🟡 Medium |
 | **P5-F6** | File Tree | [`SearchModal.tsx:65-80`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/SearchModal.tsx#L65-L80) | Unescaped regex in global "Replace All" crashes search | 🟡 Medium |
 | **P5-F7** | File Tree | [`workspacePersistence.ts:30-50`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/workspacePersistence.ts#L30-L50) | Active tab and panel layout not persisted in localStorage | 💡 Low |
