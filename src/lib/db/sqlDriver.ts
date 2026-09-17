@@ -440,6 +440,13 @@ export class RealSqlDriverEngine {
   }
 
   /**
+   * Retrieve list of table names in current schema.
+   */
+  public getTableNames(): string[] {
+    return this.introspectSchema().map(t => t.name);
+  }
+
+  /**
    * Retrieve a specific table by name.
    */
   public getTable(tableName: string): IntrospectedTable | undefined {
