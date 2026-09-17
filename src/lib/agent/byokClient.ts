@@ -122,29 +122,57 @@ export class BYOKClientAdapter {
   private async callAnthropic(
     config: BYOKConfig, prompt: string, context: string, startTime: number
   ): Promise<{ responseText: string; tokensUsed: number; latencyMs: number }> {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': config.apiKey!,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: config.modelName,
-        max_tokens: 2048,
-        system: 'You are an expert coding assistant inside an Agentic AI IDE. Return only code changes as a unified diff or complete replacement. Be concise.',
-        messages: [
-          { role: 'user', content: `Context file:\n\`\`\`\n${context}\n\`\`\`\n\nRequest: ${prompt}` }
-        ]
-      })
-    });
+    const isBrowser = typeof window !== 'undefined';
+    let data: any;
 
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Anthropic API ${response.status}: ${errBody}`);
+    if (isBrowser) {
+      // Direct browser calls to Anthropic are blocked by CORS. Route through local Next.js proxy:
+      const response = await fetch('/api/ai/anthropic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          apiKey: config.apiKey,
+          model: config.modelName || 'claude-3-5-sonnet-20240620',
+          max_tokens: 2048,
+          system: 'You are an expert coding assistant inside an Agentic AI IDE. Return only code changes as a unified diff or complete replacement. Be concise.',
+          messages: [
+            { role: 'user', content: `Context file:\n\`\`\`\n${context}\n\`\`\`\n\nRequest: ${prompt}` }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Anthropic Proxy ${response.status}: ${errBody}`);
+      }
+
+      data = await response.json();
+    } else {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': config.apiKey!,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: config.modelName,
+          max_tokens: 2048,
+          system: 'You are an expert coding assistant inside an Agentic AI IDE. Return only code changes as a unified diff or complete replacement. Be concise.',
+          messages: [
+            { role: 'user', content: `Context file:\n\`\`\`\n${context}\n\`\`\`\n\nRequest: ${prompt}` }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        const errBody = await response.text();
+        throw new Error(`Anthropic API ${response.status}: ${errBody}`);
+      }
+
+      data = await response.json();
     }
 
-    const data = await response.json();
     const latencyMs = Date.now() - startTime;
     const textContent = data.content?.find((c: any) => c.type === 'text');
     return {
@@ -342,6 +370,33 @@ export class BYOKClientAdapter {
           }
         }
       }
+    }
+  }
+
+  /**
+   * Unified progressive completion stream.
+   * If provider is nvidia with an active API key, streams real SSE reasoning & content tokens.
+   * Otherwise executes standard chat completion and streams words progressively for smooth UI feedback.
+   */
+  public async *streamCompletion(
+    provider: LLMProvider,
+    prompt: string,
+    context: string = '',
+    imageUrl?: string
+  ): AsyncGenerator<string, void, unknown> {
+    const config = this.configs[provider];
+    if (provider === 'nvidia' && config?.apiKey) {
+      yield* this.streamNvidia(prompt, context, imageUrl);
+      return;
+    }
+
+    // For other providers or simulation, stream completion tokens progressively
+    const result = await this.generateCompletion(provider, prompt, context);
+    const words = result.responseText.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      yield (i === 0 ? '' : ' ') + words[i];
+      // Small pause to allow React micro-task re-rendering
+      await new Promise((r) => setTimeout(r, 12));
     }
   }
 
