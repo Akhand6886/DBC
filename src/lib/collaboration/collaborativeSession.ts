@@ -700,6 +700,48 @@ export class CollaborativeSessionManager {
     return { success: true, lock };
   }
 
+  /**
+   * Asynchronously acquire a distributed resource lock with retry attempts and exponential backoff
+   * to resolve race conditions and sequence collisions between concurrent agent tasks.
+   */
+  public async acquireLockWithBackoff(
+    sessionId: string,
+    participantId: string,
+    resourceType: LockResourceType,
+    targetName: string,
+    mode: LockMode = 'EXCLUSIVE_WRITE',
+    ttlMs: number = 300000,
+    purpose: string = 'Autonomous query mutation or profiling',
+    maxRetries: number = 3,
+    initialBackoffMs: number = 80
+  ): Promise<{ success: boolean; lock?: ResourceLock; reason?: string; retriesAttempted: number }> {
+    let attempts = 0;
+    let delay = initialBackoffMs;
+
+    while (attempts <= maxRetries) {
+      const res = this.acquireLock(sessionId, participantId, resourceType, targetName, mode, ttlMs, purpose);
+      if (res.success) {
+        return { ...res, retriesAttempted: attempts };
+      }
+
+      attempts++;
+      if (attempts > maxRetries) {
+        return { ...res, retriesAttempted: attempts - 1 };
+      }
+
+      // Jittered exponential backoff
+      const jitter = Math.floor(Math.random() * 20);
+      await new Promise((resolve) => setTimeout(resolve, delay + jitter));
+      delay = Math.round(delay * 1.5);
+    }
+
+    return {
+      success: false,
+      reason: `Timed out acquiring lock on '${targetName}' after ${maxRetries} retries.`,
+      retriesAttempted: maxRetries
+    };
+  }
+
   public releaseLock(sessionId: string, participantId: string, targetName: string): boolean {
     const session = this.sessions.get(sessionId);
     if (!session) return false;
