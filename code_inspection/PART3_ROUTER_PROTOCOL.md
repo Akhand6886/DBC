@@ -79,60 +79,64 @@
 ## 4. Deep-Dive Code Inspection Findings
 
 ### Finding RT-01: Synchronous Router Blocks Asynchronous BYOK Streaming
-* **Severity**: 🟠 High
-* **Location**: [`src/lib/router/routerEngine.ts:62-93`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts#L62-L93)
+* **Severity**: 🟠 High (Resolved ✅)
+* **Location**: [`src/lib/router/routerEngine.ts:62-93`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts#L62-L93), [`src/lib/router/llmEngine.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/llmEngine.ts), [`src/components/agents/MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx)
 * **Defect Analysis**:
-  ```ts
-  export function executeRoutedPrompt(...): ExecuteRouteResult {
-    ...
-    if (isFastPath) {
-      const res = runDeterministicAction(...);
-    } else {
-      const res = runLLMReasoning(...);
-    }
-  }
-  ```
-  `executeRoutedPrompt` is synchronous. When the router escalates to an LLM, it cannot await real asynchronous network responses from `byokClient.generateCompletion()` or `streamNvidia()`.
+  `executeRoutedPrompt` was synchronous. When the router escalated to an LLM, it could not await asynchronous responses from external LLM providers or `byokClient.generateCompletion()`.
 * **Remediation**:
-  Make `executeRoutedPrompt` `async` and await the LLM completion when escalating to external providers.
+  - Made `executeRoutedPrompt` return `Promise<ExecuteRouteResult>`.
+  - Converted `runLLMReasoning` to `async Promise`, calling `byokClient.generateCompletion()` when an API key is present or falling back gracefully to contextual code reasoning.
+  - Updated caller in `MissionControl.tsx` to `await executeRoutedPrompt(...)`.
 
 ---
 
 ### Finding RT-02: Pseudo-Vector Search Returns Uniform Similarity
-* **Severity**: 🟡 Medium
-* **Location**: [`src/lib/sidecar/astIndexer.ts:33-42`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L33-L42)
+* **Severity**: 🟡 Medium (Resolved ✅)
+* **Location**: [`src/lib/sidecar/astIndexer.ts:33-73`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L33-L73)
 * **Defect Analysis**:
-  `searchSymbols(query: string)` checks `name.toLowerCase().includes(query.toLowerCase())`. If no exact match is found, it returns the entire list with a static `0.72` similarity score rather than computing actual string distance or token similarity.
+  Non-exact matches were returned with a static uniform `0.72` similarity score rather than ranking by actual token overlap or edit distance.
 * **Remediation**:
-  Calculate Jaccard token similarity or Levenshtein edit distance so results are ranked by actual match proximity.
+  - Implemented token-based Jaccard similarity combined with substring proximity weighting and symbol length inverse normalization.
+  - Scores are dynamically differentiated across matching symbols and sorted descending by similarity score.
 
 ---
 
 ### Finding RT-03: Rolling Latency Metric Frozen at Static Constant
-* **Severity**: 🟡 Medium
-* **Location**: [`src/lib/router/routerEngine.ts:33-40`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts#L33-L40)
+* **Severity**: 🟡 Medium (Resolved ✅)
+* **Location**: [`src/lib/router/routerEngine.ts:20-50`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts#L20-L50)
 * **Defect Analysis**:
-  `previewDeveloperIntent()` returns `estimatedLatencyMs: isFastPath ? 3 : 840`. These values are static constants and do not adapt as network or device latency varies during an active session.
+  `previewDeveloperIntent()` returned static constants `3` and `840` for fast-path vs LLM latency without adapting to actual system performance.
 * **Remediation**:
-  Track rolling average latency from `systemMetrics` and feed real-time averages into the preview card.
+  - Added rolling latency window (`recordRouteLatency`, `getRollingAverageLatency`, `resetRollingLatencies`) in `routerEngine.ts`.
+  - Wired `executeRoutedPrompt` to record actual execution times after every run.
+  - Updated `previewDeveloperIntent` to feed real-time rolling average latencies into live UI preview cards.
 
 ---
 
 ### Finding RT-04: Intent Classifier Omission of Quoted Identifiers
-* **Severity**: 💡 Low
-* **Location**: [`src/lib/router/intentClassifier.ts:28-32`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L28-L32)
+* **Severity**: 💡 Low (Resolved ✅)
+* **Location**: [`src/lib/router/intentClassifier.ts:48-95`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L48-L95)
 * **Defect Analysis**:
-  Table and symbol extraction regexes match `\b[a-zA-Z0-9_]+\b`, ignoring SQL queries using backticks `` `users` `` or square brackets `[users]`.
+  Table and symbol extraction regexes only recognized raw alphanumeric strings, ignoring SQL backticks (`` `table` ``), square brackets (`[column]`), and quotes.
 * **Remediation**:
-  Allow optional surrounding quotes or backticks in identifier capturing groups.
+  - Updated regexes for `LSP_RENAME` and `LSP_REFERENCES` to match optional surrounding backticks, brackets, single quotes, and double quotes.
+  - Tested identifier extraction across SQL, TypeScript, and JSON contexts.
 
 ---
 
 ## 5. Verification & Test Coverage Matrix
 
+- ✅ `test-part3-remediations.ts`: 50/50 Passing (100%)
+  - RT-01: Async `executeRoutedPrompt` Promise resolution across fast-path and LLM routes (OpenAI, Anthropic, Gemini, Ollama, NVIDIA)
+  - RT-02: Differentiated similarity scores in AST sidecar indexer (non-uniform, sorted descending, empty query safety)
+  - RT-03: Dynamic rolling latency metrics adapting after execution runs
+  - RT-04: Quoted, backticked, and bracketed identifier extraction in `intentClassifier`
+  - Integration: MCP protocol ping and schema introspection verification
 - ✅ `test-p0-subsystems.ts`: 25/25 Passing
   - ReAct dispatch & deterministic validation
 - ✅ `test-p1-subsystems.ts`: 27/27 Passing
   - MCP Server initialization, ping, and tools/list verification
   - MCP `dbc_introspect_schema` execution & resource reading (`db://schema`)
   - DuckDB, SQLite, PostgreSQL, and MySQL driver plugin API
+- ✅ Full Battery: **205 / 205 Tests Passing (100%)**
+

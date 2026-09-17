@@ -10,16 +10,16 @@
 
 *Only ONE task may reside here at any time. When this task finishes its verification criteria, move it to Completed and pull exactly ONE task from NEXT.*
 
-### [Task] P4-F2: Async Router Escalation to Streaming BYOK Client
-- **Goal:** Upgrade `routeRequest()` in `routerEngine.ts` to support asynchronous execution and real streaming BYOK completions.
+### [Task] Part 4: Shadow Workspace & Diff Verification Domain Remediation
+- **Goal:** Remediate findings in `code_inspection/PART4_VERIFICATION_SHADOW.md` (Myers/LCS diffing, line-aligned diff computation, and virtual workspace verification).
 - **Sub-Steps:**
-  - [ ] Support async signature in `routeRequest()`.
-  - [ ] Connect LLM escalation to `byokClient.executeChatCompletion()`.
-  - [ ] Verify non-blocking UI during reasoning.
-  - [ ] Validate with `npx tsc --noEmit`.
+  - [ ] `VF-01`: Replace naive 1:1 positional diff with Myers / Longest Common Subsequence (LCS) algorithm in `src/lib/sidecar/shadowBuffer.ts` to prevent false mismatches on insertions/deletions.
+  - [ ] `VF-02`: Syntax safety verification pass on shadow buffers before proposing patches.
+  - [ ] Create `scripts/test-part4-remediations.ts` verification suite.
+  - [ ] Validate with `npx tsc --noEmit` and run all suites.
 - **Verification Criteria:**
-  - Fast-path remains instantaneous (<5ms) while LLM path executes asynchronously without freezing the app shell.
-  - `npx tsc --noEmit` exits with 0.
+  - Positional insertions and deletions in shadow buffers produce accurate hunk diffs.
+  - All automated tests pass with 0 errors.
 
 ---
 
@@ -27,15 +27,9 @@
 
 *Ordered queue for upcoming sprints. Do not start until NOW is marked done.*
 
-1. **P6-F4: Browser Shortcut Guard on ⌘W and ⌘N**
-   - *Scope:* Prevent accidental browser tab closure on `⌘W` and window opening on `⌘N` when working in DBC.
-   - *Target Files:* [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx)
-2. **P5-F3: In-Memory Workspace Autosave Persistence**
-   - *Scope:* Persist unsaved buffer edits periodically to localStorage cache with dirty indicators.
-   - *Target Files:* [`src/lib/workspacePersistence.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/workspacePersistence.ts), [`src/app/page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx)
-3. **P6-F3: Monaco & Shell Theme Unification**
-   - *Scope:* Sync custom Monaco theme tokens dynamically to HTML root `data-theme` and CSS variables.
-   - *Target Files:* [`src/lib/monacoThemes.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/monacoThemes.ts), [`src/app/globals.css`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/globals.css)
+1. **Part 5: Monaco Editor & Workspace Tree Domain** ([`code_inspection/PART5_EDITOR_MONACO_FILETREE.md`](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART5_EDITOR_MONACO_FILETREE.md))
+2. **Part 6: Application Shell & Layout Domain** ([`code_inspection/PART6_SHELL_MODALHOST_APP.md`](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART6_SHELL_MODALHOST_APP.md))
+3. **Part 7: Risk Matrix & Production Hardening** ([`code_inspection/PART7_TESTS_HEALTH_MATRIX.md`](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md))
 
 ---
 
@@ -81,6 +75,7 @@
 
 ## 📜 Completed Milestones
 
+- ✅ **2026-09-17:** Part 3 (Deterministic Router & Protocol Layer) Domain Remediation — Resolved RT-01 (Async `executeRoutedPrompt` Promise resolution with live BYOK escalation and graceful contextual fallback), RT-02 (Token-based Jaccard similarity and substring proximity weighting in AST Sidecar semantic search), RT-03 (Rolling execution latency tracking feeding real-time dynamic preview metrics), and RT-04 (Quoted, backticked, and bracketed identifier extraction in `intentClassifier` for SQL, TypeScript, and JSON). All 50 Part 3 remediation tests passing; all 205 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 2 (DBMS Studio & SQL Engine) Domain Remediation — Resolved DB-01 (JOIN column namespace collision prevention with table qualification), DB-02 (Parameterized DDL type parsing preserving DECIMAL(10, 2) and VARCHAR(255)), DB-03 (Database Memory invariant rules persistence and resetToDefaults with deep-cloning), and DB-04 (Dropdown menu keyboard accessibility and Escape key listener in SqlQueryPanel). All 26 Part 2 remediation tests passing; all 155 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 1 (Agents & AI Personas) Domain Remediation — Resolved AG-01 (Anthropic CORS API proxy route), AG-02 (Progressive SSE token streaming in MissionControl & dbAgentRuntime), AG-03 (Asynchronous distributed lock retry with backoff in collaborativeSessionManager), and AG-04 (Intent-weighted specialized persona classification with confidence scoring & Auto selector). All 21 Part 1 remediation tests passing; all 108 baseline tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Comprehensive Modular Code Inspection — Completed partition-by-partition code inspection across 7 domains (`PART1_AGENTS_AI.md` through `PART7_TESTS_HEALTH_MATRIX.md`), master index (`README.md`), and risk matrix, saved under `code_inspection/`. 108/108 tests passing, 0 TypeScript errors.
