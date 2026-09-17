@@ -66,11 +66,13 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
 
   return (
     <div className="h-8 bg-[#323233] border-b border-[#3c3c3c] flex items-center justify-between px-3 text-xs text-[#cccccc] select-none font-sans relative z-40">
-      {/* Invisible backdrop to dismiss open menus on click outside */}
+      {/* SH-04: Invisible backdrop to dismiss open menus on touch and click outside */}
       {openMenu && (
         <div
-          className="fixed inset-0 z-40 bg-transparent cursor-default"
+          data-testid="top-menu-backdrop"
+          className="fixed inset-0 z-40 bg-transparent cursor-default touch-none"
           onClick={() => setOpenMenu(null)}
+          onTouchStart={() => setOpenMenu(null)}
         />
       )}
 
@@ -88,6 +90,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative">
           <button
             onClick={(e) => toggleMenu(e, 'file')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('file'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'file' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -98,7 +101,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
             <div className="absolute left-0 mt-1 w-48 bg-[#252526] border border-[#3c3c3c] rounded-md shadow-2xl py-1 z-50 text-[11px]">
               <button onClick={() => handleAction(onNewFile)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
                 <span>New File</span>
-                <span className="text-[10px] text-slate-400">⌘N</span>
+                <span className="text-[10px] text-slate-400">⌘N / ⌥N</span>
               </button>
               <button onClick={() => handleAction(onNewFolder)} className="w-full px-3 py-1.5 text-left hover:bg-[#007acc] hover:text-white flex items-center justify-between">
                 <span>New Folder</span>
@@ -122,6 +125,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative">
           <button
             onClick={(e) => toggleMenu(e, 'edit')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('edit'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'edit' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -148,6 +152,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative">
           <button
             onClick={(e) => toggleMenu(e, 'view')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('view'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'view' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -176,6 +181,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative">
           <button
             onClick={(e) => toggleMenu(e, 'run')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('run'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'run' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -202,6 +208,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative hidden lg:inline-block">
           <button
             onClick={(e) => toggleMenu(e, 'go')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('go'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'go' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -270,6 +277,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative hidden lg:inline-block">
           <button
             onClick={(e) => toggleMenu(e, 'terminal')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('terminal'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'terminal' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
@@ -296,6 +304,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         <div className="relative hidden lg:inline-block">
           <button
             onClick={(e) => toggleMenu(e, 'help')}
+            onMouseEnter={() => { if (openMenu) setOpenMenu('help'); }}
             className={`px-2 py-0.5 rounded hover:bg-[#3c3c3c] hover:text-white transition-colors text-[11px] ${
               openMenu === 'help' ? 'bg-[#3c3c3c] text-white' : ''
             }`}
