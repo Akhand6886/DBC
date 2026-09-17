@@ -10,13 +10,13 @@ export interface SymbolLocation {
 
 export class RustSidecarIndexer {
   private indexedSymbols: SymbolLocation[] = [
-    { id: 'sym-1', symbolName: 'main', kind: 'function', file: 'src/index.ts', line: 4, snippet: 'export function main() {' },
-    { id: 'sym-2', symbolName: 'ConfidenceRouter', kind: 'class', file: 'src/router/confidenceRouter.ts', line: 1, snippet: 'export class ConfidenceRouter {' },
-    { id: 'sym-3', symbolName: 'confidenceRouter', kind: 'variable', file: 'src/router/confidenceRouter.ts', line: 12, snippet: 'export const confidenceRouter = new ConfidenceRouter();' },
-    { id: 'sym-4', symbolName: 'SymbolGraph', kind: 'struct', file: 'src/sidecar/symbolGraph.rs', line: 3, snippet: 'pub struct SymbolGraph {' },
-    { id: 'sym-5', symbolName: 'createShadowDiffCheck', kind: 'function', file: 'src/verification/shadowBuffer.ts', line: 3, snippet: 'export function createShadowDiffCheck(' },
-    { id: 'sym-6', symbolName: 'classifyDeveloperIntent', kind: 'function', file: 'src/lib/router/intentClassifier.ts', line: 11, snippet: 'export function classifyDeveloperIntent(' },
-    { id: 'sym-7', symbolName: 'verifyAndCreateShadowDiff', kind: 'function', file: 'src/lib/verification/shadowBuffer.ts', line: 3, snippet: 'export function verifyAndCreateShadowDiff(' }
+    { id: 'sym-1', symbolName: 'executeApp', kind: 'function', file: 'src/index.ts', line: 2, snippet: 'export function executeApp() {' },
+    { id: 'sym-2', symbolName: 'users', kind: 'struct', file: 'migrations/001_initial_schema.sql', line: 2, snippet: 'CREATE TABLE users (' },
+    { id: 'sym-3', symbolName: 'roles', kind: 'struct', file: 'migrations/001_initial_schema.sql', line: 10, snippet: 'CREATE TABLE roles (' },
+    { id: 'sym-4', symbolName: 'users_report', kind: 'variable', file: 'queries/users_report.sql', line: 2, snippet: 'SELECT u.id, u.username, u.email, r.role_name' },
+    { id: 'sym-5', symbolName: 'slow_queries_check', kind: 'variable', file: 'queries/slow_queries_check.sql', line: 2, snippet: 'EXPLAIN ANALYZE SELECT * FROM users' },
+    { id: 'sym-6', symbolName: 'dbConfig', kind: 'interface', file: 'src/dbConfig.json', line: 2, snippet: '"dbEngine": "sqlite"' },
+    { id: 'sym-7', symbolName: 'DBMS_STUDIO_README', kind: 'variable', file: 'README.md', line: 1, snippet: '# Agentic DBMS Studio IDE' }
   ];
 
   public getAllSymbols(): SymbolLocation[] {
