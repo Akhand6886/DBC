@@ -98,3 +98,83 @@ export function flattenFileNodes(nodes: FileNode[]): FileNode[] {
   }
   return result;
 }
+
+const DRAFTS_STORAGE_KEY = 'dbc_active_drafts_v1';
+
+export interface PersistedDraft {
+  filePath: string;
+  content: string;
+  timestamp: number;
+}
+
+/**
+ * ED-01: Saves an uncommitted editor buffer draft to localStorage.
+ */
+export function saveDraftBuffer(filePath: string, content: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(DRAFTS_STORAGE_KEY);
+    const drafts: Record<string, PersistedDraft> = raw ? JSON.parse(raw) : {};
+    drafts[filePath] = {
+      filePath,
+      content,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+  } catch (err) {
+    console.warn('[WorkspacePersistence]: Failed to save draft buffer:', err);
+  }
+}
+
+/**
+ * ED-01: Loads an uncommitted editor buffer draft from localStorage.
+ */
+export function loadDraftBuffer(filePath: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(DRAFTS_STORAGE_KEY);
+    if (!raw) return null;
+    const drafts: Record<string, PersistedDraft> = JSON.parse(raw);
+    return drafts[filePath]?.content ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * ED-01: Clears a draft buffer once a file has been explicitly saved.
+ */
+export function clearDraftBuffer(filePath: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(DRAFTS_STORAGE_KEY);
+    if (!raw) return;
+    const drafts: Record<string, PersistedDraft> = JSON.parse(raw);
+    delete drafts[filePath];
+    localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts));
+  } catch {}
+}
+
+/**
+ * ED-01: Retrieves all uncommitted drafts.
+ */
+export function getAllDraftBuffers(): Record<string, PersistedDraft> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = localStorage.getItem(DRAFTS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * ED-01: Clears all drafts.
+ */
+export function clearAllDraftBuffers(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(DRAFTS_STORAGE_KEY);
+  } catch {}
+}
+
