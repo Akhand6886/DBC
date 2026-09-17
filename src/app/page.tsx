@@ -628,13 +628,66 @@ export default function Home() {
   };
 
   const handleRenameFile = (fileId: string, newName: string) => {
-    const updateTree = (nodes: FileNode[]): FileNode[] =>
+    let oldPath = '';
+    let newPath = '';
+
+    const updateTree = (nodes: FileNode[], parentDir = ''): FileNode[] =>
       nodes.map(n => {
-        if (n.id === fileId) return { ...n, name: newName };
-        if (n.isFolder && n.children) return { ...n, children: updateTree(n.children) };
+        if (n.id === fileId) {
+          oldPath = n.path;
+          newPath = parentDir ? `${parentDir}/${newName}` : newName;
+          const updatedNode: FileNode = {
+            ...n,
+            name: newName,
+            path: newPath
+          };
+          if (n.isFolder && n.children) {
+            const updateChildPaths = (children: FileNode[], curParent: string): FileNode[] =>
+              children.map(child => {
+                const childPath = `${curParent}/${child.name}`;
+                return {
+                  ...child,
+                  path: childPath,
+                  children: child.isFolder && child.children ? updateChildPaths(child.children, childPath) : child.children
+                };
+              });
+            updatedNode.children = updateChildPaths(n.children, newPath);
+          }
+          return updatedNode;
+        }
+        if (n.isFolder && n.children) {
+          return { ...n, children: updateTree(n.children, n.path) };
+        }
         return n;
       });
+
     setWorkspaceFiles(prev => updateTree(prev));
+
+    if (oldPath && newPath) {
+      setOpenFiles(prev =>
+        prev.map(f => {
+          if (f.id === fileId) {
+            return { ...f, name: newName, path: newPath };
+          }
+          if (f.path.startsWith(oldPath + '/')) {
+            return { ...f, path: newPath + f.path.substring(oldPath.length) };
+          }
+          return f;
+        })
+      );
+
+      setActiveFile(prev => {
+        if (!prev) return null;
+        if (prev.id === fileId) {
+          return { ...prev, name: newName, path: newPath };
+        }
+        if (prev.path.startsWith(oldPath + '/')) {
+          return { ...prev, path: newPath + prev.path.substring(oldPath.length) };
+        }
+        return prev;
+      });
+    }
+
     addToast('info', `Renamed file to ${newName}`);
   };
 
