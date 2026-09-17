@@ -77,58 +77,46 @@
 ## 4. Deep-Dive Code Inspection Findings
 
 ### Finding VF-01: Naive Line Differ Causes Cascading False Diffs on Insertions
-* **Severity**: 🟠 High
-* **Location**: [`src/lib/verification/shadowBuffer.ts:17-27`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L17-L27)
+* **Severity**: 🟠 High (Resolved ✅)
+* **Location**: [`src/lib/verification/shadowBuffer.ts:70-112`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L70-L112)
 * **Defect Analysis**:
-  ```ts
-  const maxLen = Math.max(originalLines.length, proposedLines.length);
-  for (let i = 0; i < maxLen; i++) {
-    const orig = originalLines[i];
-    const prop = proposedLines[i];
-    if (orig !== prop) {
-      if (orig !== undefined) diffLines.push(`- ${orig}`);
-      if (prop !== undefined) diffLines.push(`+ ${prop}`);
-    } else if (orig !== undefined) {
-      diffLines.push(`  ${orig}`);
-    }
-  }
-  ```
-  Comparing indices `i` directly assumes lines are matched positionally. If a single line is inserted at line 1, `originalLines[0]` and `proposedLines[0]` differ, causing every subsequent line in the entire file to be treated as a deletion and insertion.
+  Positional line matching (`originalLines[i] !== proposedLines[i]`) assumed 1:1 index alignment. An insertion at line 0 shifted all subsequent lines, generating hundreds of false deletion and addition lines.
 * **Remediation**:
-  Implement Longest Common Subsequence (LCS) or Myers diff algorithm so unchanged blocks are recognized despite line shifts.
+  - Implemented `computeLcsDiff()` based on the Longest Common Subsequence (LCS) algorithm.
+  - Correctly preserves unchanged lines (` `), identifies single line additions (`+`), and identifies single line deletions (`-`) without line-shift cascading.
 
 ---
 
 ### Finding VF-02: Bracket Balance Tolerance Delta (`<= 2`) is Too Permissive
-* **Severity**: 🟡 Medium
-* **Location**: [`src/lib/verification/shadowBuffer.ts:29-33`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L29-L33)
+* **Severity**: 🟡 Medium (Resolved ✅)
+* **Location**: [`src/lib/verification/shadowBuffer.ts:24-65`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L24-L65)
 * **Defect Analysis**:
-  ```ts
-  const openBrackets = (proposedContent.match(/[{[(]/g) || []).length;
-  const closeBrackets = (proposedContent.match(/[}\])]/g) || []).length;
-  const syntaxCheckPassed = Math.abs(openBrackets - closeBrackets) <= 2;
-  ```
-  A delta of `<= 2` allows code with up to 2 unclosed brackets, braces, or parentheses to be marked as `syntaxCheckPassed: true`.
+  A delta of `<= 2` allowed code with unclosed brackets, braces, or parens to be marked as `syntaxCheckPassed: true`. Moreover, brackets within string literals and comments corrupted balance counts.
 * **Remediation**:
-  Strip string literals and comments before counting, and require `Math.abs(openBrackets - closeBrackets) === 0`.
+  - Added `stripStringsAndComments()` to strip single-line (`//`, `--`), multi-line (`/* */`), single-quoted, double-quoted, and template strings before validation.
+  - Implemented stack-based bracket verification with strict 0-tolerance matching pairs for `()`, `[]`, and `{}`.
 
 ---
 
 ### Finding VF-03: Snapshot History Drawer Lacks Pagination and Search
-* **Severity**: 💡 Low
-* **Location**: [`src/components/agents/ShadowVerificationDrawer.tsx:50-80`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/ShadowVerificationDrawer.tsx#L50-L80)
+* **Severity**: 💡 Low (Resolved ✅)
+* **Location**: [`src/components/agents/ShadowVerificationDrawer.tsx:28-115`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/ShadowVerificationDrawer.tsx#L28-L115)
 * **Defect Analysis**:
-  In long-running sessions with dozens of router patches, the snapshot stack in `ShadowVerificationDrawer` renders all items without search or pagination, making it difficult to locate a specific rollback snapshot.
+  In long-running sessions, locating specific rollback snapshots was difficult without search or lifecycle status filtering.
 * **Remediation**:
-  Add an instant filter input by file name or snapshot status (`ACCEPTED`, `REJECTED`, `ROLLED_BACK`).
+  - Added instant search input filtering by snapshot ID or target file path with a 1-click clear button.
+  - Added lifecycle status filter tabs (`ALL`, `PENDING`, `ACCEPTED`, `REJECTED`, `ROLLED_BACK`) with active badges and counter displays (`filtered / total`).
 
 ---
 
 ## 5. Verification & Test Coverage Matrix
 
-- ✅ `test-p0-subsystems.ts`:
+- ✅ `test-part4-remediations.ts`: 49/49 Passing (100%)
+  - VF-01: Line 0 prepending, middle insertion, middle deletion, in-place edit, and identical file LCS diffs
+  - VF-02: String & comment bracket stripping, strict 0-tolerance unclosed bracket rejection, mismatched pair rejection, valid SQL DDL nested type parsing
+  - VF-03: Snapshot stack instant search query and lifecycle status filtering
+  - Integration: End-to-end `verifyAndCreateShadowDiff` generation with diagnostics
+- ✅ `test-p0-subsystems.ts`: 25/25 Passing
   - Rollback snapshots verified with pre/post mutation counts and inverted SQL statements.
-- ✅ Manual Interactive Flow:
-  - Speculative Fast-Path patch generates `SNAP-...` with diff banner.
-  - Clicking "Reject Patch" cleanly reverts Monaco editor buffer to pre-patch state.
-  - Snapshot rollback accurately restores target file regardless of which tab is active.
+- ✅ Full Battery: **254 / 254 Tests Passing (100%)**
+
