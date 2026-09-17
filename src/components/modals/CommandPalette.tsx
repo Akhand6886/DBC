@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { Command, Search, FileCode, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal } from 'lucide-react';
+import { Command, Search, FileCode, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Palette, Key, Terminal, Table, Database } from 'lucide-react';
+import { realSqlDriver } from '../../lib/db/sqlDriver';
 
 export interface PaletteAction {
   id: string;
@@ -12,12 +13,62 @@ export interface PaletteAction {
   handler: () => void;
 }
 
+export interface DynamicTableActionHandlers {
+  onInspectTable?: (tableName: string) => void;
+  onEditTable?: (tableName: string) => void;
+  onQueryTable?: (tableName: string) => void;
+}
+
+/**
+ * SH-03: Dynamically generate Palette actions for all live database tables
+ */
+export function generateDynamicTableActions(
+  handlers: DynamicTableActionHandlers,
+  customTables?: string[]
+): PaletteAction[] {
+  const tables = customTables ?? (typeof realSqlDriver !== 'undefined' ? realSqlDriver.getTableNames() : []);
+  const actions: PaletteAction[] = [];
+
+  for (const tbl of tables) {
+    if (handlers.onInspectTable) {
+      actions.push({
+        id: `inspect-table-${tbl}`,
+        label: `Inspect Table DDL: ${tbl}`,
+        category: 'action',
+        icon: <Table className="h-4 w-4 text-cyan-400" />,
+        handler: () => handlers.onInspectTable!(tbl)
+      });
+    }
+    if (handlers.onEditTable) {
+      actions.push({
+        id: `edit-table-${tbl}`,
+        label: `Open Data Grid: ${tbl}`,
+        category: 'action',
+        icon: <Table className="h-4 w-4 text-emerald-400" />,
+        handler: () => handlers.onEditTable!(tbl)
+      });
+    }
+    if (handlers.onQueryTable) {
+      actions.push({
+        id: `query-table-${tbl}`,
+        label: `Query Table: SELECT * FROM ${tbl} LIMIT 100`,
+        category: 'action',
+        icon: <Database className="h-4 w-4 text-amber-400" />,
+        handler: () => handlers.onQueryTable!(tbl)
+      });
+    }
+  }
+
+  return actions;
+}
+
 interface CommandPaletteProps {
   actions: PaletteAction[];
   onClose: () => void;
+  tableHandlers?: DynamicTableActionHandlers;
 }
 
-export const CommandPalette: React.FC<CommandPaletteProps> = ({ actions, onClose }) => {
+export const CommandPalette: React.FC<CommandPaletteProps> = ({ actions, onClose, tableHandlers }) => {
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -27,13 +78,21 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ actions, onClose
     inputRef.current?.focus();
   }, []);
 
+  const effectiveActions = useMemo(() => {
+    if (tableHandlers) {
+      const dynamicActions = generateDynamicTableActions(tableHandlers);
+      return [...actions, ...dynamicActions];
+    }
+    return actions;
+  }, [actions, tableHandlers]);
+
   const filtered = useMemo(() => {
-    if (!query.trim()) return actions;
+    if (!query.trim()) return effectiveActions;
     const term = query.toLowerCase();
-    return actions.filter(
+    return effectiveActions.filter(
       a => a.label.toLowerCase().includes(term) || a.category.toLowerCase().includes(term)
     );
-  }, [query, actions]);
+  }, [query, effectiveActions]);
 
   useEffect(() => {
     setSelectedIndex(0);
