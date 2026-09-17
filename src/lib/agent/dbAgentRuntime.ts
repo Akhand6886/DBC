@@ -113,6 +113,7 @@ export interface AgentRunParams {
   provider: LLMProvider;
   sessionId?: string;
   activeTableName?: string;
+  onTokenChunk?: (chunk: string) => void;
   onApprovalRequired?: (
     assessment: RiskAssessment,
     approve: () => Promise<void>,
@@ -502,6 +503,14 @@ export class DbAgentRuntime {
       const execRes = await this.executeTool('execute_query', { sql: 'SELECT * FROM users LIMIT 10;', dryRun: false }, session.id);
 
       replyText = `### Relational Database Agent Response\n\nExecuted active query safely under the **DBC Query Firewall**.\n- **Returned**: ${execRes.data?.rows?.length || 0} rows in ${execRes.executionTimeMs}ms\n- **Firewall Assessment**: Safe (${execRes.riskAssessment?.score ?? 0}/100)\n\nInspect the **Agent Execution Trace** drawer for full step-by-step telemetry.`;
+    }
+
+    if (params.onTokenChunk && replyText) {
+      const tokens = replyText.split(' ');
+      for (let i = 0; i < tokens.length; i++) {
+        params.onTokenChunk((i === 0 ? '' : ' ') + tokens[i]);
+        await new Promise((r) => setTimeout(r, 8));
+      }
     }
 
     agentTraceEngine.completeSession(

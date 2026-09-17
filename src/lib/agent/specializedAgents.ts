@@ -96,6 +96,76 @@ Enforce compliance with organizational business invariant rules stored in Databa
 };
 
 export class SpecializedAgentCoordinator {
+  private personaDomainKeywords: Record<AgentPersonaId, string[]> = {
+    dba_optimizer: [
+      'index', 'indices', 'scan', 'slow', 'latency', 'optimize', 'cost', 'plan',
+      'explain', 'bottleneck', 'btree', 'cartesian', 'tuning', 'benchmark', 'perf'
+    ],
+    schema_architect: [
+      'schema', 'migrate', 'migration', 'alter', 'ddl', 'foreign key', 'normalization',
+      '3nf', 'constraint', 'relation', 'table design', 'up', 'down', 'add column', 'create table'
+    ],
+    data_analyst: [
+      'aggregate', 'analytics', 'analysis', 'cohort', 'report', 'sum', 'count',
+      'avg', 'average', 'group by', 'window', 'metrics', 'sample', 'distribution', 'bi', 'kpi', 'trend'
+    ],
+    security_auditor: [
+      'security', 'audit', 'firewall', 'pii', 'privilege', 'admin', 'root',
+      'injection', 'drop', 'delete', 'truncate', 'invariant', 'risk', 'compliance', 'blast radius', 'leak'
+    ]
+  };
+
+  /**
+   * Intelligently classify user intent and match with the optimal specialized persona
+   * using multi-term token weighting and trigger heuristics.
+   */
+  public matchPersona(prompt: string): { persona: AgentPersona; confidence: number; matchedKeywords: string[] } {
+    const promptClean = prompt.toLowerCase();
+    const words = promptClean.split(/[\s,.;:!?()]+/).filter(Boolean);
+
+    let bestPersonaId: AgentPersonaId = 'dba_optimizer';
+    let highestScore = 0;
+    let bestMatchedKeywords: string[] = [];
+
+    (Object.keys(SPECIALIZED_PERSONAS) as AgentPersonaId[]).forEach((id) => {
+      const keywords = this.personaDomainKeywords[id] || [];
+      const matched = keywords.filter((kw) => {
+        if (kw.includes(' ')) {
+          return promptClean.includes(kw);
+        }
+        return words.includes(kw) || promptClean.includes(kw);
+      });
+
+      // Check trigger heuristics
+      const triggerMatch = SPECIALIZED_PERSONAS[id].recommendedTriggers.some((t) =>
+        promptClean.includes(t.prompt.toLowerCase()) || promptClean.includes(t.label.toLowerCase())
+      );
+
+      const score = matched.length * 20 + (triggerMatch ? 35 : 0);
+
+      if (score > highestScore) {
+        highestScore = score;
+        bestPersonaId = id;
+        bestMatchedKeywords = matched;
+      }
+    });
+
+    const confidence = highestScore > 0 ? Math.min(65 + highestScore, 98) : 50;
+
+    return {
+      persona: SPECIALIZED_PERSONAS[bestPersonaId],
+      confidence,
+      matchedKeywords: bestMatchedKeywords
+    };
+  }
+
+  /**
+   * Selects best matching persona for an arbitrary natural language prompt.
+   */
+  public selectPersonaForPrompt(prompt: string): AgentPersona {
+    return this.matchPersona(prompt).persona;
+  }
+
   /**
    * Run an agent request tailored to a specific specialized persona.
    */
@@ -103,7 +173,8 @@ export class SpecializedAgentCoordinator {
     personaId: AgentPersonaId,
     prompt: string,
     provider: LLMProvider,
-    activeTableName?: string
+    activeTableName?: string,
+    onTokenChunk?: (chunk: string) => void
   ): Promise<AgentRunResult & { persona: AgentPersona }> {
     const persona = SPECIALIZED_PERSONAS[personaId] || SPECIALIZED_PERSONAS.dba_optimizer;
 
@@ -119,7 +190,8 @@ export class SpecializedAgentCoordinator {
     const result = await dbAgentRuntime.runAgent({
       prompt: enrichedPrompt,
       provider,
-      activeTableName
+      activeTableName,
+      onTokenChunk
     });
 
     return {

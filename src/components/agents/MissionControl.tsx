@@ -95,7 +95,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 }) => {
   const [prompt, setPrompt] = useState('');
   const [provider, setProvider] = useState<LLMProvider>('anthropic');
-  const [selectedPersona, setSelectedPersona] = useState<AgentPersonaId>('dba_optimizer');
+  const [selectedPersona, setSelectedPersona] = useState<AgentPersonaId | 'auto'>('auto');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTriggers, setShowTriggers] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -179,10 +179,13 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
     if (isDbRelated) {
       try {
-        const persona = specializedAgents.getPersona(selectedPersona);
+        const resolvedPersonaId = selectedPersona === 'auto'
+          ? specializedAgents.matchPersona(trimmedPrompt).persona.id
+          : selectedPersona;
+        const persona = specializedAgents.getPersona(resolvedPersonaId);
         
         if (isSandboxMode) {
-          await dbBranchManager.executeInSandbox(`agent-${selectedPersona}`, async (branch) => {
+          await dbBranchManager.executeInSandbox(`agent-${resolvedPersonaId}`, async (branch) => {
             return dbBranchManager.executeInBranch(branch.id, trimmedPrompt);
           });
           if (onLogTerminal) {
@@ -190,34 +193,57 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           }
         }
 
+        const assistantMsgId = `msg-${Date.now()}-assistant`;
+        const initialAssistantMessage: ChatMessage = {
+          id: assistantMsgId,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          role: 'assistant',
+          content: '',
+          routePath: 'AGENTIC_LLM_PATH',
+          provider,
+          confidenceScore: 96,
+          executionTimeMs: 0,
+          tokenCostUSD: 0,
+          logMessage: `[${persona.badge}]: Reasoning & executing typed DB tools...`,
+          explanation: `${persona.name} is executing ReAct reasoning loop...`,
+          status: 'processing'
+        };
+
+        setMessages((prev) => [...prev, initialAssistantMessage]);
+
         const agentRes = await specializedAgents.runPersonaAgent(
-          selectedPersona,
+          resolvedPersonaId,
           trimmedPrompt,
           provider,
-          'users'
+          'users',
+          (chunk) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === assistantMsgId ? { ...m, content: m.content + chunk } : m
+              )
+            );
+          }
         );
 
         if (onLogTerminal) {
           onLogTerminal(`[DBC Specialized Agent - ${persona.badge}]: Completed ReAct loop in ${agentRes.totalDurationMs}ms with tools [${agentRes.toolsExecuted.join(', ')}]`);
         }
 
-        const assistantMsgId = `msg-${Date.now()}-assistant`;
-        const assistantMessage: ChatMessage = {
-          id: assistantMsgId,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          role: 'assistant',
-          content: agentRes.replyText,
-          routePath: 'AGENTIC_LLM_PATH',
-          provider,
-          confidenceScore: 96,
-          executionTimeMs: agentRes.totalDurationMs,
-          tokenCostUSD: agentRes.totalCostUSD,
-          logMessage: `[${persona.badge}]: Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}${isSandboxMode ? ' • Sandbox: ISOLATED' : ''}`,
-          explanation: `${persona.name} executed ${agentRes.toolsExecuted.length} typed database tool(s)${isSandboxMode ? ' inside an isolated copy-on-write Sandbox' : ''} with context from Database Memory.`,
-          status: 'success'
-        };
-
-        setMessages((prev) => [...prev, assistantMessage]);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantMsgId
+              ? {
+                  ...m,
+                  content: agentRes.replyText,
+                  executionTimeMs: agentRes.totalDurationMs,
+                  tokenCostUSD: agentRes.totalCostUSD,
+                  logMessage: `[${persona.badge}]: Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}${isSandboxMode ? ' • Sandbox: ISOLATED' : ''}`,
+                  explanation: `${persona.name} executed ${agentRes.toolsExecuted.length} typed database tool(s)${isSandboxMode ? ' inside an isolated copy-on-write Sandbox' : ''} with context from Database Memory.`,
+                  status: 'success'
+                }
+              : m
+          )
+        );
       } catch (err: any) {
         if (onLogTerminal) onLogTerminal(`[DBC DB Agent Error]: ${err.message}`);
       } finally {
@@ -455,6 +481,18 @@ export const MissionControl: React.FC<MissionControlProps> = ({
             <span>Persona:</span>
           </div>
           <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar">
+            <button
+              onClick={() => setSelectedPersona('auto')}
+              title="Auto: Dynamically select optimal persona via intent matching"
+              className={`px-2 py-0.5 rounded text-[10px] font-medium border transition-all flex items-center space-x-1 ${
+                selectedPersona === 'auto'
+                  ? 'bg-purple-600 text-white border-purple-400 font-bold shadow-xs'
+                  : 'bg-[#2d2d2d] text-slate-400 hover:text-white border-[#3c3c3c]'
+              }`}
+            >
+              <Sparkles className="h-2.5 w-2.5 text-purple-300" />
+              <span>Auto</span>
+            </button>
             {(Object.keys(SPECIALIZED_PERSONAS) as AgentPersonaId[]).map((pId) => {
               const p = SPECIALIZED_PERSONAS[pId];
               const isSelected = selectedPersona === pId;
@@ -487,7 +525,9 @@ export const MissionControl: React.FC<MissionControlProps> = ({
           <span className="flex items-center space-x-1">
             <Sparkles className="h-3 w-3 text-yellow-400" />
             <span>
-              {isDbMode ? `${SPECIALIZED_PERSONAS[selectedPersona].badge} Triggers` : 'Router Fast-Path Triggers'}
+              {isDbMode
+                ? `${SPECIALIZED_PERSONAS[selectedPersona === 'auto' ? 'dba_optimizer' : selectedPersona].badge} Triggers`
+                : 'Router Fast-Path Triggers'}
             </span>
           </span>
           {showTriggers ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -496,7 +536,7 @@ export const MissionControl: React.FC<MissionControlProps> = ({
         {showTriggers && (
           <div className="px-2.5 pb-2 flex flex-wrap gap-1">
             {(isDbMode
-              ? SPECIALIZED_PERSONAS[selectedPersona].recommendedTriggers.map(t => ({ label: t.label, q: t.prompt }))
+              ? SPECIALIZED_PERSONAS[selectedPersona === 'auto' ? 'dba_optimizer' : selectedPersona].recommendedTriggers.map(t => ({ label: t.label, q: t.prompt }))
               : [
                   { label: 'Format SQL', q: 'format sql query' },
                   { label: 'Optimize Query', q: 'optimize sql query' },
