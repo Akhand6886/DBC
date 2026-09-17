@@ -16,11 +16,41 @@ export function runLLMReasoning(
   const modelName = providerNames[provider] || providerNames.openai;
 
   let proposedContent = currentContent;
-  if (!currentContent.includes('// Agentic LLM Enhancement')) {
-    proposedContent = currentContent.replace(
-      'main();',
-      `// Agentic LLM Enhancement (${modelName})\n// Multi-turn reasoning applied: null checks & error handlers added\ntry {\n  main();\n} catch (err) {\n  console.error("Caught error:", err);\n}`
-    );
+  const promptLower = intent.rawPrompt.toLowerCase();
+
+  // Detect file language context
+  const isSql = currentContent.includes('SELECT') || currentContent.includes('CREATE TABLE') || promptLower.includes('sql') || promptLower.includes('query');
+  const isJson = currentContent.trim().startsWith('{') || promptLower.includes('json');
+
+  if (isSql) {
+    if (promptLower.includes('index') || promptLower.includes('optimize') || promptLower.includes('slow')) {
+      proposedContent = `-- [Optimized by ${modelName}]: Added index hint & normalized query\n${currentContent}\n\n-- Recommended Index:\nCREATE INDEX IF NOT EXISTS idx_users_email_created ON users(email, created_at);`;
+    } else if (promptLower.includes('count') || promptLower.includes('summary')) {
+      proposedContent = `-- [Summary Query by ${modelName}]\nSELECT COUNT(*) AS total_records, MAX(created_at) AS latest_entry\nFROM (\n${currentContent.trim().replace(/;$/, '')}\n) subquery;`;
+    } else {
+      proposedContent = `-- [Agentic SQL Enhancement (${modelName})]\n-- Prompt: "${intent.rawPrompt}"\n${currentContent}`;
+    }
+  } else if (isJson) {
+    try {
+      const parsed = JSON.parse(currentContent);
+      parsed._enhancedBy = modelName;
+      parsed._lastOptimized = new Date().toISOString();
+      proposedContent = JSON.stringify(parsed, null, 2);
+    } catch {
+      proposedContent = currentContent;
+    }
+  } else {
+    // TypeScript / JavaScript
+    if (currentContent.includes('main();')) {
+      proposedContent = currentContent.replace(
+        'main();',
+        `// Agentic LLM Enhancement (${modelName})\n// Exception handling & safety guards applied\ntry {\n  main();\n} catch (err) {\n  console.error("Caught error:", err);\n}`
+      );
+    } else if (currentContent.trim().length > 0) {
+      proposedContent = `// Agentic LLM Enhancement (${modelName})\n// Applied: ${intent.rawPrompt}\n${currentContent}`;
+    } else {
+      proposedContent = `// Created by ${modelName} for intent: ${intent.rawPrompt}\nexport function executeTask() {\n  console.log("Task executed successfully.");\n}\n`;
+    }
   }
 
   const executionTimeMs = Math.floor(Math.random() * 150) + 780; // ~780-930ms
@@ -28,7 +58,6 @@ export function runLLMReasoning(
 
   const logMessage = `${modelName}: Analyzed workspace dependencies and synthesized multi-line patch.`;
 
-  const promptLower = intent.rawPrompt.toLowerCase();
   let reasoning = '';
   if (promptLower.includes('index') || promptLower.includes('slow') || promptLower.includes('scan')) {
     reasoning = `I analyzed your query against the active database schema. Sequential scans can be resolved by creating an index on the filtered columns. A migration snippet has been generated.`;
