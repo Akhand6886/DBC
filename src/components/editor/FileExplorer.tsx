@@ -27,17 +27,48 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
   const [inputMode, setInputMode] = useState<'file' | 'folder'>('file');
   const [newItemName, setNewItemName] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>({
-    queries: true,
-    migrations: true,
-    src: true
+  // ED-02: Consistently key folder expansion by node.id, node.name, and node.path
+  const [openFolders, setOpenFolders] = useState<Record<string, boolean>>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = sessionStorage.getItem('dbc_open_folders_v1');
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return {
+      'folder-queries': true,
+      'folder-migrations': true,
+      'folder-src': true,
+      queries: true,
+      migrations: true,
+      src: true
+    };
   });
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
-  const toggleFolder = (folderId: string) => {
-    setOpenFolders(prev => ({ ...prev, [folderId]: !prev[folderId] }));
+  const toggleFolder = (folderId: string, folderName?: string, folderPath?: string) => {
+    setOpenFolders((prev) => {
+      const current =
+        prev[folderId] ??
+        (folderName ? prev[folderName] : undefined) ??
+        (folderPath ? prev[folderPath] : undefined) ??
+        true;
+      const nextState = !current;
+      const updated = {
+        ...prev,
+        [folderId]: nextState,
+        ...(folderName ? { [folderName]: nextState } : {}),
+        ...(folderPath ? { [folderPath]: nextState } : {})
+      };
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('dbc_open_folders_v1', JSON.stringify(updated));
+        } catch {}
+      }
+      return updated;
+    });
   };
 
   const handleCreateSubmit = (e: React.FormEvent) => {
@@ -70,7 +101,11 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
 
   const renderNode = (node: FileNode, level = 0) => {
     const isFolder = node.isFolder;
-    const isExpanded = openFolders[node.id] ?? true;
+    const isExpanded =
+      openFolders[node.id] ??
+      openFolders[node.name] ??
+      (node.path ? openFolders[node.path] : undefined) ??
+      true;
     const isActive = node.id === activeFileId;
     const isFolderSelected = isFolder && selectedFolder === node.path;
     const isEditing = editingId === node.id;
@@ -80,7 +115,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
         <div key={node.id} className="space-y-0.5">
           <div
             onClick={() => {
-              toggleFolder(node.id);
+              toggleFolder(node.id, node.name, node.path);
               setSelectedFolder(prev => prev === node.path ? null : node.path);
             }}
             className={`group flex items-center justify-between px-2 py-1 rounded cursor-pointer font-semibold transition-colors ${
@@ -104,7 +139,7 @@ export const FileExplorer: React.FC<FileExplorerProps> = ({
                   setSelectedFolder(node.path);
                   setInputMode('file');
                   setShowInput(true);
-                  if (!isExpanded) toggleFolder(node.id);
+                  if (!isExpanded) toggleFolder(node.id, node.name, node.path);
                 }}
                 className="text-slate-400 hover:text-cyan-300 p-0.5"
                 title={`New file in ${node.name}`}
