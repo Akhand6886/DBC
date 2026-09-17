@@ -39,6 +39,7 @@ import {
   getAllDraftBuffers
 } from '../lib/workspacePersistence';
 import { byokClient } from '../lib/agent/byokClient';
+import { realSqlDriver } from '../lib/db/sqlDriver';
 
 import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders, Sparkles, Flame, Brain, Server, Share2, GitFork, TrendingUp, Users } from 'lucide-react';
 
@@ -216,6 +217,7 @@ export default function Home() {
   // ─── Sync Theme to Document Root ────────────────────────────────────
   useEffect(() => {
     if (editorSettings.theme && typeof document !== 'undefined') {
+      document.documentElement.dataset.theme = editorSettings.theme;
       document.documentElement.setAttribute('data-theme', editorSettings.theme);
     }
   }, [editorSettings.theme]);
@@ -463,8 +465,8 @@ export default function Home() {
         return;
       }
 
-      // ⌘N: New File
-      if (mod && key === 'n') {
+      // ⌘N or ⌥N / Alt+N: New File (SH-01 safe alias)
+      if ((mod && key === 'n') || (e.altKey && !mod && key === 'n')) {
         e.preventDefault();
         handleAddFile(`query_${Date.now().toString().slice(-4)}.sql`);
         return;
@@ -477,8 +479,8 @@ export default function Home() {
         return;
       }
 
-      // ⌘W: Close Active Tab
-      if (mod && key === 'w') {
+      // ⌘W or ⌥W / Alt+W: Close Active Tab (SH-01 safe alias)
+      if ((mod && key === 'w') || (e.altKey && !mod && key === 'w')) {
         e.preventDefault();
         if (activeFile) {
           const fileId = activeFile.id;
@@ -505,12 +507,48 @@ export default function Home() {
   ]);
 
   // ─── Command Palette Actions ───────────────────────────────────────
+  const tableNames = realSqlDriver.getTableNames();
+  const defaultTable = tableNames[0] || 'users';
+
+  const dynamicTableActions: PaletteAction[] = tableNames.flatMap((tbl) => [
+    {
+      id: `inspect-table-${tbl}`,
+      label: `Inspect Table DDL: ${tbl}`,
+      category: 'action' as const,
+      icon: <Table className="h-4 w-4 text-cyan-400" />,
+      handler: () => setInspectTable(tbl)
+    },
+    {
+      id: `edit-data-grid-${tbl}`,
+      label: `Open Table Data Grid Editor: ${tbl}`,
+      category: 'action' as const,
+      icon: <Table className="h-4 w-4 text-emerald-400" />,
+      handler: () => {
+        setActiveView('database');
+        setEditingTable(tbl);
+      }
+    },
+    {
+      id: `query-table-${tbl}`,
+      label: `Query Table: SELECT * FROM ${tbl} LIMIT 100`,
+      category: 'action' as const,
+      icon: <Database className="h-4 w-4 text-amber-400" />,
+      handler: () => {
+        setActiveView('database');
+        setEditingTable(null);
+        handleAddFile(`query_${tbl}.sql`);
+      }
+    }
+  ]);
+
   const paletteActions: PaletteAction[] = [
     { id: 'toggle-ai', label: 'Toggle AI Copilot Drawer', category: 'action', shortcut: '⌘L', icon: <Sparkles className="h-4 w-4 text-yellow-300" />, handler: () => setShowMissionControl(prev => !prev) },
     { id: 'shortcuts', label: 'Keyboard Shortcuts Cheat Sheet', category: 'navigation', shortcut: '⌘/', icon: <Command className="h-4 w-4 text-yellow-300" />, handler: () => setIsShortcutsOpen(true) },
     { id: 'database', label: 'Open DBMS Studio Console', category: 'action', icon: <Database className="h-4 w-4 text-[#007acc]" />, handler: () => { setActiveView('database'); setEditingTable(null); } },
-    { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action', icon: <Table className="h-4 w-4" />, handler: () => setInspectTable('users') },
-    { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action', icon: <Table className="h-4 w-4 text-emerald-400" />, handler: () => setEditingTable('users') },
+    ...(dynamicTableActions.length > 0 ? dynamicTableActions : [
+      { id: 'inspect-table', label: 'Inspect Table DDL & Constraints', category: 'action' as const, icon: <Table className="h-4 w-4 text-cyan-400" />, handler: () => setInspectTable(defaultTable) },
+      { id: 'edit-data-grid', label: 'Open Table Data Grid Editor', category: 'action' as const, icon: <Table className="h-4 w-4 text-emerald-400" />, handler: () => setEditingTable(defaultTable) },
+    ]),
     { id: 'search', label: 'Global Search & Replace', category: 'action', shortcut: '⌘⇧F', icon: <Search className="h-4 w-4" />, handler: () => setIsSearchOpen(true) },
     { id: 'settings', label: 'Open Settings & BYOK Keys', category: 'settings', shortcut: '⌘,', icon: <Settings className="h-4 w-4" />, handler: () => setIsSettingsOpen(true) },
     { id: 'git', label: 'Git Source Control', category: 'git', shortcut: '⌘⇧G', icon: <GitBranch className="h-4 w-4" />, handler: () => setIsGitOpen(true) },
