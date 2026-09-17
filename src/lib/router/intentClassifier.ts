@@ -48,8 +48,9 @@ export function classifyDeveloperIntent(
       prompt.includes('rename table'))
   ) {
     patternScore = 98;
+    // RT-04: Allow backticks (`table`), brackets ([table]), and quotes ("table", 'table')
     const symbolMatch = rawPrompt.match(
-      /rename\s+(?:variable|function|class|symbol|table|column)?\s*['"]?([a-zA-Z0-9_]+)['"]?\s+(?:to|as|into)\s+['"]?([a-zA-Z0-9_]+)['"]?/i
+      /rename\s+(?:variable|function|class|symbol|table|column)?\s*[`'"\[]?([a-zA-Z0-9_]+)[`'"\]]?\s+(?:to|as|into)\s+[`'"\[]?([a-zA-Z0-9_]+)[`'"\]]?/i
     );
     const finalScore = Math.max(
       0,
@@ -78,6 +79,9 @@ export function classifyDeveloperIntent(
       prompt.includes('usage of'))
   ) {
     patternScore = 99;
+    const refMatch = rawPrompt.match(
+      /(?:find callers of|where is|find references (?:to|of)?|list references (?:to|of)?|usage of)\s+[`'"\[]?([a-zA-Z0-9_]+)[`'"\]]?/i
+    );
     const finalScore = Math.max(
       0,
       Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
@@ -86,6 +90,7 @@ export function classifyDeveloperIntent(
     return {
       rawPrompt,
       actionType: 'LSP_REFERENCES',
+      targetSymbol: refMatch ? refMatch[1] : undefined,
       targetFilePath,
       confidenceScore: finalScore,
       scoreBreakdown: { patternScore, lspAvailabilityScore, ambiguityPenalty, finalScore },

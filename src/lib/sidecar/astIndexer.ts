@@ -31,13 +31,44 @@ export class RustSidecarIndexer {
   }
 
   public searchSemanticEmbeddings(query: string): SymbolLocation[] {
-    const term = query.toLowerCase();
+    const term = query.toLowerCase().trim();
+    if (!term) {
+      return this.indexedSymbols.map(s => ({ ...s, similarityScore: 0.5 }));
+    }
+
+    const queryTokens = new Set(term.split(/[\s_.-]+/).filter(Boolean));
+
     return this.indexedSymbols.map(s => {
-      let score = 0.72;
-      if (s.symbolName.toLowerCase().includes(term)) score = 0.96;
-      else if (s.snippet.toLowerCase().includes(term)) score = 0.88;
-      else if (s.file.toLowerCase().includes(term)) score = 0.81;
-      return { ...s, similarityScore: score };
+      const symNameLower = s.symbolName.toLowerCase();
+      const snippetLower = s.snippet.toLowerCase();
+      const fileLower = s.file.toLowerCase();
+      const symText = `${symNameLower} ${snippetLower} ${fileLower}`;
+      const symTokens = new Set(symText.split(/[\s_.-]+/).filter(Boolean));
+
+      let score = 0;
+
+      // Exact or partial substring hits
+      if (symNameLower === term) {
+        score = 0.98;
+      } else if (symNameLower.includes(term)) {
+        score = 0.92;
+      } else if (snippetLower.includes(term)) {
+        score = 0.85;
+      } else if (fileLower.includes(term)) {
+        score = 0.78;
+      } else {
+        // Differentiated Token Jaccard overlap
+        let intersection = 0;
+        queryTokens.forEach(t => {
+          if (symTokens.has(t)) intersection += 1;
+          else if (symText.includes(t)) intersection += 0.5;
+        });
+
+        const jaccard = queryTokens.size > 0 ? (intersection / queryTokens.size) : 0;
+        score = Math.max(0.12, Math.min(0.70, 0.15 + jaccard * 0.45 + (1 / Math.max(s.symbolName.length, 1)) * 0.05));
+      }
+
+      return { ...s, similarityScore: Number(score.toFixed(2)) };
     }).sort((a, b) => (b.similarityScore || 0) - (a.similarityScore || 0));
   }
 
