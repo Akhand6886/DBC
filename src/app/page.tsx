@@ -43,6 +43,7 @@ export default function Home() {
   const initialFile = INITIAL_WORKSPACE[0].children?.[0] || null;
   const [activeFile, setActiveFile] = useState<FileNode | null>(initialFile);
   const [openFiles, setOpenFiles] = useState<FileNode[]>(initialFile ? [initialFile] : []);
+  const [targetLine, setTargetLine] = useState<number | null>(null);
   
   // Layout states
   const [showWelcome, setShowWelcome] = useState(false);
@@ -512,7 +513,7 @@ export default function Home() {
   const handleJumpToSymbol = (filePath: string, line: number) => {
     const findFileByPath = (nodes: FileNode[]): FileNode | null => {
       for (const n of nodes) {
-        if (!n.isFolder && n.path === filePath) return n;
+        if (!n.isFolder && (n.path === filePath || n.name === filePath)) return n;
         if (n.isFolder && n.children) {
           const res = findFileByPath(n.children);
           if (res) return res;
@@ -523,7 +524,11 @@ export default function Home() {
     const target = findFileByPath(workspaceFiles);
     if (target) {
       handleSelectFile(target);
+      setTargetLine(line);
+      addToast('info', `Jumped to definition at ${target.name}:${line}`);
       handleLogTerminal(`[Rust Sidecar]: Jumped to definition at ${filePath}:${line}`);
+    } else {
+      addToast('warning', `Symbol file not found: ${filePath}`);
     }
   };
 
@@ -1033,7 +1038,10 @@ export default function Home() {
               <CodeEditor
                 activeFile={activeFile}
                 openFiles={openFiles}
-                onSelectTab={setActiveFile}
+                onSelectTab={(f) => {
+                  setActiveFile(f);
+                  setTargetLine(null);
+                }}
                 onCloseTab={handleCloseTab}
                 onContentChange={handleContentChange}
                 activeDiff={activeDiff}
@@ -1041,6 +1049,7 @@ export default function Home() {
                 onRejectDiff={handleRejectDiff}
                 onSave={handleSaveActiveFile}
                 editorSettings={editorSettings}
+                targetLine={targetLine}
               />
             )}
 

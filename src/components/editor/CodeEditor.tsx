@@ -22,6 +22,7 @@ interface CodeEditorProps {
   onRejectDiff?: () => void;
   onSave?: () => void;
   editorSettings?: EditorSettings;
+  targetLine?: number | null;
 }
 
 export const CodeEditor: React.FC<CodeEditorProps> = ({
@@ -35,14 +36,31 @@ export const CodeEditor: React.FC<CodeEditorProps> = ({
   onRejectDiff,
   onSave,
   editorSettings,
+  targetLine,
 }) => {
+  const editorRef = React.useRef<any>(null);
+
   const handleEditorDidMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
     defineMonacoThemes(monaco);
     monaco.editor.setTheme(getMonacoThemeName(editorSettings?.theme));
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
       if (onSave) onSave();
     });
+    if (targetLine && targetLine > 0) {
+      editor.revealLineInCenter(targetLine);
+      editor.setPosition({ lineNumber: targetLine, column: 1 });
+      editor.focus();
+    }
   };
+
+  React.useEffect(() => {
+    if (editorRef.current && targetLine && targetLine > 0) {
+      editorRef.current.revealLineInCenter(targetLine);
+      editorRef.current.setPosition({ lineNumber: targetLine, column: 1 });
+      editorRef.current.focus();
+    }
+  }, [targetLine, activeFile?.id]);
 
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
