@@ -18,7 +18,6 @@ export const ShadowVerificationDrawer: React.FC<ShadowVerificationDrawerProps> =
   const [selectedSnapshot, setSelectedSnapshot] = useState<ShadowDiffCheck | null>(
     history.length > 0 ? history[history.length - 1] : null
   );
-  const [viewMode, setViewMode] = useState<'unified' | 'sideBySide'>('unified');
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-end p-4 font-mono text-xs animate-in fade-in duration-150">
