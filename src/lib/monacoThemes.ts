@@ -28,6 +28,12 @@ export const defineMonacoThemes = (monaco: any) => {
       { token: 'string', foreground: 'e6db74' },
       { token: 'number', foreground: 'ae81ff' },
       { token: 'type', foreground: '66d9ef' },
+      // ED-03: Comprehensive SQL token coverage
+      { token: 'operator.sql', foreground: 'f92672' },
+      { token: 'delimiter.sql', foreground: 'f8f8f2' },
+      { token: 'type.sql', foreground: '66d9ef' },
+      { token: 'predefined.sql', foreground: 'a6e22e' },
+      { token: 'identifier.sql', foreground: 'fd971f' },
     ],
     colors: {
       'editor.background': '#272822',
@@ -45,6 +51,12 @@ export const defineMonacoThemes = (monaco: any) => {
       { token: 'string', foreground: '98c379' },
       { token: 'number', foreground: 'd19a66' },
       { token: 'type', foreground: 'e5c07b' },
+      // ED-03: Comprehensive SQL token coverage
+      { token: 'operator.sql', foreground: '56b6c2' },
+      { token: 'delimiter.sql', foreground: 'abb2bf' },
+      { token: 'type.sql', foreground: 'e5c07b' },
+      { token: 'predefined.sql', foreground: '61afef' },
+      { token: 'identifier.sql', foreground: 'e06c75' },
     ],
     colors: {
       'editor.background': '#282c34',
@@ -62,6 +74,12 @@ export const defineMonacoThemes = (monaco: any) => {
       { token: 'string', foreground: '00ff9f' },
       { token: 'number', foreground: 'ffe600' },
       { token: 'type', foreground: '00f0ff' },
+      // ED-03: Comprehensive SQL token coverage
+      { token: 'operator.sql', foreground: 'ff007f' },
+      { token: 'delimiter.sql', foreground: '00f0ff' },
+      { token: 'type.sql', foreground: 'ffe600' },
+      { token: 'predefined.sql', foreground: '00ff9f' },
+      { token: 'identifier.sql', foreground: 'ffffff' },
     ],
     colors: {
       'editor.background': '#0d1117',
