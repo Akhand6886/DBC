@@ -731,10 +731,71 @@ export default function Home() {
     }
   };
 
+  const handleAcceptDiff = () => {
+    if (activeDiff) {
+      setShadowHistory((prev) =>
+        prev.map((s) => (s.id === activeDiff.id ? { ...s, status: 'ACCEPTED' } : s))
+      );
+      addToast('success', `Accepted patch for ${activeDiff.targetFile}.`);
+      setActiveDiff(null);
+    }
+  };
+
+  const handleRejectDiff = () => {
+    if (activeDiff) {
+      handleContentChange(activeDiff.originalContent);
+      setShadowHistory((prev) =>
+        prev.map((s) => (s.id === activeDiff.id ? { ...s, status: 'REJECTED' } : s))
+      );
+      addToast('info', `Rejected patch for ${activeDiff.targetFile}. Buffer restored to original.`);
+      setActiveDiff(null);
+    }
+  };
+
   const handleRollbackSnapshot = (diffCheck: ShadowDiffCheck) => {
-    handleContentChange(diffCheck.originalContent);
-    setShadowHistory((prev) => prev.map((s) => (s.id === diffCheck.id ? { ...s, status: 'ROLLED_BACK' } : s)));
-    addToast('warning', `Rolled back to snapshot ${diffCheck.id}.`);
+    const updateContentInTree = (nodes: FileNode[]): FileNode[] =>
+      nodes.map((node) => {
+        if (node.isFolder && node.children) {
+          return { ...node, children: updateContentInTree(node.children) };
+        }
+        if (
+          !node.isFolder &&
+          (node.path === diffCheck.targetFile ||
+            node.name === diffCheck.targetFile ||
+            node.path.endsWith('/' + diffCheck.targetFile))
+        ) {
+          return { ...node, content: diffCheck.originalContent, isModified: false };
+        }
+        return node;
+      });
+
+    setWorkspaceFiles((prev) => updateContentInTree(prev));
+
+    setOpenFiles((prev) =>
+      prev.map((f) =>
+        f.path === diffCheck.targetFile ||
+        f.name === diffCheck.targetFile ||
+        f.path.endsWith('/' + diffCheck.targetFile)
+          ? { ...f, content: diffCheck.originalContent, isModified: false }
+          : f
+      )
+    );
+
+    if (
+      activeFile &&
+      (activeFile.path === diffCheck.targetFile ||
+        activeFile.name === diffCheck.targetFile ||
+        activeFile.path.endsWith('/' + diffCheck.targetFile))
+    ) {
+      setActiveFile((prev) =>
+        prev ? { ...prev, content: diffCheck.originalContent, isModified: false } : null
+      );
+    }
+
+    setShadowHistory((prev) =>
+      prev.map((s) => (s.id === diffCheck.id ? { ...s, status: 'ROLLED_BACK' } : s))
+    );
+    addToast('warning', `Rolled back ${diffCheck.targetFile} to snapshot ${diffCheck.id}.`);
   };
 
   function handleRunTestSuite() {
@@ -876,8 +937,8 @@ export default function Home() {
                 onCloseTab={handleCloseTab}
                 onContentChange={handleContentChange}
                 activeDiff={activeDiff}
-                onAcceptDiff={() => setActiveDiff(null)}
-                onRejectDiff={() => setActiveDiff(null)}
+                onAcceptDiff={handleAcceptDiff}
+                onRejectDiff={handleRejectDiff}
                 onSave={handleSaveActiveFile}
                 editorSettings={editorSettings}
               />
