@@ -18,10 +18,11 @@ interface ShortcutCategory {
 }
 
 export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
-  // ED-04: Dynamic OS detection for platform-accurate glyphs
+  // ED-04 & SH-01: Dynamic OS detection for platform-accurate glyphs & safe aliases
   const isMac = typeof window !== 'undefined' ? /(Mac|iPhone|iPod|iPad)/i.test(navigator.userAgent || navigator.platform) : true;
   const modKey = isMac ? '⌘' : 'Ctrl';
   const shiftKey = isMac ? '⇧' : 'Shift';
+  const altKey = isMac ? '⌥' : 'Alt';
 
   const shortcuts: ShortcutCategory[] = [
     {
@@ -38,8 +39,8 @@ export const ShortcutsModal: React.FC<ShortcutsModalProps> = ({ onClose }) => {
       category: 'Editor & Files',
       items: [
         { keys: [modKey, 'S'], description: 'Save Active File to Workspace' },
-        { keys: [modKey, 'W'], description: 'Close Active Editor Tab' },
-        { keys: [modKey, 'N'], description: 'Create New SQL Script File' },
+        { keys: [modKey, 'W'], description: `Close Active Editor Tab (Safe alias: ${altKey}+W)` },
+        { keys: [modKey, 'N'], description: `Create New SQL Script File (Safe alias: ${altKey}+N)` },
         { keys: [modKey, shiftKey, 'F'], description: 'Global Workspace Search & Replace' },
         { keys: [modKey, 'F'], description: 'Find in Current File (or Workspace when unfocused)' },
       ]
