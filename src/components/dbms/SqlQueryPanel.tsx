@@ -147,6 +147,18 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, onRegisterExecute]);
 
+  // DB-04: Keyboard accessibility & Escape key listener for tools & export menus
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && (isToolsMenuOpen || isExportMenuOpen)) {
+        setIsToolsMenuOpen(false);
+        setIsExportMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isToolsMenuOpen, isExportMenuOpen]);
+
   const handleCellDoubleClick = (rowIdx: number, colName: string) => {
     setEditingCell({ rowIdx, colName });
   };
