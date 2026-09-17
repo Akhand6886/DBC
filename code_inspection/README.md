@@ -3,7 +3,7 @@
 > **Inspection Completed:** September 2026  
 > **Target System:** DBC Enterprise Multi-Agent Database Studio & Autonomous IDE  
 > **Compiler Status:** `0 errors` (`npx tsc --noEmit`)  
-> **Test Status:** `359 / 359 tests passing (100%)` across 10 verification suites  
+> **Test Status:** `390 / 390 tests passing (100%)` across 11 verification suites  
 
 ---
 
@@ -19,7 +19,7 @@ The DBC codebase has been subjected to a deep architectural inspection partition
 | **Part 4** | [PART4_VERIFICATION_SHADOW.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART4_VERIFICATION_SHADOW.md) | **Shadow Verification & Diff** | `shadowBuffer.ts`, `ShadowVerificationDrawer.tsx`, `CodeEditor.tsx` (Diff mode), undo rollback hooks | 🟢 All Remediations Complete (VF-01 - VF-03) |
 | **Part 5** | [PART5_EDITOR_MONACO_FILETREE.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART5_EDITOR_MONACO_FILETREE.md) | **Monaco Editor & Workspace Tree** | `CodeEditor.tsx`, `FileExplorer.tsx`, `workspacePersistence.ts`, `initialWorkspace.ts`, AST symbol jump | 🟢 All Remediations Complete (ED-01 - ED-04) |
 | **Part 6** | [PART6_SHELL_MODALHOST_APP.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART6_SHELL_MODALHOST_APP.md) | **Application Shell & Layout** | `page.tsx`, `TopMenuBar.tsx`, `ActivityBar.tsx`, `StatusBar.tsx`, `TerminalPanel.tsx`, `ModalHost.tsx` | 🟢 All Remediations Complete (SH-01 - SH-04) |
-| **Part 7** | [PART7_TESTS_HEALTH_MATRIX.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md) | **Test Suites & Risk Matrix** | `scripts/test-p0-subsystems.ts` through `test-p3-subsystems.ts`, Static typing, Consolidated Risk Matrix | 🟢 108/108 Tests (100% Pass) |
+| **Part 7** | [PART7_TESTS_HEALTH_MATRIX.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md) | **Test Suites & Risk Matrix** | `scripts/test-part7-remediations.ts`, `test-p0-subsystems.ts` through `test-p3-subsystems.ts`, Static typing, Risk Matrix | 🟢 All Remediations Complete (P7-F1 - P7-F7) |
 
 ---
 
@@ -64,5 +64,5 @@ npx tsx scripts/test-p3-subsystems.ts      # 31 / 31 Passed
 | **HIGH** | `RT-01` | [`routerEngine.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts) | `executeRoutedPrompt` synchronous blocking | Resolved ✅ (Converted to async with BYOK & rolling latency) |
 | **HIGH** | `ED-01` | [`CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/editor/CodeEditor.tsx) | Typing in Monaco is kept in editor model but not mirrored to draft store | Resolved ✅ (Debounced draft persistence & rehydration) |
 | **HIGH** | `SH-01` | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | `⌘W` and `⌘N` collide with browser native tab and window close | Resolved ✅ (Alt+W / Alt+N safe aliases, preventDefault, and platform-aware glyphs) |
-| **MEDIUM** | `DB-02` | [`realSqlDriver.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/realSqlDriver.ts) | DDL column definition parsing splits by comma, breaking `DECIMAL(10, 2)` | Use parenthesis-aware regex tokenizer for column definitions |
-| **MEDIUM** | `AG-02` | [`MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx) | NVIDIA SSE stream chunks not rendered progressively | Consume `streamNvidia` async generator in mission step updater |
+| **MEDIUM** | `DB-02` | [`realSqlDriver.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/realSqlDriver.ts) | DDL column definition parsing splits by comma, breaking `DECIMAL(10, 2)` | Resolved ✅ (Regex paren-aware split in `sqlDriver.ts`) |
+| **MEDIUM** | `AG-02` | [`MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx) | NVIDIA SSE stream chunks not rendered progressively | Resolved ✅ (Progressive SSE chunk streaming in `MissionControl.tsx`) |
