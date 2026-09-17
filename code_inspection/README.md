@@ -3,7 +3,7 @@
 > **Inspection Completed:** September 2026  
 > **Target System:** DBC Enterprise Multi-Agent Database Studio & Autonomous IDE  
 > **Compiler Status:** `0 errors` (`npx tsc --noEmit`)  
-> **Test Status:** `205 / 205 tests passing (100%)` across 7 verification suites  
+> **Test Status:** `254 / 254 tests passing (100%)` across 8 verification suites  
 
 ---
 
@@ -16,7 +16,7 @@ The DBC codebase has been subjected to a deep architectural inspection partition
 | **Part 1** | [PART1_AGENTS_AI.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART1_AGENTS_AI.md) | **Agents, Personas & BYOK AI** | `agentRuntime.ts`, `agentPersonas.ts`, `agentCouncil.ts`, `byokClient.ts`, `MissionControl.tsx` | 🟢 All Remediations Complete (AG-01 - AG-04) |
 | **Part 2** | [PART2_DBMS_SQL_ENGINE.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART2_DBMS_SQL_ENGINE.md) | **DBMS, SQL Engine & Drivers** | `realSqlDriver.ts`, `queryFirewall.ts`, `transactionManager.ts`, `schemaDiffer.ts`, `SqlQueryPanel.tsx`, `TableDataEditor.tsx` | 🟢 All Remediations Complete (DB-01 - DB-04) |
 | **Part 3** | [PART3_ROUTER_PROTOCOL.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART3_ROUTER_PROTOCOL.md) | **Router, Protocol & MCP** | `routerEngine.ts`, `intentClassifier.ts`, `deterministicEngine.ts`, `astIndexer.ts`, `mcpServer.ts` | 🟢 All Remediations Complete (RT-01 - RT-04) |
-| **Part 4** | [PART4_VERIFICATION_SHADOW.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART4_VERIFICATION_SHADOW.md) | **Shadow Verification & Diff** | `shadowBuffer.ts`, `ShadowVerificationDrawer.tsx`, `CodeEditor.tsx` (Diff mode), undo rollback hooks | 🟡 Functional (Positional differ needs Myers LCS) |
+| **Part 4** | [PART4_VERIFICATION_SHADOW.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART4_VERIFICATION_SHADOW.md) | **Shadow Verification & Diff** | `shadowBuffer.ts`, `ShadowVerificationDrawer.tsx`, `CodeEditor.tsx` (Diff mode), undo rollback hooks | 🟢 All Remediations Complete (VF-01 - VF-03) |
 | **Part 5** | [PART5_EDITOR_MONACO_FILETREE.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART5_EDITOR_MONACO_FILETREE.md) | **Monaco Editor & Workspace Tree** | `CodeEditor.tsx`, `FileExplorer.tsx`, `workspacePersistence.ts`, `initialWorkspace.ts`, AST symbol jump | 🟢 Robust (Draft buffer caching recommended) |
 | **Part 6** | [PART6_SHELL_MODALHOST_APP.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART6_SHELL_MODALHOST_APP.md) | **Application Shell & Layout** | `page.tsx`, `TopMenuBar.tsx`, `ActivityBar.tsx`, `StatusBar.tsx`, `TerminalPanel.tsx`, `ModalHost.tsx` | 🟢 Robust (Shortcut guards recommended) |
 | **Part 7** | [PART7_TESTS_HEALTH_MATRIX.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md) | **Test Suites & Risk Matrix** | `scripts/test-p0-subsystems.ts` through `test-p3-subsystems.ts`, Static typing, Consolidated Risk Matrix | 🟢 108/108 Tests (100% Pass) |
@@ -58,7 +58,7 @@ npx tsx scripts/test-p3-subsystems.ts      # 31 / 31 Passed
 
 | Priority | ID | Module | Finding Summary | Recommended Action |
 |:---:|:---:|---|---|---|
-| **CRITICAL** | `VF-01` | [`shadowBuffer.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/shadowBuffer.ts) | Positional 1:1 line diff causes false mismatches on insertions | Implement Myers / Longest Common Subsequence (LCS) diffing |
+| **CRITICAL** | `VF-01` | [`shadowBuffer.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts) | Positional 1:1 line diff causes false mismatches on insertions | Resolved ✅ (Myers / LCS unified line diff algorithm implemented) |
 | **CRITICAL** | `DB-01` | [`realSqlDriver.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/realSqlDriver.ts) | JOIN queries with duplicate column names (`id`) overwrite in row object | Qualify field names with table prefixes (`users.id`, `roles.id`) |
 | **CRITICAL** | `AG-01` | [`byokClient.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/byokClient.ts) | Anthropic API does not allow browser-origin requests (CORS blocked) | Route Anthropic API calls through Next.js route handler (`/api/llm/proxy`) |
 | **HIGH** | `RT-01` | [`routerEngine.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts) | `executeRoutedPrompt` synchronous blocking | Resolved ✅ (Converted to async with BYOK & rolling latency) |
