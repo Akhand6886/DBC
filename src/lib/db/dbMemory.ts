@@ -136,7 +136,7 @@ export class DatabaseMemoryManager {
   }
 
   private loadState(): DatabaseMemoryState {
-    if (typeof window === 'undefined') return INITIAL_DATABASE_MEMORY;
+    if (typeof window === 'undefined') return JSON.parse(JSON.stringify(INITIAL_DATABASE_MEMORY));
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -153,7 +153,7 @@ export class DatabaseMemoryManager {
     } catch {
       // ignore parsing error
     }
-    return INITIAL_DATABASE_MEMORY;
+    return JSON.parse(JSON.stringify(INITIAL_DATABASE_MEMORY));
   }
 
   public saveState(): void {
