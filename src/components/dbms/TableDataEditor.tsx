@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Table, Plus, Trash2, Save, ArrowUpDown, Search, X, Inbox } from 'lucide-react';
 import { realSqlDriver } from '../../lib/db/sqlDriver';
 
@@ -42,20 +42,24 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
   const [selectedRows, setSelectedRows] = useState<number[]>([]);
   const [pendingChanges, setPendingChanges] = useState(false);
 
-  // Filter rows by search term
-  const filteredRows = rows.filter(r =>
-    Object.values(r).some(v => String(v ?? '').toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Sort rows
-  const sortedRows = [...filteredRows].sort((a, b) => {
-    if (!sortCol) return 0;
-    const valA = a[sortCol];
-    const valB = b[sortCol];
-    if (valA < valB) return sortAsc ? -1 : 1;
-    if (valA > valB) return sortAsc ? 1 : -1;
-    return 0;
-  });
+  // Filter & sort rows while preserving original index into underlying rows
+  const displayRows = useMemo(() => {
+    const indexed = rows.map((data, originalIndex) => ({ originalIndex, data }));
+    const filtered = indexed.filter(({ data }) =>
+      !searchTerm || Object.values(data).some(v => String(v ?? '').toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    if (!sortCol) return filtered;
+    return [...filtered].sort((a, b) => {
+      const valA = a.data[sortCol];
+      const valB = b.data[sortCol];
+      if (valA === valB) return 0;
+      if (valA === undefined || valA === null) return 1;
+      if (valB === undefined || valB === null) return -1;
+      if (valA < valB) return sortAsc ? -1 : 1;
+      if (valA > valB) return sortAsc ? 1 : -1;
+      return 0;
+    });
+  }, [rows, searchTerm, sortCol, sortAsc]);
 
   const handleAddRow = () => {
     const newRow: Record<string, any> = {};
@@ -72,16 +76,19 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
   };
 
   const handleDeleteSelected = () => {
-    const remaining = rows.filter((_, idx) => !selectedRows.includes(idx));
-    setRows(remaining);
+    if (selectedRows.length === 0) return;
+    setRows(prev => prev.filter((_, idx) => !selectedRows.includes(idx)));
     setSelectedRows([]);
     setPendingChanges(true);
   };
 
-  const handleCellChange = (rowIdx: number, colName: string, value: any) => {
-    const updated = [...rows];
-    updated[rowIdx] = { ...updated[rowIdx], [colName]: value };
-    setRows(updated);
+  const handleCellChange = (originalIndex: number, colName: string, value: any) => {
+    setRows(prev => {
+      if (originalIndex < 0 || originalIndex >= prev.length) return prev;
+      const updated = [...prev];
+      updated[originalIndex] = { ...updated[originalIndex], [colName]: value };
+      return updated;
+    });
     setPendingChanges(true);
   };
 
@@ -112,7 +119,9 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
           <span className="text-[#007acc] font-bold bg-[#007acc]/10 px-2 sm:px-2.5 py-0.5 rounded-full border border-[#007acc]/30 truncate max-w-[120px] sm:max-w-[200px]">
             {tableName}
           </span>
-          <span className="text-[10px] text-slate-500 hidden sm:inline">({rows.length} rows)</span>
+          <span className="text-[10px] text-slate-500 hidden sm:inline">
+            ({displayRows.length !== rows.length ? `${displayRows.length} of ${rows.length}` : rows.length} rows)
+          </span>
         </div>
 
         <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
@@ -188,7 +197,7 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-[#3c3c3c]/50 text-slate-200">
-            {sortedRows.length === 0 ? (
+            {displayRows.length === 0 ? (
               <tr>
                 <td colSpan={columns.length + 1} className="py-14 text-center text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
@@ -199,40 +208,40 @@ export const TableDataEditor: React.FC<TableDataEditorProps> = ({
                 </td>
               </tr>
             ) : (
-              sortedRows.map((row, rIdx) => {
-              const isSelected = selectedRows.includes(rIdx);
-              return (
-                <tr
-                  key={rIdx}
-                  className={`hover:bg-[#007acc]/10 transition-colors ${
-                    isSelected ? 'bg-[#007acc]/20' : 'even:bg-[#2d2d2d]/30'
-                  }`}
-                >
-                  <td className="px-3 py-2 border-r border-[#3c3c3c]/50 text-center text-slate-500">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={(e) => {
-                        if (e.target.checked) setSelectedRows([...selectedRows, rIdx]);
-                        else setSelectedRows(selectedRows.filter(i => i !== rIdx));
-                      }}
-                      className="h-3.5 w-3.5 accent-[#007acc]"
-                    />
-                  </td>
-                  {columns.map((col, cIdx) => (
-                    <td key={cIdx} className="px-4 py-2 border-r border-[#3c3c3c]/50">
+              displayRows.map(({ originalIndex, data: row }) => {
+                const isSelected = selectedRows.includes(originalIndex);
+                return (
+                  <tr
+                    key={row.id !== undefined ? `row-${row.id}` : `row-idx-${originalIndex}`}
+                    className={`hover:bg-[#007acc]/10 transition-colors ${
+                      isSelected ? 'bg-[#007acc]/20' : 'even:bg-[#2d2d2d]/30'
+                    }`}
+                  >
+                    <td className="px-3 py-2 border-r border-[#3c3c3c]/50 text-center text-slate-500">
                       <input
-                        type="text"
-                        value={row[col] ?? ''}
-                        onChange={(e) => handleCellChange(rIdx, col, e.target.value)}
-                        className="bg-transparent border-b border-transparent focus:border-[#007acc] text-slate-200 focus:text-cyan-300 font-mono focus:outline-none w-full"
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedRows([...selectedRows, originalIndex]);
+                          else setSelectedRows(selectedRows.filter(i => i !== originalIndex));
+                        }}
+                        className="h-3.5 w-3.5 accent-[#007acc]"
                       />
                     </td>
-                  ))}
-                </tr>
-              );
-            })
-          )}
+                    {columns.map((col, cIdx) => (
+                      <td key={cIdx} className="px-4 py-2 border-r border-[#3c3c3c]/50">
+                        <input
+                          type="text"
+                          value={row[col] ?? ''}
+                          onChange={(e) => handleCellChange(originalIndex, col, e.target.value)}
+                          className="bg-transparent border-b border-transparent focus:border-[#007acc] text-slate-200 focus:text-cyan-300 font-mono focus:outline-none w-full"
+                        />
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
