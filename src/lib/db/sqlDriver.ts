@@ -198,6 +198,16 @@ export class RealSqlDriverEngine {
         if (selectMatch) {
           const rawCols = selectMatch[1].trim();
           const mainTable = selectMatch[2].toLowerCase();
+
+          if (!this.inMemoryTables[mainTable]) {
+            return {
+              columns: [],
+              rows: [],
+              executionTimeMs: Date.now() - startTime,
+              error: `Table '${mainTable}' does not exist in schema.`
+            };
+          }
+
           let rows: Record<string, any>[] = this.inMemoryData[mainTable] ? this.inMemoryData[mainTable].map(r => ({ ...r })) : [];
 
           // Optional JOIN
@@ -414,6 +424,16 @@ export class RealSqlDriverEngine {
             executionTimeMs: Date.now() - startTime
           };
         }
+      }
+
+      // Unknown or unsupported SQL command
+      if (!/^(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|EXPLAIN|PRAGMA|SHOW|DESCRIBE|BEGIN|COMMIT|ROLLBACK)\b/i.test(cleanSql)) {
+        return {
+          columns: [],
+          rows: [],
+          executionTimeMs: Date.now() - startTime,
+          error: `Syntax error in SQL statement: '${cleanSql}'`
+        };
       }
 
       // Fallback response for custom queries
