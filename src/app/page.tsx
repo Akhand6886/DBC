@@ -724,11 +724,39 @@ export default function Home() {
   };
 
   const handleDeleteFile = (fileId: string) => {
+    const idsToDelete = new Set<string>();
+
+    const findAndCollect = (nodes: FileNode[]) => {
+      for (const n of nodes) {
+        if (n.id === fileId) {
+          idsToDelete.add(n.id);
+          const collectDescendants = (children: FileNode[]) => {
+            for (const c of children) {
+              idsToDelete.add(c.id);
+              if (c.children) collectDescendants(c.children);
+            }
+          };
+          if (n.children) collectDescendants(n.children);
+          return;
+        }
+        if (n.children) findAndCollect(n.children);
+      }
+    };
+    findAndCollect(workspaceFiles);
+
     const filterTree = (nodes: FileNode[]): FileNode[] =>
-      nodes.filter((n) => n.id !== fileId).map((n) => (n.children ? { ...n, children: filterTree(n.children) } : n));
+      nodes.filter((n) => !idsToDelete.has(n.id)).map((n) => (n.children ? { ...n, children: filterTree(n.children) } : n));
     setWorkspaceFiles((prev) => filterTree(prev));
-    handleCloseTab(fileId);
-    addToast('info', 'File deleted from workspace.');
+
+    setOpenFiles((prev) => {
+      const remaining = prev.filter((f) => !idsToDelete.has(f.id));
+      if (activeFile && idsToDelete.has(activeFile.id)) {
+        setActiveFile(remaining.length > 0 ? remaining[remaining.length - 1] : null);
+      }
+      return remaining;
+    });
+
+    addToast('info', 'Deleted from workspace.');
   };
 
   const handleReplaceAll = (searchTerm: string, replaceTerm: string) => {
