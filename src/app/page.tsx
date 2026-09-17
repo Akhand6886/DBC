@@ -699,7 +699,26 @@ export default function Home() {
       language: 'sql',
       content
     };
-    setWorkspaceFiles(prev => [...prev, newFile]);
+
+    let inserted = false;
+    const insertIntoQueriesFolder = (nodes: FileNode[]): FileNode[] =>
+      nodes.map(n => {
+        if (n.isFolder && (n.name === 'queries' || n.path === 'queries')) {
+          inserted = true;
+          return { ...n, isOpen: true, children: [...(n.children || []), newFile] };
+        }
+        if (n.isFolder && n.children) {
+          return { ...n, children: insertIntoQueriesFolder(n.children) };
+        }
+        return n;
+      });
+
+    setWorkspaceFiles(prev => {
+      const updated = insertIntoQueriesFolder(prev);
+      return inserted ? updated : [...prev, newFile];
+    });
+
+    handleSelectFile(newFile);
     addToast('success', `Saved SQL script ${scriptName} to workspace queries/ folder.`);
     handleLogTerminal(`[Workspace File System]: Saved SQL script to queries/${scriptName}`);
   };
