@@ -907,6 +907,68 @@ export default function Home() {
     setTerminalLogs([]);
   };
 
+  const handleExecuteTerminalCommand = async (cmd: string) => {
+    const trimmed = cmd.trim();
+    if (!trimmed) return;
+
+    handleLogTerminal(`$ ${trimmed}`);
+    const lower = trimmed.toLowerCase();
+
+    if (lower === 'clear' || lower === 'cls') {
+      handleClearTerminal();
+      return;
+    }
+
+    if (lower === 'help' || lower === '.help') {
+      handleLogTerminal('[CLI Help]: Available commands:');
+      handleLogTerminal('  .tables                 - List all tables in active database');
+      handleLogTerminal('  .schema <table_name>    - Print CREATE TABLE DDL definition');
+      handleLogTerminal('  run tests | test        - Run complete automated test suite');
+      handleLogTerminal('  clear | cls             - Clear terminal log output');
+      handleLogTerminal('  <SQL Statement>         - Execute SQL query (SELECT, INSERT, UPDATE, etc.)');
+      return;
+    }
+
+    if (lower === 'tables' || lower === '.tables') {
+      const tbls = realSqlDriver.getTableNames();
+      handleLogTerminal(`[Tables]: ${tbls.join(', ') || 'No tables found'}`);
+      return;
+    }
+
+    if (lower.startsWith('.schema ') || lower.startsWith('schema ')) {
+      const tblName = trimmed.split(/\s+/)[1];
+      if (tblName) {
+        const ddl = realSqlDriver.generateTableDDL(tblName);
+        ddl.split('\n').forEach(line => handleLogTerminal(line));
+      } else {
+        handleLogTerminal('Usage: .schema <table_name>');
+      }
+      return;
+    }
+
+    if (lower === 'test' || lower === 'run tests' || lower === 'run test') {
+      handleRunTestSuite();
+      return;
+    }
+
+    // Direct SQL Execution
+    try {
+      const res = await realSqlDriver.executeQuery(trimmed);
+      if (res.error) {
+        handleLogTerminal(`[SQL Error]: ${res.error}`);
+      } else {
+        handleLogTerminal(`[Query Success]: ${res.affectedRows} row(s) affected (${res.executionTimeMs}ms)`);
+        if (res.rows && res.rows.length > 0) {
+          const preview = res.rows.slice(0, 5);
+          handleLogTerminal(`[Result Preview (${res.rows.length} row(s))]:`);
+          handleLogTerminal(JSON.stringify(preview, null, 2));
+        }
+      }
+    } catch (e: any) {
+      handleLogTerminal(`[Command Error]: ${e.message || 'Failed to execute command'}`);
+    }
+  };
+
   const handleApplyPatch = (newContent: string, diffCheck: ShadowDiffCheck) => {
     handleContentChange(newContent);
     setActiveDiff(diffCheck);
@@ -1159,6 +1221,7 @@ export default function Home() {
                 logs={terminalLogs}
                 onRunTests={handleRunTestSuite}
                 onClearLogs={handleClearTerminal}
+                onExecuteCommand={handleExecuteTerminalCommand}
               />
             )}
           </div>
