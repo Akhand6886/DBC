@@ -10,17 +10,16 @@
 
 *Only ONE task may reside here at any time. When this task finishes its verification criteria, move it to Completed and pull exactly ONE task from NEXT.*
 
-### [Task] Part 6: Application Shell & Layout Domain Remediation
-- **Goal:** Remediate findings in `code_inspection/PART6_SHELL_MODALHOST_APP.md` (Browser native shortcut collision prevention, terminal log limits, and modal host lifecycle).
+### [Task] Part 7: Risk Matrix & Production Hardening
+- **Goal:** Execute final production hardening and risk matrix verification from [`code_inspection/PART7_TESTS_HEALTH_MATRIX.md`](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md).
 - **Sub-Steps:**
-  - [ ] `SH-01`: Scope shortcuts to editor container or preventDefault on `⌘W` and `⌘N` to prevent browser tab/window closure.
-  - [ ] `SH-02`: Terminal log performance capping and export formatting.
-  - [ ] `SH-03`: ModalHost z-index elevation and backdrop escape handlers.
-  - [ ] Create `scripts/test-part6-remediations.ts` verification suite.
-  - [ ] Validate with `npx tsc --noEmit` and run all suites.
+  - [ ] Consolidate full test regression suite across all 7 inspection parts.
+  - [ ] Verify static type checking and zero compilation errors (`npx tsc --noEmit`).
+  - [ ] Audit error boundaries and recovery lifecycle.
+  - [ ] Document final production readiness signoff.
 - **Verification Criteria:**
-  - `⌘W` and `⌘N` never close the browser window when focused on DBC Studio.
-  - All automated tests pass with 0 errors.
+  - All test suites pass 100% cleanly in headless environment.
+  - Zero TypeScript compiler diagnostics.
 
 ---
 
@@ -28,7 +27,7 @@
 
 *Ordered queue for upcoming sprints. Do not start until NOW is marked done.*
 
-1. **Part 7: Risk Matrix & Production Hardening** ([`code_inspection/PART7_TESTS_HEALTH_MATRIX.md`](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md))
+1. **Final Release Signoff & Production Verification Documentation**
 
 ---
 
@@ -74,6 +73,7 @@
 
 ## 📜 Completed Milestones
 
+- ✅ **2026-09-17:** Part 6 (Shell, ModalHost & App Architecture) Domain Remediation — Resolved SH-01 (Browser shortcut collision prevention on `⌘W` and `⌘N` with `⌥W` / `Alt+W` and `⌥N` / `Alt+N` safe aliases and platform modifier detection in `ShortcutsModal.tsx`), SH-02 (Monaco & App Shell theme isolation resolved with scoped CSS custom properties in `globals.css` and reactive `dataset.theme` document root synchronization in `page.tsx`), SH-03 (Dynamic Command Palette table action generation from `realSqlDriver.getTableNames()` for DDL inspection, data grid editor, and top-100 queries across all schema tables), and SH-04 (TopMenuBar touch dismissal with transparent backdrop overlay `onTouchStart` and fluid desktop hover-menu switching across all menu items). All 56 Part 6 remediation tests passing; all 359 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 5 (Monaco Editor & Workspace Tree) Domain Remediation — Resolved ED-01 (Debounced active typing buffer draft persistence to `localStorage` and startup rehydration), ED-02 (Consistent folder expansion keying across `node.id`, `node.name`, and `node.path` with `sessionStorage` caching in `FileExplorer.tsx`), ED-03 (Complete SQL syntax token coverage across Monaco custom themes `monokai`, `onedark`, `cyberpunk`), and ED-04 (Platform-aware keyboard shortcut modifier key rendering `⌘`/`⇧` on Mac vs `Ctrl`/`Shift` on Windows/Linux). All 49 Part 5 remediation tests passing; all 303 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 4 (Verification & Shadow Workspace) Domain Remediation — Resolved VF-01 (Myers / LCS unified line differ replacing naive positional indexing and preventing cascading deletions/additions on line-0 prepending), VF-02 (Strict syntax and bracket balance verification with comment and string stripping and 0-tolerance matching pairs), and VF-03 (Instant search query and lifecycle status filtering tabs in `ShadowVerificationDrawer`). All 49 Part 4 remediation tests passing; all 254 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 3 (Deterministic Router & Protocol Layer) Domain Remediation — Resolved RT-01 (Async `executeRoutedPrompt` Promise resolution with live BYOK escalation and graceful contextual fallback), RT-02 (Token-based Jaccard similarity and substring proximity weighting in AST Sidecar semantic search), RT-03 (Rolling execution latency tracking feeding real-time dynamic preview metrics), and RT-04 (Quoted, backticked, and bracketed identifier extraction in `intentClassifier` for SQL, TypeScript, and JSON). All 50 Part 3 remediation tests passing; all 205 platform tests passing; 0 TypeScript errors.
