@@ -7,14 +7,19 @@ interface TerminalPanelProps {
   logs: string[];
   onRunTests: () => void;
   onClearLogs?: () => void;
+  onExecuteCommand?: (cmd: string) => void;
 }
 
 export const TerminalPanel: React.FC<TerminalPanelProps> = ({
   logs,
   onRunTests,
   onClearLogs,
+  onExecuteCommand,
 }) => {
   const [activeTab, setActiveTab] = useState<'terminal' | 'output' | 'problems' | 'debug'>('terminal');
+  const [inputCommand, setInputCommand] = useState('');
+  const [commandHistory, setCommandHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new logs are added
@@ -27,6 +32,43 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
   const handleClear = () => {
     if (onClearLogs) {
       onClearLogs();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (commandHistory.length === 0) return;
+      const nextIndex = historyIndex === -1 ? commandHistory.length - 1 : Math.max(0, historyIndex - 1);
+      setHistoryIndex(nextIndex);
+      setInputCommand(commandHistory[nextIndex]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (historyIndex === -1) return;
+      const nextIndex = historyIndex + 1;
+      if (nextIndex >= commandHistory.length) {
+        setHistoryIndex(-1);
+        setInputCommand('');
+      } else {
+        setHistoryIndex(nextIndex);
+        setInputCommand(commandHistory[nextIndex]);
+      }
+    }
+  };
+
+  const handleCommandSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmd = inputCommand.trim();
+    if (!cmd) return;
+
+    // Record in history
+    setCommandHistory(prev => [...prev, cmd]);
+    setHistoryIndex(-1);
+    setInputCommand('');
+
+    // Dispatch command
+    if (onExecuteCommand) {
+      onExecuteCommand(cmd);
     }
   };
 
@@ -105,6 +147,29 @@ export const TerminalPanel: React.FC<TerminalPanelProps> = ({
           ))
         )}
       </div>
+
+      {/* Interactive Command Line (stdin) Prompt (P7-F6) */}
+      {activeTab === 'terminal' && (
+        <form
+          data-testid="terminal-stdin-form"
+          onSubmit={handleCommandSubmit}
+          className="h-8 bg-[#1e1e1e] border-t border-[#2d2d2d] px-3 flex items-center space-x-2 select-text"
+        >
+          <span className="text-emerald-400 font-bold select-none text-xs">$</span>
+          <input
+            data-testid="terminal-stdin-input"
+            type="text"
+            value={inputCommand}
+            onChange={(e) => setInputCommand(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type command (.help, .tables, .schema <tbl>, run tests, clear, or SQL)..."
+            className="flex-1 bg-transparent text-[11px] text-slate-100 placeholder-slate-600 focus:outline-none font-mono"
+          />
+          <kbd className="text-[9px] text-slate-500 bg-[#252526] border border-[#3c3c3c] px-1 py-0.5 rounded select-none">
+            ↵
+          </kbd>
+        </form>
+      )}
     </div>
   );
 };
