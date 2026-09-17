@@ -18,23 +18,54 @@ export interface RoutePreview {
   isFastPath: boolean;
 }
 
+// RT-03: Rolling latency metrics tracking
+const ROLLING_WINDOW_SIZE = 20;
+const rollingFastLatencies: number[] = [3, 4, 2];
+const rollingLlmLatencies: number[] = [840, 790, 890];
+
+export function recordRouteLatency(path: RouterPath, latencyMs: number): void {
+  const target = path === 'DETERMINISTIC_FAST_PATH' ? rollingFastLatencies : rollingLlmLatencies;
+  target.push(latencyMs);
+  if (target.length > ROLLING_WINDOW_SIZE) {
+    target.shift();
+  }
+}
+
+export function getRollingAverageLatency(path: RouterPath): number {
+  const target = path === 'DETERMINISTIC_FAST_PATH' ? rollingFastLatencies : rollingLlmLatencies;
+  if (target.length === 0) return path === 'DETERMINISTIC_FAST_PATH' ? 3 : 840;
+  const sum = target.reduce((acc, v) => acc + v, 0);
+  return Math.round(sum / target.length);
+}
+
+export function resetRollingLatencies(): void {
+  rollingFastLatencies.length = 0;
+  rollingFastLatencies.push(3);
+  rollingLlmLatencies.length = 0;
+  rollingLlmLatencies.push(840);
+}
+
 /**
  * Real-time intent preview helper for UI live-gauges while the user is typing.
  */
 export function previewDeveloperIntent(
   rawPrompt: string,
   targetFilePath?: string,
-  config: RouterConfig = DEFAULT_ROUTER_CONFIG
+  config: RouterConfig = DEFAULT_ROUTER_CONFIG,
+  provider: LLMProvider = 'openai'
 ): RoutePreview {
   const intent = classifyDeveloperIntent(rawPrompt, targetFilePath, config);
   const isFastPath = intent.confidenceScore >= config.confidenceThreshold;
   const routerPath: RouterPath = isFastPath ? 'DETERMINISTIC_FAST_PATH' : 'AGENTIC_LLM_PATH';
 
+  const estimatedLatencyMs = getRollingAverageLatency(routerPath);
+  const estimatedCostUSD = isFastPath ? 0.0 : (provider === 'ollama' ? 0.0 : 0.0035);
+
   return {
     intent,
     routerPath,
-    estimatedLatencyMs: isFastPath ? 3 : 840,
-    estimatedCostUSD: isFastPath ? 0.0 : 0.0035,
+    estimatedLatencyMs,
+    estimatedCostUSD,
     isFastPath
   };
 }
@@ -59,13 +90,13 @@ export interface ExecuteRouteResult {
  * Main dual-path dispatch engine.
  * Decides between Deterministic Fast-Path and Agentic LLM Escalation.
  */
-export function executeRoutedPrompt({
+export async function executeRoutedPrompt({
   prompt,
   targetFilePath,
   currentContent,
   provider,
   config = DEFAULT_ROUTER_CONFIG
-}: ExecuteRouteParams): ExecuteRouteResult {
+}: ExecuteRouteParams): Promise<ExecuteRouteResult> {
   const intent = classifyDeveloperIntent(prompt, targetFilePath, config);
   const isFastPath = intent.confidenceScore >= config.confidenceThreshold;
   const routerPath: RouterPath = isFastPath ? 'DETERMINISTIC_FAST_PATH' : 'AGENTIC_LLM_PATH';
@@ -83,13 +114,16 @@ export function executeRoutedPrompt({
     logMessage = `⚡ [Fast-Path Router | ${intent.confidenceScore}%]: ${res.logMessage} (0.00 cost, ${executionTimeMs}ms)`;
     replyText = res.replyText;
   } else {
-    const res = runLLMReasoning(intent, currentContent, provider);
+    const res = await runLLMReasoning(intent, currentContent, provider);
     proposedContent = res.proposedContent;
     executionTimeMs = res.executionTimeMs;
     tokenCostUSD = res.tokenCostUSD;
     logMessage = `🧠 [LLM Escalation | ${intent.confidenceScore}%]: ${res.logMessage} ($${tokenCostUSD.toFixed(4)}, ${executionTimeMs}ms)`;
     replyText = res.replyText;
   }
+
+  // Record observed latency into rolling metrics window
+  recordRouteLatency(routerPath, executionTimeMs);
 
   const patchId = `patch-${Date.now().toString(36)}`;
   const patchLine = `+ // Routed via ${routerPath}: ${prompt.slice(0, 40)}`;

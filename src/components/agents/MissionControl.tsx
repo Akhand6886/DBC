@@ -139,8 +139,8 @@ export const MissionControl: React.FC<MissionControlProps> = ({
   // Real-time confidence preview as developer types
   const routePreview = useMemo(() => {
     if (!prompt.trim()) return null;
-    return previewDeveloperIntent(prompt, activeFilePath, routerConfig);
-  }, [prompt, activeFilePath, routerConfig]);
+    return previewDeveloperIntent(prompt, activeFilePath, routerConfig, provider);
+  }, [prompt, activeFilePath, routerConfig, provider]);
 
   const handleClearHistory = () => {
     setMessages([INITIAL_GREETING]);
@@ -255,46 +255,50 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     const isFast = routePreview?.isFastPath ?? true;
     const simDelay = isFast ? 90 : 750;
 
-    setTimeout(() => {
-      setIsProcessing(false);
+    setTimeout(async () => {
+      try {
+        const result = await executeRoutedPrompt({
+          prompt: trimmedPrompt,
+          targetFilePath: activeFilePath,
+          currentContent: activeFileContent,
+          provider,
+          config: routerConfig
+        });
 
-      const result = executeRoutedPrompt({
-        prompt: trimmedPrompt,
-        targetFilePath: activeFilePath,
-        currentContent: activeFileContent,
-        provider,
-        config: routerConfig
-      });
+        if (onLogTerminal) {
+          onLogTerminal(result.logMessage);
+        }
 
-      if (onLogTerminal) {
-        onLogTerminal(result.logMessage);
+        if (onExecutePlan) {
+          onExecutePlan(result.plan);
+        }
+
+        onApplyPatch(result.proposedContent, result.diffCheck);
+
+        const assistantMsgId = `msg-${Date.now()}-assistant`;
+        const assistantMessage: ChatMessage = {
+          id: assistantMsgId,
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          role: 'assistant',
+          content: result.replyText,
+          routePath: result.plan.routerPath,
+          provider,
+          confidenceScore: result.plan.confidenceScore,
+          executionTimeMs: result.plan.executionTimeMs,
+          tokenCostUSD: result.plan.tokenCostUSD,
+          explanation: result.plan.intent.explanation,
+          logMessage: result.logMessage,
+          diffCheck: result.diffCheck,
+          proposedContent: result.proposedContent,
+          status: 'success'
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+      } catch (err: any) {
+        if (onLogTerminal) onLogTerminal(`[Router Error]: ${err.message}`);
+      } finally {
+        setIsProcessing(false);
       }
-
-      if (onExecutePlan) {
-        onExecutePlan(result.plan);
-      }
-
-      onApplyPatch(result.proposedContent, result.diffCheck);
-
-      const assistantMsgId = `msg-${Date.now()}-assistant`;
-      const assistantMessage: ChatMessage = {
-        id: assistantMsgId,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        role: 'assistant',
-        content: result.replyText,
-        routePath: result.plan.routerPath,
-        provider,
-        confidenceScore: result.plan.confidenceScore,
-        executionTimeMs: result.plan.executionTimeMs,
-        tokenCostUSD: result.plan.tokenCostUSD,
-        explanation: result.plan.intent.explanation,
-        logMessage: result.logMessage,
-        diffCheck: result.diffCheck,
-        proposedContent: result.proposedContent,
-        status: 'success'
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
     }, simDelay);
   };
 

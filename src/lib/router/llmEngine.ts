@@ -1,10 +1,11 @@
 import { LLMProvider, CodeIntent } from '../types';
+import { byokClient } from '../agent/byokClient';
 
-export function runLLMReasoning(
+export async function runLLMReasoning(
   intent: CodeIntent,
   currentContent: string,
   provider: LLMProvider = 'openai'
-): { proposedContent: string; executionTimeMs: number; tokenCostUSD: number; logMessage: string; replyText: string } {
+): Promise<{ proposedContent: string; executionTimeMs: number; tokenCostUSD: number; logMessage: string; replyText: string }> {
   const providerNames: Record<LLMProvider, string> = {
     openai: 'OpenAI GPT-4o',
     anthropic: 'Anthropic Claude 3.5 Sonnet',
@@ -14,6 +15,29 @@ export function runLLMReasoning(
   };
 
   const modelName = providerNames[provider] || providerNames.openai;
+  const startTime = Date.now();
+
+  // If BYOK key is present (or local ollama), attempt real asynchronous generation
+  if (byokClient.hasApiKey(provider) || provider === 'ollama') {
+    try {
+      const completionPrompt = `You are an expert AI code assistant. Modify the following code according to the request.\nUser Request: ${intent.rawPrompt}\nFile Content:\n\`\`\`\n${currentContent}\n\`\`\`\nReturn ONLY the modified code or SQL without conversational filler.`;
+      const res = await byokClient.generateCompletion(provider, completionPrompt, currentContent);
+      const executionTimeMs = Math.max(15, Date.now() - startTime);
+      const tokenCostUSD = provider === 'ollama' ? 0.00 : Number((res.tokensUsed * 0.000015).toFixed(4));
+      const logMessage = `${modelName}: Generated live completion via BYOK API (${res.tokensUsed} tokens, ${executionTimeMs}ms).`;
+      const replyText = `I processed your request using **${modelName}**.\n\n**Confidence**: ${intent.confidenceScore}% • **Tokens**: ${res.tokensUsed} • **Cost**: $${tokenCostUSD.toFixed(4)}\n\nA shadow workspace diff is ready for your inspection.`;
+      return {
+        proposedContent: res.responseText || currentContent,
+        executionTimeMs,
+        tokenCostUSD,
+        logMessage,
+        replyText
+      };
+    } catch (err: any) {
+      // Gracefully fall through to contextual reasoning engine if network or API key error
+      console.warn(`[BYOK LLM Router] Failed to call ${modelName}, falling back to local contextual engine:`, err);
+    }
+  }
 
   let proposedContent = currentContent;
   const promptLower = intent.rawPrompt.toLowerCase();
