@@ -765,15 +765,34 @@ export default function Home() {
   };
 
   const handleReplaceAll = (searchTerm: string, replaceTerm: string) => {
+    if (!searchTerm) return;
+    const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'g');
+
     const replaceInTree = (nodes: FileNode[]): FileNode[] =>
       nodes.map((node) => {
         if (node.isFolder && node.children) return { ...node, children: replaceInTree(node.children) };
-        if (!node.isFolder && node.content) {
-          return { ...node, content: node.content.replace(new RegExp(searchTerm, 'g'), replaceTerm), isModified: true };
+        if (!node.isFolder && node.content && node.content.includes(searchTerm)) {
+          return { ...node, content: node.content.replace(regex, replaceTerm), isModified: true };
         }
         return node;
       });
+
     setWorkspaceFiles((prev) => replaceInTree(prev));
+
+    setOpenFiles((prev) =>
+      prev.map((f) =>
+        f.content && f.content.includes(searchTerm)
+          ? { ...f, content: f.content.replace(regex, replaceTerm), isModified: true }
+          : f
+      )
+    );
+
+    setActiveFile((prev) => {
+      if (!prev || !prev.content || !prev.content.includes(searchTerm)) return prev;
+      return { ...prev, content: prev.content.replace(regex, replaceTerm), isModified: true };
+    });
+
     addToast('success', `Replaced all occurrences of "${searchTerm}".`);
   };
 
