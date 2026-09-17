@@ -765,10 +765,14 @@ export default function Home() {
         onToggleTerminal={() => setShowTerminal(prev => !prev)}
         onRunQuery={() => {
           if (activeView === 'database') {
-            handleLogTerminal('[DBC Engine]: Executed active SQL query from menu.');
-            addToast('info', 'Executing active SQL query...');
+            handleLogTerminal('[DBC Engine]: Executed query via Menu Bar.');
+            if (executeSqlRef.current) {
+              executeSqlRef.current();
+            } else {
+              window.dispatchEvent(new CustomEvent('dbc-execute-sql'));
+            }
           } else {
-            handleLogTerminal('[DBC Engine]: Executed query from menu.');
+            handleRunTestSuite();
           }
         }}
         onOpenGit={() => setIsGitOpen(true)}
