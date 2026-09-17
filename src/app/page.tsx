@@ -818,7 +818,10 @@ export default function Home() {
   };
 
   const handleLogTerminal = (msg: string) => {
-    setTerminalLogs((prev) => [...prev, msg]);
+    setTerminalLogs((prev) => {
+      const updated = [...prev, msg];
+      return updated.length > 500 ? updated.slice(updated.length - 500) : updated;
+    });
   };
 
   const handleClearTerminal = () => {
