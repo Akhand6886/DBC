@@ -83,59 +83,67 @@
 
 ---
 
-## 4. Deep-Dive Code Inspection Findings
+## 4. Deep-Dive Code Inspection Findings & Remediations
 
 ### Finding SH-01: Browser Shortcut Collision on `⌘W` and `⌘N`
 * **Severity**: 🟠 High
-* **Location**: [`src/app/page.tsx:425-450`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L425-L450)
+* **Status**: ✅ REMEDIATED
+* **Location**: [`src/app/page.tsx:466-493`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L466-L493) & [`src/components/modals/ShortcutsModal.tsx:20-46`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/modals/ShortcutsModal.tsx#L20-L46)
 * **Defect Analysis**:
-  ```ts
-  // ⌘W: Close Active Tab
-  if (mod && key === 'w') {
-    e.preventDefault();
-    ...
-  }
-  ```
-  In standard web browsers (Google Chrome, Apple Safari), `⌘W` (close browser tab) and `⌘N` (new browser window) are reserved by the OS window manager and cannot be prevented by web pages. When running in web mode, pressing `⌘W` closes the entire DBC application.
-* **Remediation**:
-  Check `typeof window !== 'undefined' && !!(window as any).electronAPI`. When running in standard web mode, alias tab close to `⌥W` (Option+W) and display a warning toast.
+  In standard web browsers (Google Chrome, Apple Safari), `⌘W` (close browser tab) and `⌘N` (new browser window) are reserved by the OS window manager. Web pages cannot prevent them, causing unintentional window closure.
+* **Remediation Applied**:
+  - In `src/app/page.tsx`, added browser-safe alias handlers `(mod && key === 'w') || (e.altKey && !mod && key === 'w')` to close active tabs, and `(mod && key === 'n') || (e.altKey && !mod && key === 'n')` to create new files without browser shortcut collisions.
+  - In `ShortcutsModal.tsx`, dynamically resolved platform-aware `altKey` modifier (`⌥` on Mac, `Alt` on Windows/Linux) and exposed explicit safe alias documentation.
 
 ---
 
 ### Finding SH-02: Theme Isolation Between Monaco and Application Shell
 * **Severity**: 🟡 Medium
-* **Location**: [`src/app/globals.css`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/globals.css) & [`src/lib/monacoThemes.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/monacoThemes.ts)
+* **Status**: ✅ REMEDIATED
+* **Location**: [`src/app/globals.css:18-63`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/globals.css#L18-L63) & [`src/app/page.tsx:216-222`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L216-L222)
 * **Defect Analysis**:
-  Selecting a custom theme (e.g. Tokyo Night or Dracula) updates the Monaco editor canvas. However, the application shell (Activity Bar, Top Menu Bar, Status Bar, Sidebars) uses hardcoded Tailwind hex codes (`#1e1e1e`, `#252526`, `#3c3c3c`).
-* **Remediation**:
-  Define CSS custom variables in `globals.css` (`--bg-shell`, `--bg-sidebar`, `--border-color`) and set `document.documentElement.dataset.theme` when the user selects a theme.
+  Selecting a custom theme (e.g. Monokai, One Dark, Cyberpunk) updated the Monaco editor canvas, but the application shell retained hardcoded hex colors without synchronization.
+* **Remediation Applied**:
+  - In `src/app/globals.css`, defined CSS custom variables (`--bg-shell`, `--bg-sidebar`, `--bg-card`, `--bg-menubar`, `--border-shell`, `--text-shell`, `--text-shell-bright`, `--accent-shell`) scoped to `:root`, `[data-theme="vscode-dark"]`, `[data-theme="monokai"]`, `[data-theme="onedark"]`, and `[data-theme="cyberpunk"]`.
+  - In `src/app/page.tsx`, synchronized `document.documentElement.dataset.theme` and `setAttribute('data-theme', ...)` reactively inside `useEffect`.
 
 ---
 
 ### Finding SH-03: Command Palette Table Actions Hardcoded to `'users'`
 * **Severity**: 🟡 Medium
-* **Location**: [`src/components/modals/CommandPalette.tsx:45-55`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/modals/CommandPalette.tsx#L45-L55)
+* **Status**: ✅ REMEDIATED
+* **Location**: [`src/lib/db/sqlDriver.ts:442-448`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L442-L448), [`src/components/modals/CommandPalette.tsx:18-70`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/modals/CommandPalette.tsx#L18-L70), & [`src/app/page.tsx:505-545`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L505-L545)
 * **Defect Analysis**:
-  Quick actions in the Command Palette (e.g. "Select Top 100 Rows", "Inspect Table Schema") default to the `'users'` table. If the database has tables like `roles`, `audit_logs`, or custom user tables, they are not accessible via Command Palette search.
-* **Remediation**:
-  Dynamically populate Command Palette actions from `realSqlDriver.getTableNames()`.
+  Quick actions in the Command Palette (e.g. DDL inspection, data grid opening) only pointed to the `'users'` table. If the database schema contained `roles`, `audit_logs`, or custom tables, they could not be accessed via Command Palette.
+* **Remediation Applied**:
+  - In `RealSqlDriverEngine`, added `getTableNames(): string[]` helper.
+  - In `CommandPalette.tsx`, created and exported `generateDynamicTableActions()`.
+  - In `src/app/page.tsx`, mapped `realSqlDriver.getTableNames()` to dynamic actions for inspecting DDL, opening data grid editors, and querying top 100 rows for every table present in the active database.
 
 ---
 
 ### Finding SH-04: Menu Item Hover Persistence on Touch Devices
 * **Severity**: 💡 Low
-* **Location**: [`src/components/shell/TopMenuBar.tsx:180-220`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/shell/TopMenuBar.tsx#L180-L220)
+* **Status**: ✅ REMEDIATED
+* **Location**: [`src/components/shell/TopMenuBar.tsx:68-315`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/shell/TopMenuBar.tsx#L68-L315)
 * **Defect Analysis**:
-  TopMenuBar dropdowns open on mouse hover. On touch devices, tapping an item opens the menu but tapping outside does not dismiss it because touch events do not trigger mouseout.
-* **Remediation**:
-  Add an invisible backdrop overlay (`fixed inset-0 z-30`) while any menu is open.
+  TopMenuBar dropdowns opened on click/hover. On touch/mobile devices, tapping outside did not dismiss open menus due to lack of touch event listeners, and moving between top menu items did not switch menus smoothly.
+* **Remediation Applied**:
+  - In `TopMenuBar.tsx`, bound `onTouchStart={() => setOpenMenu(null)}` along with `onClick` to the `fixed inset-0 z-40` backdrop overlay with `touch-none`.
+  - Added `onMouseEnter={() => { if (openMenu) setOpenMenu('...'); }}` across all top menu headers (`File`, `Edit`, `View`, `Run`, `Go`, `Terminal`, `Help`) for fluid desktop hover menu switching.
+  - Updated File menu label to reflect `⌘N / ⌥N`.
 
 ---
 
 ## 5. Verification & Test Coverage Matrix
 
-- ✅ Shell Architecture:
-  - 40 components organized across 6 clean domains.
-  - `ModalHost.tsx` decouples 19 dialogs with zero prop-drilling into `page.tsx`.
-  - Zero TypeScript compilation errors (`npx tsc --noEmit`).
-  - Terminal bounded to 500 lines verified under high-frequency query bursts.
+- ✅ Shell & ModalHost Remediations Verified:
+  - `scripts/test-part6-remediations.ts`: **56 / 56 tests passing (100%)**
+  - Shortcut resolution, browser-safe aliases, platform modifiers: 14 passing
+  - Monaco & App Shell theme custom variables and synchronization: 16 passing
+  - Dynamic Command Palette table actions generation and filtering: 14 passing
+  - TopMenuBar backdrop touch dismissal and hover switching: 12 passing
+- ✅ Total System Baseline:
+  - **359 / 359 tests passing (100%)** across 10 test suites.
+  - Zero TypeScript errors (`npx tsc --noEmit`).
+
