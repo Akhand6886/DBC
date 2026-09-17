@@ -141,7 +141,14 @@ export class DatabaseMemoryManager {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.tables && parsed.rules) return parsed;
+        if (parsed && typeof parsed === 'object' && parsed.tables && parsed.rules) {
+          return {
+            tables: { ...INITIAL_DATABASE_MEMORY.tables, ...parsed.tables },
+            columns: { ...INITIAL_DATABASE_MEMORY.columns, ...(parsed.columns || {}) },
+            rules: Array.isArray(parsed.rules) && parsed.rules.length > 0 ? parsed.rules : INITIAL_DATABASE_MEMORY.rules,
+            patterns: Array.isArray(parsed.patterns) && parsed.patterns.length > 0 ? parsed.patterns : INITIAL_DATABASE_MEMORY.patterns
+          };
+        }
       }
     } catch {
       // ignore parsing error
@@ -158,6 +165,15 @@ export class DatabaseMemoryManager {
       }
     }
     this.notify();
+  }
+
+  /**
+   * Reset database memory state to clean default seed values
+   * and sync to localStorage cache.
+   */
+  public resetToDefaults(): void {
+    this.state = JSON.parse(JSON.stringify(INITIAL_DATABASE_MEMORY));
+    this.saveState();
   }
 
   public getState(): DatabaseMemoryState {
