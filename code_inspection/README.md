@@ -3,7 +3,7 @@
 > **Inspection Completed:** September 2026  
 > **Target System:** DBC Enterprise Multi-Agent Database Studio & Autonomous IDE  
 > **Compiler Status:** `0 errors` (`npx tsc --noEmit`)  
-> **Test Status:** `303 / 303 tests passing (100%)` across 9 verification suites  
+> **Test Status:** `359 / 359 tests passing (100%)` across 10 verification suites  
 
 ---
 
@@ -18,7 +18,7 @@ The DBC codebase has been subjected to a deep architectural inspection partition
 | **Part 3** | [PART3_ROUTER_PROTOCOL.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART3_ROUTER_PROTOCOL.md) | **Router, Protocol & MCP** | `routerEngine.ts`, `intentClassifier.ts`, `deterministicEngine.ts`, `astIndexer.ts`, `mcpServer.ts` | 🟢 All Remediations Complete (RT-01 - RT-04) |
 | **Part 4** | [PART4_VERIFICATION_SHADOW.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART4_VERIFICATION_SHADOW.md) | **Shadow Verification & Diff** | `shadowBuffer.ts`, `ShadowVerificationDrawer.tsx`, `CodeEditor.tsx` (Diff mode), undo rollback hooks | 🟢 All Remediations Complete (VF-01 - VF-03) |
 | **Part 5** | [PART5_EDITOR_MONACO_FILETREE.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART5_EDITOR_MONACO_FILETREE.md) | **Monaco Editor & Workspace Tree** | `CodeEditor.tsx`, `FileExplorer.tsx`, `workspacePersistence.ts`, `initialWorkspace.ts`, AST symbol jump | 🟢 All Remediations Complete (ED-01 - ED-04) |
-| **Part 6** | [PART6_SHELL_MODALHOST_APP.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART6_SHELL_MODALHOST_APP.md) | **Application Shell & Layout** | `page.tsx`, `TopMenuBar.tsx`, `ActivityBar.tsx`, `StatusBar.tsx`, `TerminalPanel.tsx`, `ModalHost.tsx` | 🟢 Robust (Shortcut guards recommended) |
+| **Part 6** | [PART6_SHELL_MODALHOST_APP.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART6_SHELL_MODALHOST_APP.md) | **Application Shell & Layout** | `page.tsx`, `TopMenuBar.tsx`, `ActivityBar.tsx`, `StatusBar.tsx`, `TerminalPanel.tsx`, `ModalHost.tsx` | 🟢 All Remediations Complete (SH-01 - SH-04) |
 | **Part 7** | [PART7_TESTS_HEALTH_MATRIX.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART7_TESTS_HEALTH_MATRIX.md) | **Test Suites & Risk Matrix** | `scripts/test-p0-subsystems.ts` through `test-p3-subsystems.ts`, Static typing, Consolidated Risk Matrix | 🟢 108/108 Tests (100% Pass) |
 
 ---
@@ -63,6 +63,6 @@ npx tsx scripts/test-p3-subsystems.ts      # 31 / 31 Passed
 | **CRITICAL** | `AG-01` | [`byokClient.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/byokClient.ts) | Anthropic API does not allow browser-origin requests (CORS blocked) | Route Anthropic API calls through Next.js route handler (`/api/llm/proxy`) |
 | **HIGH** | `RT-01` | [`routerEngine.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/routerEngine.ts) | `executeRoutedPrompt` synchronous blocking | Resolved ✅ (Converted to async with BYOK & rolling latency) |
 | **HIGH** | `ED-01` | [`CodeEditor.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/editor/CodeEditor.tsx) | Typing in Monaco is kept in editor model but not mirrored to draft store | Resolved ✅ (Debounced draft persistence & rehydration) |
-| **HIGH** | `SH-01` | [`TopMenuBar.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/layout/TopMenuBar.tsx) | `⌘W` and `⌘N` collide with browser native tab and window close | Scope shortcuts to focused editor container and add `e.preventDefault()` |
+| **HIGH** | `SH-01` | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | `⌘W` and `⌘N` collide with browser native tab and window close | Resolved ✅ (Alt+W / Alt+N safe aliases, preventDefault, and platform-aware glyphs) |
 | **MEDIUM** | `DB-02` | [`realSqlDriver.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/engine/realSqlDriver.ts) | DDL column definition parsing splits by comma, breaking `DECIMAL(10, 2)` | Use parenthesis-aware regex tokenizer for column definitions |
 | **MEDIUM** | `AG-02` | [`MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx) | NVIDIA SSE stream chunks not rendered progressively | Consume `streamNvidia` async generator in mission step updater |
