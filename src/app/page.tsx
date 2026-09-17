@@ -91,7 +91,7 @@ export default function Home() {
     anthropic: '',
     gemini: '',
     ollama: 'http://localhost:11434',
-    nvidia: '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'
+    nvidia: ''
   });
 
   const [editorSettings, setEditorSettings] = useState({
@@ -177,8 +177,6 @@ export default function Home() {
         if (parsed.gemini) byokClient.setApiKey('gemini', parsed.gemini);
         if (parsed.ollama) byokClient.setEndpoint('ollama', parsed.ollama);
         if (parsed.nvidia) byokClient.setApiKey('nvidia', parsed.nvidia);
-      } else {
-        byokClient.setApiKey('nvidia', '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');
       }
       const savedSettings = localStorage.getItem('dbc_editor_settings');
       if (savedSettings) {
