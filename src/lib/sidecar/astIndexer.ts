@@ -84,3 +84,4 @@ export class RustSidecarIndexer {
 }
 
 export const rustSidecar = new RustSidecarIndexer();
+export const astIndexer = rustSidecar;
