@@ -157,25 +157,54 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
     setPendingEdits(prev => ({ ...prev, [key]: newValue }));
   };
 
-  const handleCommitEdits = () => {
+  const handleCommitEdits = async () => {
     if (!queryResult || Object.keys(pendingEdits).length === 0) return;
 
+    // Detect target table from the SQL query (e.g., SELECT ... FROM users ...)
+    const fromMatch = query.match(/\bFROM\s+([a-zA-Z0-9_]+)/i);
+    const targetTable = fromMatch ? fromMatch[1] : null;
+
     const updatedRows = [...queryResult.rows];
-    Object.entries(pendingEdits).forEach(([key, val]) => {
+    let executedSqlCount = 0;
+
+    for (const [key, val] of Object.entries(pendingEdits)) {
       const [rIdxStr, colName] = key.split(':');
       const rIdx = parseInt(rIdxStr, 10);
-      if (updatedRows[rIdx]) {
+      const originalRow = queryResult.rows[rIdx];
+      if (originalRow) {
         updatedRows[rIdx] = { ...updatedRows[rIdx], [colName]: val };
+
+        if (targetTable) {
+          const escapedVal = typeof val === 'number' ? val : `'${String(val).replace(/'/g, "''")}'`;
+          let whereClause = '';
+          if (originalRow.id !== undefined) {
+            whereClause = `id = ${typeof originalRow.id === 'number' ? originalRow.id : `'${originalRow.id}'`}`;
+          } else {
+            whereClause = Object.entries(originalRow)
+              .filter(([k]) => k !== colName)
+              .map(([k, v]) => `${k} = ${typeof v === 'number' ? v : `'${String(v).replace(/'/g, "''")}'`}`)
+              .join(' AND ');
+          }
+          if (whereClause) {
+            const updateSql = `UPDATE ${targetTable} SET ${colName} = ${escapedVal} WHERE ${whereClause};`;
+            await realSqlDriver.executeQuery(updateSql);
+            executedSqlCount++;
+          }
+        }
       }
-    });
+    }
 
     const editCount = Object.keys(pendingEdits).length;
     setQueryResult({ ...queryResult, rows: updatedRows });
     setPendingEdits({});
     setEditingCell(null);
 
+    if (onRefreshSchema) {
+      onRefreshSchema();
+    }
+
     if (onLogTerminal) {
-      onLogTerminal(`[DBC Data Editor]: Auto-generated & executed UPDATE statements for ${editCount} cell modification(s).`);
+      onLogTerminal(`[DBC Data Editor]: Auto-generated & executed ${executedSqlCount} UPDATE statement(s) against table '${targetTable || 'unknown'}' for ${editCount} cell modification(s).`);
     }
   };
 
