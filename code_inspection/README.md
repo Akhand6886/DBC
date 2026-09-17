@@ -13,7 +13,7 @@ The DBC codebase has been subjected to a deep architectural inspection partition
 
 | Part | Report File | Domain Scope | Primary Components & Engines | Health |
 |:---:|---|---|---|:---:|
-| **Part 1** | [PART1_AGENTS_AI.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART1_AGENTS_AI.md) | **Agents, Personas & BYOK AI** | `agentRuntime.ts`, `agentPersonas.ts`, `agentCouncil.ts`, `byokClient.ts`, `MissionControl.tsx` | 🟡 Stable (CORS / Streaming fixes needed) |
+| **Part 1** | [PART1_AGENTS_AI.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART1_AGENTS_AI.md) | **Agents, Personas & BYOK AI** | `agentRuntime.ts`, `agentPersonas.ts`, `agentCouncil.ts`, `byokClient.ts`, `MissionControl.tsx` | 🟢 All Remediations Complete (AG-01 - AG-04) |
 | **Part 2** | [PART2_DBMS_SQL_ENGINE.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART2_DBMS_SQL_ENGINE.md) | **DBMS, SQL Engine & Drivers** | `realSqlDriver.ts`, `queryFirewall.ts`, `transactionManager.ts`, `schemaDiffer.ts`, `SqlQueryPanel.tsx`, `TableDataEditor.tsx` | 🟢 Robust (JOIN aliasing & DDL parsing noted) |
 | **Part 3** | [PART3_ROUTER_PROTOCOL.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART3_ROUTER_PROTOCOL.md) | **Router, Protocol & MCP** | `routerEngine.ts`, `intentClassifier.ts`, `deterministicEngine.ts`, `astIndexer.ts`, `mcpServer.ts` | 🟡 Good (Synchronous routing to be upgraded to async) |
 | **Part 4** | [PART4_VERIFICATION_SHADOW.md](file:///Users/alpha/Desktop/antigavity/DBC/code_inspection/PART4_VERIFICATION_SHADOW.md) | **Shadow Verification & Diff** | `shadowBuffer.ts`, `ShadowVerificationDrawer.tsx`, `CodeEditor.tsx` (Diff mode), undo rollback hooks | 🟡 Functional (Positional differ needs Myers LCS) |

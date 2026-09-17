@@ -68,58 +68,56 @@
 ## 4. Deep-Dive Code Inspection Findings
 
 ### Finding AG-01: Direct Browser CORS Block on Anthropic API
+* **Status**: ✅ **RESOLVED** (Commit `a29dd86`)
 * **Severity**: 🟠 High
-* **Location**: [`src/lib/agent/byokClient.ts:121-155`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L121-L155)
+* **Location**: [`src/lib/agent/byokClient.ts:121-155`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L121-L155) & [`src/app/api/ai/anthropic/route.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/api/ai/anthropic/route.ts)
 * **Defect Analysis**:
-  ```ts
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': config.apiKey!,
-      'anthropic-version': '2023-06-01'
-    },
-    ...
-  });
-  ```
-  Anthropic's public API explicitly rejects browser-initiated `fetch` requests with CORS preflight errors (`No 'Access-Control-Allow-Origin' header is present`). While OpenAI and NVIDIA NIM support direct browser client calls, Anthropic requests fail immediately when executed in client-side Next.js.
-* **Remediation**:
-  Route Anthropic requests through Next.js API route proxy `src/app/api/ai/anthropic/route.ts` or Electron's `ipcRenderer` in desktop mode.
+  Anthropic's public API explicitly rejects browser-initiated `fetch` requests with CORS preflight errors.
+* **Remediation Implemented**:
+  Created Next.js server-side route handler [`src/app/api/ai/anthropic/route.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/api/ai/anthropic/route.ts). Updated `byokClient.ts` to automatically detect browser environments (`typeof window !== 'undefined'`) and route calls through the local proxy server-to-server.
 
 ---
 
 ### Finding AG-02: NVIDIA NIM SSE `streamNvidia()` Generator Not Wired to Progressive UI
+* **Status**: ✅ **RESOLVED** (Commits `a29dd86`, `1714130`)
 * **Severity**: 🟡 Medium
-* **Location**: [`src/lib/agent/byokClient.ts:271-346`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L271-L346) & [`src/components/agents/MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx)
+* **Location**: [`src/lib/agent/byokClient.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts), [`src/lib/agent/dbAgentRuntime.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/dbAgentRuntime.ts), [`src/components/agents/MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx)
 * **Defect Analysis**:
-  The `streamNvidia` async generator parses `text/event-stream` SSE chunks and yields reasoning deltas cleanly. However, `MissionControl.tsx` calls `dbAgentRuntime.runAgent()` which only awaits complete batch responses. The user sees a loading spinner for 10-15 seconds rather than watching real-time token streaming.
-* **Remediation**:
-  Introduce `onTokenChunk?: (chunk: string) => void` callback in `runAgent()` and pipe `streamNvidia` output directly to the UI active response block.
+  The `streamNvidia` async generator parsed SSE chunks, but the caller awaited full batch responses before showing content.
+* **Remediation Implemented**:
+  Added unified `streamCompletion` generator in `byokClient.ts`. Added `onTokenChunk?: (chunk: string) => void` in `AgentRunParams` and `runPersonaAgent()`. In `MissionControl.tsx`, wired `onTokenChunk` directly to active chat message state, rendering progressive streaming tokens in real time.
 
 ---
 
 ### Finding AG-03: Distributed Lock Manager Sequence Collision on Rapid Concurrent Mutations
+* **Status**: ✅ **RESOLVED** (Commit `1b267a7`)
 * **Severity**: 🟡 Medium
-* **Location**: [`src/lib/collaboration/collaborativeSession.ts:180-210`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/collaboration/collaborativeSession.ts#L180-L210)
+* **Location**: [`src/lib/collaboration/collaborativeSession.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/collaboration/collaborativeSession.ts)
 * **Defect Analysis**:
-  `acquireLock` and `releaseLock` mutate an in-memory `Map<string, ResourceLock>`. When two autonomous agents in the Collaborative Council simultaneously emit proposals requiring `EXCLUSIVE_WRITE` locks within the same JavaScript execution frame, the second agent receives a reject, but the rejection handler does not queue a retry with backoff.
-* **Remediation**:
-  Implement an asynchronous FIFO lock queue with timeout expiration (e.g. 5000ms) rather than immediate hard rejection.
+  Simultaneous lock acquisition on conflicting resources resulted in immediate hard rejection with no retry or queuing.
+* **Remediation Implemented**:
+  Added `acquireLockWithBackoff(sessionId, participantId, resourceType, targetName, mode, ttlMs, purpose, maxRetries, initialBackoffMs)` to `CollaborativeSessionManager`. Retries with jittered exponential backoff until the conflicting lock is released or timeout threshold is reached.
 
 ---
 
 ### Finding AG-04: Static Keyword Matching in Persona Router
+* **Status**: ✅ **RESOLVED** (Commit `1714130`)
 * **Severity**: 💡 Low
-* **Location**: [`src/lib/agent/specializedAgents.ts:50-70`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/specializedAgents.ts#L50-L70)
+* **Location**: [`src/lib/agent/specializedAgents.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/specializedAgents.ts) & [`src/components/agents/MissionControl.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/MissionControl.tsx)
 * **Defect Analysis**:
-  `selectAgentForTask()` scans `agent.capabilities.triggers` using `prompt.toLowerCase().includes(t)`. Compound or synonym prompts (e.g. "audit database constraints" or "inspect anomalous latency") can fail to activate the Security Auditor or DBA Optimizer.
-* **Remediation**:
-  Enhance keyword scoring with weighted multi-word token overlap or cosine similarity over prompt embeddings.
+  Personas required manual selection; simple substring matching could not classify multi-token database queries.
+* **Remediation Implemented**:
+  Implemented `matchPersona(prompt)` and `selectPersonaForPrompt(prompt)` with weighted domain keywords (`dba_optimizer`, `schema_architect`, `data_analyst`, `security_auditor`) and trigger heuristics, returning confidence scores up to 98%. Added "Auto" pill in `MissionControl.tsx` for dynamic automatic persona selection.
 
 ---
 
 ## 5. Verification & Test Coverage Matrix
 
+- ✅ `test-part1-remediations.ts`: 21/21 Passing (100%)
+  - Anthropic config & simulation fallback (AG-01)
+  - Progressive token chunk streaming via `streamCompletion` & `onTokenChunk` (AG-02)
+  - Distributed lock contention resolution via exponential backoff (AG-03)
+  - Multi-persona weighted intent classification across DBA, Schema, Analyst, Security (AG-04)
 - ✅ `test-p0-subsystems.ts`: 25/25 Passing
   - Query Firewall evaluation (Safe, Warning, Critical)
   - Virtual Transaction Manager dry-runs & rollback generation
@@ -128,8 +126,12 @@
 - ✅ `test-p1-subsystems.ts`: 27/27 Passing
   - Database Memory invariant rules registration
   - 4 specialized personas presence & directive verification
+- ✅ `test-p2-subsystems.ts`: 25/25 Passing
+  - Data lineage graph and blast radius assessment
+  - Sandbox branches and merge execution
 - ✅ `test-p3-subsystems.ts`: 31/31 Passing
   - Collaborative Council participant presence
   - Messaging & `@mention` delegation protocol
   - Cooperative distributed lock manager (Exclusive write & Shared read)
   - Proposal consensus, immutable event store & session replay
+- ✅ `npx tsc --noEmit`: 0 TypeScript compiler errors
