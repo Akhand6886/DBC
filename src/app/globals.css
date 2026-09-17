@@ -15,6 +15,52 @@
   }
 }
 
+/* SH-02: Shell & Monaco Theme CSS Custom Variables */
+:root,
+[data-theme="vscode-dark"] {
+  --bg-shell: #1e1e1e;
+  --bg-sidebar: #252526;
+  --bg-card: #2d2d2d;
+  --bg-menubar: #323233;
+  --border-shell: #3c3c3c;
+  --text-shell: #cccccc;
+  --text-shell-bright: #ffffff;
+  --accent-shell: #007acc;
+}
+
+[data-theme="monokai"] {
+  --bg-shell: #272822;
+  --bg-sidebar: #1e1f1c;
+  --bg-card: #34352f;
+  --bg-menubar: #2d2a2e;
+  --border-shell: #3e3d32;
+  --text-shell: #f8f8f2;
+  --text-shell-bright: #ffffff;
+  --accent-shell: #f92672;
+}
+
+[data-theme="onedark"] {
+  --bg-shell: #282c34;
+  --bg-sidebar: #21252b;
+  --bg-card: #2c313a;
+  --bg-menubar: #21252b;
+  --border-shell: #181a1f;
+  --text-shell: #abb2bf;
+  --text-shell-bright: #ffffff;
+  --accent-shell: #61afef;
+}
+
+[data-theme="cyberpunk"] {
+  --bg-shell: #0d1117;
+  --bg-sidebar: #161b22;
+  --bg-card: #1f242c;
+  --bg-menubar: #090d12;
+  --border-shell: #30363d;
+  --text-shell: #00f0ff;
+  --text-shell-bright: #ffffff;
+  --accent-shell: #ff007f;
+}
+
 /* VS Code Custom Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
