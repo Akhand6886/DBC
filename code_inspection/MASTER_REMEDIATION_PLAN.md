@@ -249,28 +249,28 @@ Phase 2 connects disconnected subsystems, converts synchronous blocking calls to
 Phase 3 addresses **edge cases, boundary limits, memory leaks, and cross-platform UX polish**.
 
 ### Summary Matrix: Phase 3
-| ID | Subsystem | File & Lines | Defect Summary | Severity |
-|---|---|---|---|:---:|
-| **P1-F3** | Router | [`intentClassifier.ts:40-42`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L40-L42) | Classifier maps to unhandled strategy `'RIPGREP_SEARCH'` | 🟡 Medium |
-| **P1-F4** | Router | [`intentClassifier.ts:28-30`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L28-L30) | Regex omits backtick-quoted table identifiers | 💡 Low |
-| **P2-F4** | Verification | [`shadowBuffer.ts:65-78`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L65-L78) | AST check tolerates bracket count delta `< 2` | 🟡 Medium |
-| **P2-F5** | Verification | [`page.tsx:510-530`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L510-L530) | Fast path directly applies edits without shadow verification | 🟡 Medium |
-| **P2-F6** | Verification | [`ShadowVerificationDrawer.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/ShadowVerificationDrawer.tsx) | Removed unused viewMode state | ✅ **Resolved** |
-| **P3-F5** | SQL Driver | [`sqlDriver.ts:80-105`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L80-L105) | Naive comma split breaks DDL parameterized types | 🟡 Medium |
-| **P3-F6** | SQL Driver | [`page.tsx:740-750`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L740-L750) | "Select Top 100 Rows" context action is phantom log | 🟡 Medium |
-| **P3-F7** | SQL Driver | [`sqlDriver.ts:210-235`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L210-L235) | JOIN column namespace collision on identical field names | 💡 Low |
-| **P4-F5** | Agentic AI | [`byokClient.ts:5-12`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L5-L12) | Missing `costTracker.ts` and `contextAssembler.ts` modules | 🟡 Medium |
-| **P4-F6** | Agentic AI | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Sanitized hardcoded fallback API key to empty string | ✅ **Resolved** |
-| **P4-F7** | Agentic AI | [`fileTools.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/fileTools.ts) | Purged orphaned fileTools.ts and terminalRunner.ts | ✅ **Resolved** |
-| **P5-F5** | File Tree | [`FileExplorer.tsx:85-110`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/FileExplorer.tsx#L85-L110) | Nested folder expansion ID mismatch collapses folders | 🟡 Medium |
-| **P5-F6** | File Tree | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Escaped regex in global "Replace All" and synced tabs | ✅ **Resolved** |
-| **P5-F7** | File Tree | [`workspacePersistence.ts:30-50`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/workspacePersistence.ts#L30-L50) | Active tab and panel layout not persisted in localStorage | 💡 Low |
-| **P6-F5** | Monaco Editor | [`monacoThemes.ts:25-71`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/monacoThemes.ts#L25-L71) | Incomplete token coverage (operators, delimiters, functions) | 🟡 Medium |
-| **P6-F6** | Monaco Editor | [`page.tsx:415-416`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L415-L416) | Command Palette table actions hardcoded to `'users'` | 🟡 Medium |
-| **P6-F7** | Monaco Editor | [`ShortcutsModal.tsx:25-56`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ShortcutsModal.tsx#L25-L56) | Hardcoded Apple `⌘` glyphs shown to Windows/Linux users | 💡 Low |
-| **P7-F5** | Rust Sidecar | [`astIndexer.ts:33-42`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L33-L42) | Pseudo-vector search returns uniform 72% match on any query | 🟡 Medium |
-| **P7-F6** | Terminal Panel | [`TerminalPanel.tsx:32-94`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/TerminalPanel.tsx#L32-L94) | Redundant terminal tabs and missing interactive stdin input | 🟡 Medium |
-| **P7-F7** | Terminal Panel | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Bounded `terminalLogs` array to last 500 entries | ✅ **Resolved** |
+| ID | Subsystem | File & Lines | Defect Summary | Severity | Status |
+|---|---|---|---|:---:|:---:|
+| **P1-F3** | Router | [`intentClassifier.ts:40-42`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L40-L42) | Classifier maps to unhandled strategy `'RIPGREP_SEARCH'` | 🟡 Medium | ✅ **Resolved** |
+| **P1-F4** | Router | [`intentClassifier.ts:28-30`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/router/intentClassifier.ts#L28-L30) | Regex omits backtick-quoted table identifiers | 💡 Low | ✅ **Resolved** |
+| **P2-F4** | Verification | [`shadowBuffer.ts:65-78`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/verification/shadowBuffer.ts#L65-L78) | AST check tolerates bracket count delta `< 2` | 🟡 Medium | ✅ **Resolved** |
+| **P2-F5** | Verification | [`page.tsx:510-530`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L510-L530) | Fast path directly applies edits without shadow verification | 🟡 Medium | ✅ **Resolved** |
+| **P2-F6** | Verification | [`ShadowVerificationDrawer.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/agents/ShadowVerificationDrawer.tsx) | Removed unused viewMode state | 💡 Low | ✅ **Resolved** |
+| **P3-F5** | SQL Driver | [`sqlDriver.ts:80-105`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L80-L105) | Naive comma split breaks DDL parameterized types | 🟡 Medium | ✅ **Resolved** |
+| **P3-F6** | SQL Driver | [`page.tsx:740-750`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L740-L750) | "Select Top 100 Rows" context action is phantom log | 🟡 Medium | ✅ **Resolved** |
+| **P3-F7** | SQL Driver | [`sqlDriver.ts:210-235`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/db/sqlDriver.ts#L210-L235) | JOIN column namespace collision on identical field names | 💡 Low | ✅ **Resolved** |
+| **P4-F5** | Agentic AI | [`byokClient.ts:5-12`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/byokClient.ts#L5-L12) | Missing `costTracker.ts` and `contextAssembler.ts` modules | 🟡 Medium | ✅ **Resolved** |
+| **P4-F6** | Agentic AI | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Sanitized hardcoded fallback API key to empty string | 💡 Low | ✅ **Resolved** |
+| **P4-F7** | Agentic AI | [`fileTools.ts`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/agent/fileTools.ts) | Purged orphaned fileTools.ts and terminalRunner.ts | 💡 Low | ✅ **Resolved** |
+| **P5-F5** | File Tree | [`FileExplorer.tsx:85-110`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/FileExplorer.tsx#L85-L110) | Nested folder expansion ID mismatch collapses folders | 🟡 Medium | ✅ **Resolved** |
+| **P5-F6** | File Tree | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Escaped regex in global "Replace All" and synced tabs | 💡 Low | ✅ **Resolved** |
+| **P5-F7** | File Tree | [`workspacePersistence.ts:30-50`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/workspacePersistence.ts#L30-L50) | Active tab and panel layout not persisted in localStorage | 💡 Low | ✅ **Resolved** |
+| **P6-F5** | Monaco Editor | [`monacoThemes.ts:25-71`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/monacoThemes.ts#L25-L71) | Incomplete token coverage (operators, delimiters, functions) | 🟡 Medium | ✅ **Resolved** |
+| **P6-F6** | Monaco Editor | [`page.tsx:415-416`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx#L415-L416) | Command Palette table actions hardcoded to `'users'` | 🟡 Medium | ✅ **Resolved** |
+| **P6-F7** | Monaco Editor | [`ShortcutsModal.tsx:25-56`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/ShortcutsModal.tsx#L25-L56) | Hardcoded Apple `⌘` glyphs shown to Windows/Linux users | 💡 Low | ✅ **Resolved** |
+| **P7-F5** | Rust Sidecar | [`astIndexer.ts:33-42`](file:///Users/alpha/Desktop/antigavity/DBC/src/lib/sidecar/astIndexer.ts#L33-L42) | Pseudo-vector search returns uniform 72% match on any query | 🟡 Medium | ✅ **Resolved** |
+| **P7-F6** | Terminal Panel | [`TerminalPanel.tsx:32-94`](file:///Users/alpha/Desktop/antigavity/DBC/src/components/TerminalPanel.tsx#L32-L94) | Redundant terminal tabs and missing interactive stdin input | 🟡 Medium | ✅ **Resolved** |
+| **P7-F7** | Terminal Panel | [`page.tsx`](file:///Users/alpha/Desktop/antigavity/DBC/src/app/page.tsx) | Bounded `terminalLogs` array to last 500 entries | 💡 Low | ✅ **Resolved** |
 
 ---
 
