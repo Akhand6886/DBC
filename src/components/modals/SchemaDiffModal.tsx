@@ -136,7 +136,22 @@ export const SchemaDiffModal: React.FC<SchemaDiffModalProps> = ({
                 <span className="font-mono text-slate-200">{tbl}</span>
               </div>
             ))}
-            {diffResult.addedTables.length === 0 && diffResult.droppedTables.length === 0 && (
+            {diffResult.addedColumns.map((col, idx) => (
+              <div key={`ac-${idx}`} className="flex items-center space-x-2 text-emerald-400">
+                <span className="font-bold text-xs">+ ADD COLUMN:</span>
+                <span className="font-mono text-slate-200">{col.table}.{col.colName} ({col.type})</span>
+              </div>
+            ))}
+            {diffResult.droppedColumns.map((col, idx) => (
+              <div key={`dc-${idx}`} className="flex items-center space-x-2 text-rose-400">
+                <span className="font-bold text-xs">- DROP COLUMN:</span>
+                <span className="font-mono text-slate-200">{col.table}.{col.colName}</span>
+              </div>
+            ))}
+            {diffResult.addedTables.length === 0 &&
+              diffResult.droppedTables.length === 0 &&
+              diffResult.addedColumns.length === 0 &&
+              diffResult.droppedColumns.length === 0 && (
               <div className="text-slate-500 text-center py-6">
                 No schema differences detected between environments.
               </div>

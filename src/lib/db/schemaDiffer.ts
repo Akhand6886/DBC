@@ -15,6 +15,7 @@ export interface SchemaDiffResult {
   addedTables: string[];
   droppedTables: string[];
   addedColumns: { table: string; colName: string; type: string }[];
+  droppedColumns: { table: string; colName: string; type: string }[];
   upSql: string;
   downSql: string;
   safetyWarnings: SchemaSafetyWarning[];
@@ -30,6 +31,7 @@ export function computeSchemaDiff(
   const addedTables: string[] = [];
   const droppedTables: string[] = [];
   const addedColumns: { table: string; colName: string; type: string }[] = [];
+  const droppedColumns: { table: string; colName: string; type: string }[] = [];
   const safetyWarnings: SchemaSafetyWarning[] = [];
 
   const upSqlLines: string[] = ['-- AI Generated UP Migration Script', '-- Executes schema changes forward', ''];
@@ -47,12 +49,28 @@ export function computeSchemaDiff(
       // Compare Columns for existing tables
       const sTable = sourceTableMap.get(tTable.name)!;
       const sColMap = new Map(sTable.columns.map(c => [c.name, c]));
+      const tColMap = new Map(tTable.columns.map(c => [c.name, c]));
 
+      // Added columns (in target, not in source)
       tTable.columns.forEach(tCol => {
         if (!sColMap.has(tCol.name)) {
           addedColumns.push({ table: tTable.name, colName: tCol.name, type: tCol.type });
           upSqlLines.push(`ALTER TABLE ${tTable.name} ADD COLUMN ${tCol.name} ${tCol.type};`);
           downSqlLines.push(`ALTER TABLE ${tTable.name} DROP COLUMN ${tCol.name};`);
+        }
+      });
+
+      // Dropped columns (in source, missing in target)
+      sTable.columns.forEach(sCol => {
+        if (!tColMap.has(sCol.name)) {
+          droppedColumns.push({ table: sTable.name, colName: sCol.name, type: sCol.type });
+          upSqlLines.push(`ALTER TABLE ${sTable.name} DROP COLUMN ${sCol.name};`);
+          downSqlLines.push(`ALTER TABLE ${sTable.name} ADD COLUMN ${sCol.name} ${sCol.type};`);
+          safetyWarnings.push({
+            level: 'WARNING',
+            message: `Dropping column '${sCol.name}' from table '${sTable.name}' will destroy existing column data.`,
+            affectedTable: sTable.name
+          });
         }
       });
     }
@@ -75,7 +93,7 @@ export function computeSchemaDiff(
   });
 
   // Default fallback if no changes
-  if (addedTables.length === 0 && droppedTables.length === 0 && addedColumns.length === 0) {
+  if (addedTables.length === 0 && droppedTables.length === 0 && addedColumns.length === 0 && droppedColumns.length === 0) {
     upSqlLines.push('-- Schemas are in sync. No migration needed.');
     downSqlLines.push('-- Schemas are in sync. No rollback needed.');
   }
@@ -84,6 +102,7 @@ export function computeSchemaDiff(
     addedTables,
     droppedTables,
     addedColumns,
+    droppedColumns,
     upSql: upSqlLines.join('\n'),
     downSql: downSqlLines.join('\n'),
     safetyWarnings
