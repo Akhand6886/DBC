@@ -125,7 +125,7 @@ export class RealSqlDriverEngine {
    */
   public async executeQuery(sql: string): Promise<RealQueryResult> {
     const startTime = Date.now();
-    const cleanSql = sql.trim();
+    const cleanSql = sql.trim().replace(/;+\s*$/, '');
 
     try {
       // 1. Handle CREATE TABLE
@@ -317,7 +317,7 @@ export class RealSqlDriverEngine {
         if (match) {
           const tableName = match[1].toLowerCase();
           const setClause = match[2];
-          const whereClause = match[3];
+          const whereClause = match[3] ? match[3].trim().replace(/;+\s*$/, '') : undefined;
 
           if (this.inMemoryData[tableName]) {
             const assignments = setClause.split(',').map(s => {
@@ -357,7 +357,7 @@ export class RealSqlDriverEngine {
         const match = cleanSql.match(/DELETE\s+FROM\s+([a-zA-Z0-9_]+)(?:\s+WHERE\s+([\s\S]+))?$/i);
         if (match) {
           const tableName = match[1].toLowerCase();
-          const whereClause = match[2];
+          const whereClause = match[2] ? match[2].trim().replace(/;+\s*$/, '') : undefined;
 
           if (this.inMemoryData[tableName]) {
             const initialCount = this.inMemoryData[tableName].length;
