@@ -10,15 +10,16 @@
 
 *Only ONE task may reside here at any time. When this task finishes its verification criteria, move it to Completed and pull exactly ONE task from NEXT.*
 
-### [Task] Part 4: Shadow Workspace & Diff Verification Domain Remediation
-- **Goal:** Remediate findings in `code_inspection/PART4_VERIFICATION_SHADOW.md` (Myers/LCS diffing, line-aligned diff computation, and virtual workspace verification).
+### [Task] Part 5: Monaco Editor & Workspace Tree Domain Remediation
+- **Goal:** Remediate findings in `code_inspection/PART5_EDITOR_MONACO_FILETREE.md` (Monaco model draft caching, file explorer directory state, and symbol coordinate reveal).
 - **Sub-Steps:**
-  - [ ] `VF-01`: Replace naive 1:1 positional diff with Myers / Longest Common Subsequence (LCS) algorithm in `src/lib/sidecar/shadowBuffer.ts` to prevent false mismatches on insertions/deletions.
-  - [ ] `VF-02`: Syntax safety verification pass on shadow buffers before proposing patches.
-  - [ ] Create `scripts/test-part4-remediations.ts` verification suite.
+  - [ ] `ED-01`: Add debounce draft sync to `sessionStorage` on Monaco model changes to prevent edit loss.
+  - [ ] `ED-02`: Persist folder expanded/collapsed states across file operations in `FileExplorer.tsx`.
+  - [ ] `ED-03`: Clean tab close handlers and active model switching safety guards.
+  - [ ] Create `scripts/test-part5-remediations.ts` verification suite.
   - [ ] Validate with `npx tsc --noEmit` and run all suites.
 - **Verification Criteria:**
-  - Positional insertions and deletions in shadow buffers produce accurate hunk diffs.
+  - Monaco editor draft buffers survive tab switches and browser refresh.
   - All automated tests pass with 0 errors.
 
 ---
@@ -75,6 +76,7 @@
 
 ## 📜 Completed Milestones
 
+- ✅ **2026-09-17:** Part 4 (Verification & Shadow Workspace) Domain Remediation — Resolved VF-01 (Myers / LCS unified line differ replacing naive positional indexing and preventing cascading deletions/additions on line-0 prepending), VF-02 (Strict syntax and bracket balance verification with comment and string stripping and 0-tolerance matching pairs), and VF-03 (Instant search query and lifecycle status filtering tabs in `ShadowVerificationDrawer`). All 49 Part 4 remediation tests passing; all 254 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 3 (Deterministic Router & Protocol Layer) Domain Remediation — Resolved RT-01 (Async `executeRoutedPrompt` Promise resolution with live BYOK escalation and graceful contextual fallback), RT-02 (Token-based Jaccard similarity and substring proximity weighting in AST Sidecar semantic search), RT-03 (Rolling execution latency tracking feeding real-time dynamic preview metrics), and RT-04 (Quoted, backticked, and bracketed identifier extraction in `intentClassifier` for SQL, TypeScript, and JSON). All 50 Part 3 remediation tests passing; all 205 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 2 (DBMS Studio & SQL Engine) Domain Remediation — Resolved DB-01 (JOIN column namespace collision prevention with table qualification), DB-02 (Parameterized DDL type parsing preserving DECIMAL(10, 2) and VARCHAR(255)), DB-03 (Database Memory invariant rules persistence and resetToDefaults with deep-cloning), and DB-04 (Dropdown menu keyboard accessibility and Escape key listener in SqlQueryPanel). All 26 Part 2 remediation tests passing; all 155 platform tests passing; 0 TypeScript errors.
 - ✅ **2026-09-17:** Part 1 (Agents & AI Personas) Domain Remediation — Resolved AG-01 (Anthropic CORS API proxy route), AG-02 (Progressive SSE token streaming in MissionControl & dbAgentRuntime), AG-03 (Asynchronous distributed lock retry with backoff in collaborativeSessionManager), and AG-04 (Intent-weighted specialized persona classification with confidence scoring & Auto selector). All 21 Part 1 remediation tests passing; all 108 baseline tests passing; 0 TypeScript errors.
