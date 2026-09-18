@@ -1181,6 +1181,7 @@ export default function Home() {
                     onSaveScriptToWorkspace={handleSaveScriptToWorkspace}
                     onRegisterExecute={(fn) => { executeSqlRef.current = fn; }}
                     editorSettings={editorSettings}
+                    onToggleAgent={() => setShowMissionControl(prev => !prev)}
                   />
                   {showPerfMonitor && activeConnection && (
                     <div className="p-3 border-t border-[#3c3c3c] bg-[#252526]">
