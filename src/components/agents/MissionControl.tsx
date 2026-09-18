@@ -38,7 +38,8 @@ import {
   Server,
   Share2,
   GitBranch,
-  Users
+  Users,
+  Play
 } from 'lucide-react';
 import { specializedAgents, AgentPersonaId, SPECIALIZED_PERSONAS } from '../../lib/agent/specializedAgents';
 import { dbMemory } from '../../lib/db/dbMemory';
@@ -70,7 +71,19 @@ const INITIAL_GREETING: ChatMessage = {
   id: 'msg-welcome',
   timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
   role: 'assistant',
-  content: `### Welcome to DBC Copilot & Mission Control AI 👋\n\nI operate in **P3 Collaborative DBMS Studio Mode**:\n- **Collaborative Agent Sessions (⌘⌥C)**: Multi-agent rooms, delegation handoffs, distributed locks & consensus.\n- **Data Lineage DAG (⌘⇧L)**: Column-level pipeline tracking & downstream blast radius evaluation.\n- **Database Sandboxing (⌘⌥B)**: Isolated copy-on-write branches with zero-risk agent mutation testing.\n- **Agent Performance Optimizer (⌘⇧O)**: Automated sequential scan detection and index advisor.\n- **Specialized DB Personas**: DBA Optimizer, Schema Architect, Data Analyst, Security Auditor.\n- **Query Firewall & MCP**: Real-time risk gate, rollback stack, and external Claude Desktop connectivity.\n\nChoose an agent persona or click a trigger below to begin!`,
+  content: `### 🤖 Agentic Database Assistant Ready
+
+I am your Autonomous Database Management & Query Agent powered by **Confidence-Aware Routing** and **Policy Guardrails**.
+
+**Try asking:**
+- *"Find customers who haven't placed an order in the last six months"*
+- *"Find slow queries"*
+- *"Optimize query #1842"*
+- *"Why did revenue fall?"*
+- *"Count users"* (Deterministic fast-path • 98%)
+- *"Show orders from today"* (Deterministic fast-path • 94%)
+- *"Find duplicate emails"* (Deterministic fast-path • 82%)
+- *"Delete all inactive users"* (Guardrail intercepted)`,
   status: 'success'
 };
 
@@ -175,82 +188,95 @@ export const MissionControl: React.FC<MissionControlProps> = ({
     setPrompt('');
     setIsProcessing(true);
 
-    const isDbRelated = isDbMode || /\b(select|from|table|index|schema|column|database|query|explain|migrate|migration|drop|delete|update|truncate|insert)\b/i.test(trimmedPrompt);
+    // ─── 2. Confidence-Aware Request Routing ─────────────────────────────
+    const preview = previewDeveloperIntent(trimmedPrompt, activeFilePath, routerConfig, provider);
+    const isFast = preview.isFastPath;
 
-    if (isDbRelated) {
-      try {
-        const resolvedPersonaId = selectedPersona === 'auto'
-          ? specializedAgents.matchPersona(trimmedPrompt).persona.id
-          : selectedPersona;
-        const persona = specializedAgents.getPersona(resolvedPersonaId);
-        
-        if (isSandboxMode) {
-          await dbBranchManager.executeInSandbox(`agent-${resolvedPersonaId}`, async (branch) => {
-            return dbBranchManager.executeInBranch(branch.id, trimmedPrompt);
-          });
-          if (onLogTerminal) {
-            onLogTerminal(`[DBC Sandbox Isolation]: Executed speculative query inside isolated branch (0 Production Blast Radius).`);
-          }
-        }
+    if (isFast) {
+      // ══════════════════════════════════════════════════════════════════
+      // ROUTE A: ≥ Threshold (Deterministic Engine) - Sub-5ms, $0.00 Cost
+      // ══════════════════════════════════════════════════════════════════
+      const res = runDeterministicAction(preview.intent, activeFileContent);
+      const assistantMsgId = `msg-${Date.now()}-assistant`;
+      const assistantMessage: ChatMessage = {
+        id: assistantMsgId,
+        timestamp: timeStr,
+        role: 'assistant',
+        content: res.replyText,
+        routePath: 'DETERMINISTIC_FAST_PATH',
+        provider,
+        confidenceScore: preview.intent.confidenceScore,
+        executionTimeMs: res.executionTimeMs,
+        tokenCostUSD: 0.0,
+        explanation: preview.intent.explanation,
+        logMessage: res.logMessage,
+        proposedContent: res.proposedContent,
+        status: 'success'
+      };
 
-        const assistantMsgId = `msg-${Date.now()}-assistant`;
-        const initialAssistantMessage: ChatMessage = {
-          id: assistantMsgId,
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          role: 'assistant',
-          content: '',
-          routePath: 'AGENTIC_LLM_PATH',
-          provider,
-          confidenceScore: 96,
-          executionTimeMs: 0,
-          tokenCostUSD: 0,
-          logMessage: `[${persona.badge}]: Reasoning & executing typed DB tools...`,
-          explanation: `${persona.name} is executing ReAct reasoning loop...`,
-          status: 'processing'
-        };
-
-        setMessages((prev) => [...prev, initialAssistantMessage]);
-
-        const agentRes = await specializedAgents.runPersonaAgent(
-          resolvedPersonaId,
-          trimmedPrompt,
-          provider,
-          'users',
-          (chunk) => {
-            setMessages((prev) =>
-              prev.map((m) =>
-                m.id === assistantMsgId ? { ...m, content: m.content + chunk } : m
-              )
-            );
-          }
-        );
-
-        if (onLogTerminal) {
-          onLogTerminal(`[DBC Specialized Agent - ${persona.badge}]: Completed ReAct loop in ${agentRes.totalDurationMs}ms with tools [${agentRes.toolsExecuted.join(', ')}]`);
-        }
-
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === assistantMsgId
-              ? {
-                  ...m,
-                  content: agentRes.replyText,
-                  executionTimeMs: agentRes.totalDurationMs,
-                  tokenCostUSD: agentRes.totalCostUSD,
-                  logMessage: `[${persona.badge}]: Tools: ${agentRes.toolsExecuted.join(', ')} • Session: ${agentRes.sessionId}${isSandboxMode ? ' • Sandbox: ISOLATED' : ''}`,
-                  explanation: `${persona.name} executed ${agentRes.toolsExecuted.length} typed database tool(s)${isSandboxMode ? ' inside an isolated copy-on-write Sandbox' : ''} with context from Database Memory.`,
-                  status: 'success'
-                }
-              : m
-          )
-        );
-      } catch (err: any) {
-        if (onLogTerminal) onLogTerminal(`[DBC DB Agent Error]: ${err.message}`);
-      } finally {
-        setIsProcessing(false);
+      if (onLogTerminal) {
+        onLogTerminal(`⚡ [Confidence Router | ${preview.intent.confidenceScore}%]: Fast-Path routed to Deterministic Engine (0 tokens, ${res.executionTimeMs}ms)`);
       }
+
+      setMessages((prev) => [...prev, assistantMessage]);
+      setIsProcessing(false);
       return;
     }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ROUTE B: < Threshold (AI Agent with ReAct & 12 Controlled Tools)
+    // ══════════════════════════════════════════════════════════════════
+    try {
+      const assistantMsgId = `msg-${Date.now()}-assistant`;
+      const initialAssistantMessage: ChatMessage = {
+        id: assistantMsgId,
+        timestamp: timeStr,
+        role: 'assistant',
+        content: '',
+        routePath: 'AGENTIC_LLM_PATH',
+        provider,
+        confidenceScore: preview.intent.confidenceScore,
+        executionTimeMs: 0,
+        tokenCostUSD: 0,
+        logMessage: `[AI Agent]: Analyzing database schema & executing controlled tools...`,
+        explanation: `Agent ReAct loop active. Confidence ${preview.intent.confidenceScore}% (< 80% threshold).`,
+        status: 'processing'
+      };
+
+      setMessages((prev) => [...prev, initialAssistantMessage]);
+
+      const agentRes = await dbAgentRuntime.runAgent({
+        prompt: trimmedPrompt,
+        provider,
+        activeTableName: 'users'
+      });
+
+      if (onLogTerminal) {
+        onLogTerminal(`[DBC Autonomous Agent]: Completed ReAct loop in ${agentRes.totalDurationMs}ms with tools [${agentRes.toolsExecuted.join(', ')}]`);
+      }
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantMsgId
+            ? {
+                ...m,
+                content: agentRes.replyText,
+                executionTimeMs: agentRes.totalDurationMs,
+                tokenCostUSD: agentRes.totalCostUSD,
+                logMessage: `[AI Agent]: Executed tools: ${agentRes.toolsExecuted.join(', ') || 'schema_inspect'} • Session: ${agentRes.sessionId}`,
+                explanation: `Agent executed ${agentRes.toolsExecuted.length} controlled database tool(s) with grounding from Business Context Layer.`,
+                proposedContent: agentRes.suggestedSql,
+                status: 'success'
+              }
+            : m
+        )
+      );
+    } catch (err: any) {
+      if (onLogTerminal) onLogTerminal(`[DBC Agent Error]: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+    return;
 
     const isFast = routePreview?.isFastPath ?? true;
     const simDelay = isFast ? 90 : 750;
@@ -539,14 +565,16 @@ export const MissionControl: React.FC<MissionControlProps> = ({
 
         {showTriggers && (
           <div className="px-2.5 pb-2 flex flex-wrap gap-1">
-            {(isDbMode
-              ? SPECIALIZED_PERSONAS[selectedPersona === 'auto' ? 'dba_optimizer' : selectedPersona].recommendedTriggers.map(t => ({ label: t.label, q: t.prompt }))
-              : [
-                  { label: 'Format SQL', q: 'format sql query' },
-                  { label: 'Optimize Query', q: 'optimize sql query' },
-                  { label: 'Fix Syntax', q: 'fix sql syntax errors' }
-                ]
-            ).map((item, idx) => (
+            {[
+              { label: 'Find Customers (6mo)', q: "Find customers who haven't placed an order in the last six months" },
+              { label: 'Find Slow Queries', q: 'Find slow queries' },
+              { label: 'Optimize #1842', q: 'Optimize query #1842' },
+              { label: 'Why Revenue Fell', q: 'Why did revenue fall?' },
+              { label: 'Count Users (98%)', q: 'Count users' },
+              { label: 'Orders Today (94%)', q: 'Show orders from today' },
+              { label: 'Duplicate Emails (82%)', q: 'Find duplicate emails' },
+              { label: 'Delete Inactive (Risk)', q: 'Delete all inactive users' }
+            ].map((item, idx) => (
               <button
                 key={idx}
                 onClick={() => {
@@ -644,30 +672,33 @@ export const MissionControl: React.FC<MissionControlProps> = ({
                   })}
                 </div>
 
-                {/* Action Footer for Assistant Diffs */}
-                {!isUser && msg.diffCheck && (
-                  <div className="pt-2 border-t border-[#3c3c3c] flex items-center justify-between text-[11px]">
-                    <div className="flex items-center space-x-1 text-slate-400 truncate max-w-[200px]">
-                      <FileCode className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                      <span className="truncate">{msg.diffCheck.targetFile}</span>
-                    </div>
+                {/* Inline Run SQL in Editor Button */}
+                {!isUser && (() => {
+                  const sqlBlockMatch = msg.content.match(/```sql\s*([\s\S]+?)\s*```/i);
+                  const candidateSql = sqlBlockMatch ? sqlBlockMatch[1].trim() : (msg.proposedContent && /^(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER)/i.test(msg.proposedContent.trim()) ? msg.proposedContent.trim() : null);
 
-                    <div className="flex items-center space-x-1">
+                  if (!candidateSql) return null;
+
+                  return (
+                    <div className="pt-2 border-t border-[#3c3c3c] flex items-center justify-between">
+                      <span className="text-[10px] text-slate-400 font-mono truncate max-w-[170px]">
+                        Executable SQL
+                      </span>
                       <button
                         onClick={() => {
-                          if (msg.diffCheck && msg.proposedContent) {
-                            onApplyPatch(msg.proposedContent, msg.diffCheck);
+                          window.dispatchEvent(new CustomEvent('dbc-execute-sql', { detail: { sql: candidateSql } }));
+                          if (onLogTerminal) {
+                            onLogTerminal(`[Agent Dispatch]: Injected SQL into editor & executed: ${candidateSql.slice(0, 60)}...`);
                           }
                         }}
-                        className="px-2 py-1 rounded bg-[#007acc] hover:bg-[#0062a3] text-white font-bold flex items-center space-x-1 transition-colors shadow"
-                        title="Inspect and apply shadow diff"
+                        className="bg-[#007acc] hover:bg-[#0062a3] text-white px-2.5 py-1 rounded text-[11px] font-bold flex items-center gap-1.5 shadow transition active:scale-95"
                       >
-                        <span>Apply Diff</span>
-                        <ArrowRight className="h-3 w-3" />
+                        <Play className="w-3 h-3 fill-current text-white" />
+                        <span>Run in Editor</span>
                       </button>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Observability & Trace Action for Assistant */}
                 {!isUser && (
