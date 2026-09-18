@@ -23,15 +23,72 @@ export interface IntrospectedTable {
   columns: IntrospectedColumn[];
 }
 
+export interface QueryExecutionStat {
+  queryId: string;
+  sql: string;
+  avgExecutionSec: number;
+  calls: number;
+  table: string;
+  isSlow: boolean;
+  missingIndex?: string;
+  recommendation?: string;
+}
+
 export class RealSqlDriverEngine {
   private inMemoryTables: Record<string, IntrospectedTable> = {
     users: {
       name: 'users',
       columns: [
         { name: 'id', type: 'INTEGER', isPrimary: true, isForeign: false },
+        { name: 'name', type: 'VARCHAR(255)', isPrimary: false, isForeign: false },
         { name: 'username', type: 'VARCHAR(255)', isPrimary: false, isForeign: false },
         { name: 'email', type: 'VARCHAR(255)', isPrimary: false, isForeign: false },
-        { name: 'role_id', type: 'INTEGER', isPrimary: false, isForeign: true }
+        { name: 'status', type: 'VARCHAR(50)', isPrimary: false, isForeign: false },
+        { name: 'role_id', type: 'INTEGER', isPrimary: false, isForeign: true },
+        { name: 'created_at', type: 'TIMESTAMP', isPrimary: false, isForeign: false },
+        { name: 'deleted_at', type: 'TIMESTAMP', isPrimary: false, isForeign: false }
+      ]
+    },
+    customers: {
+      name: 'customers',
+      columns: [
+        { name: 'id', type: 'INTEGER', isPrimary: true, isForeign: false },
+        { name: 'name', type: 'VARCHAR(255)', isPrimary: false, isForeign: false },
+        { name: 'email', type: 'VARCHAR(255)', isPrimary: false, isForeign: false },
+        { name: 'customer_status', type: 'INTEGER', isPrimary: false, isForeign: false },
+        { name: 'last_order_date', type: 'TIMESTAMP', isPrimary: false, isForeign: false },
+        { name: 'created_at', type: 'TIMESTAMP', isPrimary: false, isForeign: false }
+      ]
+    },
+    orders: {
+      name: 'orders',
+      columns: [
+        { name: 'id', type: 'INTEGER', isPrimary: true, isForeign: false },
+        { name: 'customer_id', type: 'INTEGER', isPrimary: false, isForeign: true },
+        { name: 'amount', type: 'DECIMAL(10, 2)', isPrimary: false, isForeign: false },
+        { name: 'status', type: 'VARCHAR(50)', isPrimary: false, isForeign: false },
+        { name: 'created_at', type: 'TIMESTAMP', isPrimary: false, isForeign: false }
+      ]
+    },
+    products: {
+      name: 'products',
+      columns: [
+        { name: 'id', type: 'INTEGER', isPrimary: true, isForeign: false },
+        { name: 'title', type: 'VARCHAR(255)', isPrimary: false, isForeign: false },
+        { name: 'price', type: 'DECIMAL(10, 2)', isPrimary: false, isForeign: false },
+        { name: 'stock', type: 'INTEGER', isPrimary: false, isForeign: false },
+        { name: 'category', type: 'VARCHAR(100)', isPrimary: false, isForeign: false }
+      ]
+    },
+    transactions: {
+      name: 'transactions',
+      columns: [
+        { name: 'id', type: 'INTEGER', isPrimary: true, isForeign: false },
+        { name: 'order_id', type: 'INTEGER', isPrimary: false, isForeign: true },
+        { name: 'amount', type: 'DECIMAL(10, 2)', isPrimary: false, isForeign: false },
+        { name: 'payment_method', type: 'VARCHAR(50)', isPrimary: false, isForeign: false },
+        { name: 'status', type: 'VARCHAR(50)', isPrimary: false, isForeign: false },
+        { name: 'created_at', type: 'TIMESTAMP', isPrimary: false, isForeign: false }
       ]
     },
     roles: {
@@ -45,15 +102,90 @@ export class RealSqlDriverEngine {
 
   private inMemoryData: Record<string, Record<string, any>[]> = {
     users: [
-      { id: 1, username: 'admin', email: 'admin@dbc.org', role_id: 1 },
-      { id: 2, username: 'alpha', email: 'alpha@dbc.org', role_id: 1 },
-      { id: 3, username: 'agent_cli', email: 'agent@dbc.org', role_id: 2 }
+      { id: 1, name: 'Root Administrator', username: 'admin', email: 'admin@dbc.org', status: 'active', role_id: 1, created_at: '2026-01-10 09:00:00', deleted_at: null },
+      { id: 2, name: 'Alex Rivera', username: 'alpha', email: 'alpha@dbc.org', status: 'active', role_id: 1, created_at: '2026-02-14 11:20:00', deleted_at: null },
+      { id: 3, name: 'Autonomous Agent', username: 'agent_cli', email: 'agent@dbc.org', status: 'active', role_id: 2, created_at: '2026-03-01 14:30:00', deleted_at: null },
+      { id: 102, name: 'Alex Johnson', username: 'alex_j', email: 'alex.j@enterprise.com', status: 'active', role_id: 2, created_at: '2026-03-15 10:15:00', deleted_at: null },
+      { id: 103, name: 'Inactive User One', username: 'inactive_1', email: 'inactive1@oldcorp.io', status: 'inactive', role_id: 2, created_at: '2025-05-12 08:00:00', deleted_at: null },
+      { id: 104, name: 'Inactive User Two', username: 'inactive_2', email: 'inactive2@oldcorp.io', status: 'inactive', role_id: 2, created_at: '2025-06-20 16:45:00', deleted_at: null },
+      { id: 105, name: 'Duplicate Email Account', username: 'alex_dup', email: 'alex.j@enterprise.com', status: 'active', role_id: 2, created_at: '2026-04-01 12:00:00', deleted_at: null }
+    ],
+    customers: [
+      { id: 1, name: 'Acme Corporation', email: 'billing@acme.com', customer_status: 1, last_order_date: '2026-09-10 12:00:00', created_at: '2025-01-01 00:00:00' },
+      { id: 2, name: 'Globex Logistics', email: 'contact@globex.org', customer_status: 1, last_order_date: '2026-08-25 15:30:00', created_at: '2025-02-15 00:00:00' },
+      { id: 3, name: 'Initech Systems', email: 'ops@initech.dev', customer_status: 3, last_order_date: '2025-11-04 09:12:00', created_at: '2024-06-01 00:00:00' },
+      { id: 4, name: 'Soylent Health', email: 'finance@soylent.io', customer_status: 3, last_order_date: '2025-12-19 14:00:00', created_at: '2024-08-10 00:00:00' },
+      { id: 5, name: 'Hooli Cloud', email: 'dev@hooli.xyz', customer_status: 2, last_order_date: '2026-09-17 18:20:00', created_at: '2025-04-12 00:00:00' },
+      { id: 42, name: 'Arthur Dent', email: 'arthur@galaxy.net', customer_status: 1, last_order_date: '2026-09-15 10:00:00', created_at: '2025-03-01 00:00:00' }
+    ],
+    orders: [
+      { id: 501, customer_id: 42, amount: 249.50, status: 'completed', created_at: '2026-09-15 10:00:00' },
+      { id: 502, customer_id: 42, amount: 89.00, status: 'completed', created_at: '2026-08-12 14:22:00' },
+      { id: 503, customer_id: 1, amount: 1450.00, status: 'completed', created_at: '2026-09-10 12:00:00' },
+      { id: 504, customer_id: 2, amount: 780.25, status: 'completed', created_at: '2026-08-25 15:30:00' },
+      { id: 505, customer_id: 3, amount: 320.00, status: 'refunded', created_at: '2025-11-04 09:12:00' },
+      { id: 506, customer_id: 4, amount: 199.99, status: 'cancelled', created_at: '2025-12-19 14:00:00' },
+      { id: 507, customer_id: 5, amount: 2100.00, status: 'completed', created_at: '2026-09-17 18:20:00' },
+      { id: 508, customer_id: 1, amount: 450.00, status: 'completed', created_at: '2026-09-18 08:30:00' }
+    ],
+    products: [
+      { id: 1, title: 'Enterprise Database Appliance', price: 4999.00, stock: 15, category: 'Hardware' },
+      { id: 2, title: 'Autonomous Agent License (Annual)', price: 1200.00, stock: 999, category: 'Software' },
+      { id: 3, title: 'High-Throughput NVMe Cluster', price: 8500.00, stock: 8, category: 'Storage' },
+      { id: 4, title: 'Real-Time Replication Gateway', price: 2400.00, stock: 45, category: 'Networking' }
+    ],
+    transactions: [
+      { id: 9001, order_id: 501, amount: 249.50, payment_method: 'credit_card', status: 'settled', created_at: '2026-09-15 10:01:00' },
+      { id: 9002, order_id: 503, amount: 1450.00, payment_method: 'wire_transfer', status: 'settled', created_at: '2026-09-10 12:02:00' },
+      { id: 9003, order_id: 507, amount: 2100.00, payment_method: 'credit_card', status: 'settled', created_at: '2026-09-17 18:21:00' },
+      { id: 9004, order_id: 508, amount: 450.00, payment_method: 'credit_card', status: 'settled', created_at: '2026-09-18 08:31:00' }
     ],
     roles: [
       { id: 1, role_name: 'Administrator' },
       { id: 2, role_name: 'API Agent' }
     ]
   };
+
+  private queryStats: QueryExecutionStat[] = [
+    {
+      queryId: '#1842',
+      sql: 'SELECT * FROM orders WHERE customer_id = 42 ORDER BY created_at DESC;',
+      avgExecutionSec: 8.4,
+      calls: 12402,
+      table: 'orders',
+      isSlow: true,
+      missingIndex: 'orders(customer_id, created_at)',
+      recommendation: 'CREATE INDEX idx_orders_customer_id_created ON orders(customer_id, created_at DESC);'
+    },
+    {
+      queryId: '#1938',
+      sql: "SELECT * FROM transactions WHERE status = 'settled' AND amount > 1000;",
+      avgExecutionSec: 6.1,
+      calls: 8231,
+      table: 'transactions',
+      isSlow: true,
+      missingIndex: 'transactions(status, amount)',
+      recommendation: 'CREATE INDEX idx_transactions_status_amt ON transactions(status, amount);'
+    },
+    {
+      queryId: '#2104',
+      sql: 'SELECT * FROM customers WHERE customer_status = 3;',
+      avgExecutionSec: 4.8,
+      calls: 5119,
+      table: 'customers',
+      isSlow: true,
+      missingIndex: 'customers(customer_status)',
+      recommendation: 'CREATE INDEX idx_customers_status ON customers(customer_status);'
+    },
+    {
+      queryId: '#1001',
+      sql: "SELECT * FROM users WHERE status = 'active';",
+      avgExecutionSec: 0.002,
+      calls: 45012,
+      table: 'users',
+      isSlow: false
+    }
+  ];
 
   private evaluateWhereCondition(row: Record<string, any>, whereClause?: string): boolean {
     if (!whereClause || !whereClause.trim()) return true;
