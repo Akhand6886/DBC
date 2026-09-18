@@ -318,6 +318,34 @@ export class TransactionManager {
     return true;
   }
 
+  public createManualSnapshot(description: string = 'Agent Manual Snapshot'): RollbackSnapshot {
+    const tableNames = realSqlDriver.getTableNames();
+    const beforeTablesState: Record<string, Record<string, any>[]> = {};
+    for (const tbl of tableNames) {
+      beforeTablesState[tbl] = realSqlDriver.getTableData(tbl).map(r => ({ ...r }));
+    }
+
+    const snapshot: RollbackSnapshot = {
+      id: `snap-${Date.now().toString(36)}-manual`,
+      timestamp: new Date().toLocaleTimeString(),
+      description,
+      query: '-- Manual Agent Snapshot Backup',
+      targetTables: tableNames,
+      affectedRowCount: 0,
+      rowDiffs: [],
+      rollbackSql: '-- Manual snapshot point',
+      status: 'COMMITTED',
+      beforeTablesState,
+      afterTablesState: beforeTablesState,
+    };
+
+    this.history.unshift(snapshot);
+    if (this.history.length > this.maxHistorySize) {
+      this.history.pop();
+    }
+    return snapshot;
+  }
+
   public getHistory(): RollbackSnapshot[] {
     return [...this.history];
   }
