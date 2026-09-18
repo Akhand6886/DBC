@@ -80,9 +80,9 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
       <div className="flex items-center space-x-1 relative z-50">
         {/* Brand Icon */}
         <div className="flex items-center space-x-1.5 pr-2 border-r border-[#3c3c3c]">
-          <span className="font-bold text-white tracking-tight flex items-center space-x-1">
-            <span className="text-[#007acc] font-black text-sm">✦</span>
-            <span>Code-OSS</span>
+          <span className="font-bold text-white tracking-tight flex items-center space-x-1.5">
+            <span className="text-[#007acc] font-black text-sm">⚡</span>
+            <span>Agentic Database IDE</span>
           </span>
         </div>
 
@@ -338,7 +338,7 @@ export const TopMenuBar: React.FC<TopMenuBarProps> = ({
         className="hidden md:flex bg-[#1e1e1e] border border-[#3c3c3c] hover:border-[#007acc] px-3 py-0.5 rounded text-[11px] text-[#cccccc] items-center space-x-2 max-w-xs w-full flex-1 mx-2 justify-center shadow-inner truncate"
       >
         <Command className="h-3 w-3 text-[#007acc] shrink-0" />
-        <span className="truncate">Agentic AI IDE — DBMS Studio</span>
+        <span className="truncate">Agentic Database IDE — Autonomous DB Management (⌘⇧P)</span>
       </button>
 
       {/* Right Utility Shortcuts */}
