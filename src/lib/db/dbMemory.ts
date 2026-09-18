@@ -50,10 +50,38 @@ export const INITIAL_DATABASE_MEMORY: DatabaseMemoryState = {
   tables: {
     users: {
       tableName: 'users',
-      description: 'Core developer, agent, and administrator identity repository.',
+      description: 'Core developer, customer, agent, and administrator identity repository.',
       primaryPurpose: 'Authentication, credential tracking, and workspace permissions.',
       ownerTeam: 'Platform Security',
       tags: ['auth', 'core', 'audit']
+    },
+    customers: {
+      tableName: 'customers',
+      description: 'Enterprise and retail customer accounts and subscription metadata.',
+      primaryPurpose: 'Billing, CRM synchronization, and contract lifecycle management.',
+      ownerTeam: 'Revenue Operations',
+      tags: ['crm', 'billing', 'core']
+    },
+    orders: {
+      tableName: 'orders',
+      description: 'Transactional purchase orders placed by enterprise customers.',
+      primaryPurpose: 'Order fulfillment, invoicing, and revenue reporting.',
+      ownerTeam: 'Commerce Engineering',
+      tags: ['ecommerce', 'orders', 'finance']
+    },
+    products: {
+      tableName: 'products',
+      description: 'Hardware, software licenses, and database appliances catalog.',
+      primaryPurpose: 'Inventory, SKU management, and pricing calculations.',
+      ownerTeam: 'Product Management',
+      tags: ['catalog', 'pricing']
+    },
+    transactions: {
+      tableName: 'transactions',
+      description: 'Payment settlement and ledger entries tied to customer orders.',
+      primaryPurpose: 'Financial audit, payment gateway reconciliations, and tax accounting.',
+      ownerTeam: 'Finance & Compliance',
+      tags: ['payments', 'ledger', 'audit']
     },
     roles: {
       tableName: 'roles',
@@ -78,6 +106,47 @@ export const INITIAL_DATABASE_MEMORY: DatabaseMemoryState = {
         columnName: 'email',
         description: 'Primary verified contact address for operator notifications.',
         isPii: true
+      },
+      deleted_at: {
+        columnName: 'deleted_at',
+        description: 'Soft deletion timestamp. Non-null indicates account was deactivated without physical row removal.',
+        isPii: false
+      },
+      status: {
+        columnName: 'status',
+        description: 'Account activity state: active, inactive, or suspended.',
+        valueMeanings: {
+          'active': 'Active standing, authorized for production API access',
+          'inactive': 'Dormant user account flagged for archival review',
+          'suspended': 'Security compliance lock'
+        }
+      }
+    },
+    customers: {
+      customer_status: {
+        columnName: 'customer_status',
+        description: 'Numeric subscription lifecycle state code.',
+        valueMeanings: {
+          '1': 'Active Enterprise Subscription',
+          '2': 'Trial / Evaluation Tier',
+          '3': 'Subscription Cancelled'
+        },
+        isPii: false
+      },
+      last_order_date: {
+        columnName: 'last_order_date',
+        description: 'Timestamp of the most recent completed order. Used to detect churn (>6 months dormancy).'
+      }
+    },
+    orders: {
+      amount: {
+        columnName: 'amount',
+        description: 'Net order value in USD, strictly excluding sales tax and shipping surcharges.',
+        exampleValues: ['249.50', '1450.00', '2100.00']
+      },
+      customer_id: {
+        columnName: 'customer_id',
+        description: 'Foreign key linking order to customers(id).'
       }
     }
   },
@@ -93,17 +162,17 @@ export const INITIAL_DATABASE_MEMORY: DatabaseMemoryState = {
     {
       id: 'rule-soft-delete',
       title: 'Soft-Delete & Audit Requirement',
-      rule: 'Prefer setting role_id = 0 or status = "deprecated" over hard row deletion in audit tables.',
+      rule: 'Prefer setting deleted_at = CURRENT_TIMESTAMP over hard DELETE operations.',
       severity: 'RECOMMENDED',
-      affectedTables: ['users', 'roles'],
+      affectedTables: ['users', 'customers'],
       createdAt: new Date().toLocaleDateString()
     },
     {
       id: 'rule-unbounded-select',
       title: 'Mandatory LIMIT on Interactive Queries',
-      rule: 'All ad-hoc SELECT queries against users or logs must specify a LIMIT clause (max 100).',
+      rule: 'All ad-hoc SELECT queries against transactions or users must specify a LIMIT clause.',
       severity: 'MANDATORY',
-      affectedTables: ['users'],
+      affectedTables: ['transactions', 'users'],
       createdAt: new Date().toLocaleDateString()
     }
   ],
