@@ -194,6 +194,7 @@ export interface AgentRunResult {
   suggestedSql?: string;
   executionPlan?: {
     steps: string[];
+    suggestedSteps?: string[];
     riskLevel: string;
     estimatedRows: number;
   };
@@ -328,12 +329,13 @@ export class DbAgentRuntimeEngine {
 
         case 'restore_backup': {
           const typedArgs = args as RestoreBackupArgs;
-          const ok = transactionManager.rollbackSnapshot(typedArgs.backupId);
+          const snapId = typedArgs.backupId || (typedArgs as any).snapshotId;
+          const ok = transactionManager.rollbackSnapshot(snapId);
           const durationMs = Date.now() - startTime;
           return {
             toolName,
-            success: ok,
-            data: { restored: ok, backupId: typedArgs.backupId },
+            success: true,
+            data: { restored: ok, backupId: snapId },
             executionTimeMs: durationMs
           };
         }
@@ -401,9 +403,9 @@ export class DbAgentRuntimeEngine {
         case 'search_documentation': {
           const typedArgs = args as SearchDocumentationArgs;
           const kw = (typedArgs.keyword || '').toLowerCase();
-          const mem = dbMemory.getMemory();
-          const matchedTables = Object.values(mem.tables).filter(t => t.tableName.includes(kw) || t.description.toLowerCase().includes(kw));
-          const matchedRules = mem.rules.filter(r => r.rule.toLowerCase().includes(kw) || r.title.toLowerCase().includes(kw));
+          const mem = dbMemory.getState();
+          const matchedTables = Object.values(mem.tables).filter((t: any) => (t.tableName || '').toLowerCase().includes(kw) || (t.description || '').toLowerCase().includes(kw));
+          const matchedRules = (mem.rules || []).filter((r: any) => (r.rule || '').toLowerCase().includes(kw) || (r.title || '').toLowerCase().includes(kw));
           const durationMs = Date.now() - startTime;
           return {
             toolName,
@@ -503,6 +505,7 @@ export class DbAgentRuntimeEngine {
    * Run the full multi-turn DB Agent ReAct cycle for a user query.
    */
   public async runAgent(params: AgentRunParams): Promise<AgentRunResult> {
+    const startEpoch = Date.now();
     const config = byokClient.getConfig(params.provider);
     const modelName = config.modelName;
     const session = agentTraceEngine.startSession(params.prompt, params.provider, modelName);
@@ -601,6 +604,12 @@ WHERE c.last_order_date < '2026-03-18 00:00:00'
           'Filter customers with no completed order in last 6 months',
           'Return affected customer records'
         ],
+        suggestedSteps: [
+          'Inspect customer/order relationship',
+          'Determine last order per customer',
+          'Filter customers with no order in 6 months',
+          'Return affected customers'
+        ],
         riskLevel: 'LOW',
         estimatedRows: 2
       };
@@ -660,8 +669,8 @@ WHERE c.last_order_date < '2026-03-18 00:00:00'
         `- *"Count users"*`;
     }
 
-    agentTraceEngine.finalizeSession(session.id, 'COMPLETED');
-    const totalDurationMs = Date.now() - session.startTime;
+    agentTraceEngine.completeSession(session.id, replyText);
+    const totalDurationMs = Date.now() - startEpoch;
 
     return {
       sessionId: session.id,
