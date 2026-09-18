@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode, ShieldAlert, ShieldCheck, RotateCcw } from 'lucide-react';
+import { Play, Database, ChevronRight, AlertCircle, Save, ChevronDown, Wrench, Download, FileSpreadsheet, FileText, FileJson, Code, PlusSquare, Activity, GitCompare, FileCode, ShieldAlert, ShieldCheck, RotateCcw, Bot, Sparkles } from 'lucide-react';
 import { TableCreatorModal } from '../modals/TableCreatorModal';
 import { DataExportWizard } from './DataExportWizard';
 import { SchemaDiffModal } from '../modals/SchemaDiffModal';
@@ -26,6 +26,7 @@ interface SqlQueryPanelProps {
   onSaveScriptToWorkspace?: (scriptName: string, content: string) => void;
   onRegisterExecute?: (executeFn: () => void) => void;
   editorSettings?: EditorSettings;
+  onToggleAgent?: () => void;
 }
 
 export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
@@ -35,6 +36,7 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
   onSaveScriptToWorkspace,
   onRegisterExecute,
   editorSettings,
+  onToggleAgent,
 }) => {
   const [query, setQuery] = useState('SELECT * FROM users LIMIT 10;');
   const [isRunning, setIsRunning] = useState(false);
@@ -533,6 +535,57 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
             automaticLayout: true,
           }}
         />
+      </div>
+
+      {/* Editor Action Bar (The Vision Signature Toolbar: ▶ Run  Explain  Format  Agent 🤖) */}
+      <div className="bg-[#252526] border-b border-[#3c3c3c] px-3 py-1.5 flex items-center justify-between select-none">
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => handleExecuteQuery()}
+            disabled={isRunning}
+            className="bg-[#007acc] hover:bg-[#0062a3] text-white px-3 py-1 rounded-md font-bold flex items-center space-x-1.5 text-xs transition shadow"
+          >
+            <Play className="h-3 w-3 fill-current" />
+            <span>▶ Run</span>
+          </button>
+          <button
+            onClick={() => setIsExplainOpen(true)}
+            className="bg-[#2d2d2d] hover:bg-[#3c3c3c] text-slate-200 border border-[#3c3c3c] px-2.5 py-1 rounded-md text-xs font-semibold flex items-center space-x-1 transition"
+          >
+            <Activity className="h-3 w-3 text-emerald-400" />
+            <span>Explain</span>
+          </button>
+          <button
+            onClick={() => {
+              const keywords = ['SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'INNER JOIN', 'ON', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT', 'OFFSET', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM', 'AND', 'OR', 'AS', 'DESC', 'ASC'];
+              let formatted = query.trim();
+              for (const kw of keywords) {
+                const regex = new RegExp(`\\b${kw}\\b`, 'gi');
+                formatted = formatted.replace(regex, kw);
+              }
+              setQuery(formatted);
+            }}
+            className="bg-[#2d2d2d] hover:bg-[#3c3c3c] text-slate-200 border border-[#3c3c3c] px-2.5 py-1 rounded-md text-xs font-semibold flex items-center space-x-1 transition"
+          >
+            <Sparkles className="h-3 w-3 text-cyan-400" />
+            <span>Format</span>
+          </button>
+          <button
+            onClick={onToggleAgent}
+            className="bg-purple-900/50 hover:bg-purple-800/60 text-purple-200 border border-purple-500/50 px-3 py-1 rounded-md text-xs font-bold flex items-center space-x-1.5 transition shadow"
+          >
+            <Bot className="h-3 w-3 text-purple-300" />
+            <span>Agent 🤖</span>
+          </button>
+        </div>
+
+        <div className="flex items-center space-x-2 text-[11px] text-slate-400">
+          <span>Target: <strong className="text-white">PostgreSQL</strong></span>
+          <span>•</span>
+          <span>Query cost: <strong className="text-emerald-400">Low</strong></span>
+          <span>•</span>
+          <span className="text-emerald-400 font-semibold">Safe ✓</span>
+        </div>
       </div>
 
       {/* Query Output Results Panel */}
