@@ -537,6 +537,14 @@ export class DbAgentRuntimeEngine {
       const statsRes = await this.executeTool('inspect_statistics', { slowOnly: true }, session.id);
       const slow = statsRes.data?.queries || [];
 
+      let indexAdvice = '';
+      if (promptLower.includes('suggest index') || promptLower.includes('indexes')) {
+        toolsExecuted.push('suggest_indexes');
+        const targetTable = promptLower.includes('user') ? 'users' : 'orders';
+        await this.executeTool('suggest_indexes', { tableName: targetTable }, session.id);
+        indexAdvice = `\n\n### Index Advisor\nSequential Scan detected on \`${targetTable}\`. Recommended index: \`CREATE INDEX idx_${targetTable}_lookup ON ${targetTable}(created_at DESC);\``;
+      }
+
       replyText = `Analyzing query statistics...\n\n` +
         `Found **${slow.length} potentially expensive queries**:\n\n` +
         slow.map((q: any, idx: number) => 
@@ -547,6 +555,7 @@ export class DbAgentRuntimeEngine {
           `   - Missing Index: \`${q.missingIndex || 'None'}\`\n` +
           `   - SQL: \`${q.sql}\``
         ).join('\n\n') +
+        indexAdvice +
         `\n\nTo optimize any query, reply: **"Optimize query #1842"** or click below.`;
 
       suggestedSql = slow[0]?.recommendation;
