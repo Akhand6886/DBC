@@ -136,8 +136,14 @@ export const SqlQueryPanel: React.FC<SqlQueryPanelProps> = ({
         handleExecuteQuery();
       });
     }
-    const handleGlobalExec = () => {
-      handleExecuteQuery();
+    const handleGlobalExec = (e: any) => {
+      const customSql = e?.detail?.sql;
+      if (customSql) {
+        setQuery(customSql);
+        handleExecuteQuery(customSql);
+      } else {
+        handleExecuteQuery();
+      }
     };
     window.addEventListener('dbc-execute-sql', handleGlobalExec);
     return () => {
