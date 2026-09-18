@@ -19,6 +19,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "npx ts-node -O '{\"module\":\"commonjs\"}' scripts/test-db-vision-router.ts && npx ts-node -O '{\"module\":\"commonjs\"}' scripts/test-p0-subsystems.ts",
     "electron:dev": "concurrently \"next dev\" \"cross-env WAIT_UNTIL=3000 electron .\"",
     "dist": "npm run dist:mac",
     "dist:mac": "next build && electron-builder --mac dmg",
