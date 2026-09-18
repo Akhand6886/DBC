@@ -413,6 +413,48 @@ export class RealSqlDriverEngine {
             });
           }
 
+          // Check for GROUP BY
+          const groupByMatch = cleanSql.match(/\bGROUP\s+BY\s+([a-zA-Z0-9_.]+)(?:\s+HAVING\s+([\s\S]+?))?(?:\s+ORDER\s+BY|\s+LIMIT|;|\s*$)/i);
+          if (groupByMatch) {
+            const groupCol = groupByMatch[1].split('.').pop()!;
+            const havingClause = groupByMatch[2]?.trim();
+            const groups: Record<string, Record<string, any>[]> = {};
+            for (const r of rows) {
+              const key = String(r[groupCol] ?? '');
+              if (!groups[key]) groups[key] = [];
+              groups[key].push(r);
+            }
+
+            const groupedRows: Record<string, any>[] = [];
+            for (const [keyVal, gRows] of Object.entries(groups)) {
+              const count = gRows.length;
+              if (havingClause) {
+                const havingMatch = havingClause.match(/COUNT\s*\([^)]*\)\s*(>|>=|<|<=|=|!=)\s*(\d+)/i);
+                if (havingMatch) {
+                  const op = havingMatch[1];
+                  const targetNum = parseInt(havingMatch[2], 10);
+                  const pass =
+                    op === '>' ? count > targetNum :
+                    op === '>=' ? count >= targetNum :
+                    op === '<' ? count < targetNum :
+                    op === '<=' ? count <= targetNum :
+                    op === '=' ? count === targetNum :
+                    count !== targetNum;
+                  if (!pass) continue;
+                }
+              }
+              const rowObj: Record<string, any> = { [groupCol]: gRows[0][groupCol], 'count(*)': count, count: count };
+              groupedRows.push(rowObj);
+            }
+            rows = groupedRows;
+          } else if (/\bCOUNT\s*\([^)]*\)/i.test(rawCols)) {
+            // Standalone COUNT(*) or COUNT(col) without GROUP BY
+            const countVal = rows.length;
+            const countAliasMatch = rawCols.match(/\bCOUNT\s*\([^)]*\)\s+(?:AS\s+)?([a-zA-Z0-9_]+)/i);
+            const countKey = countAliasMatch ? countAliasMatch[1] : 'count(*)';
+            rows = [{ [countKey]: countVal }];
+          }
+
           // LIMIT and OFFSET clause
           const limitMatch = cleanSql.match(/\bLIMIT\s+(\d+)(?:\s+OFFSET\s+(\d+))?/i);
           if (limitMatch) {
@@ -434,7 +476,7 @@ export class RealSqlDriverEngine {
           } else {
             const requestedCols = rawCols.split(',').map(c => {
               const trimmed = c.trim();
-              const aliasMatch = trimmed.match(/^([a-zA-Z0-9_.]+)\s+(?:AS\s+)?([a-zA-Z0-9_]+)$/i);
+              const aliasMatch = trimmed.match(/^([a-zA-Z0-9_().*]+)\s+(?:AS\s+)?([a-zA-Z0-9_]+)$/i);
               if (aliasMatch) {
                 return { display: aliasMatch[2], source: aliasMatch[1] };
               }
@@ -446,7 +488,7 @@ export class RealSqlDriverEngine {
               const projected: Record<string, any> = {};
               for (const col of requestedCols) {
                 const unqualifiedSource = col.source.split('.').pop()!;
-                projected[col.display] = r[col.source] ?? r[col.display] ?? r[unqualifiedSource] ?? null;
+                projected[col.display] = r[col.source] ?? r[col.display] ?? r[unqualifiedSource] ?? (col.source.toLowerCase().includes('count') ? (r['count(*)'] ?? r.count ?? 1) : null);
               }
               return projected;
             });
