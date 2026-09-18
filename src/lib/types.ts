@@ -1,6 +1,12 @@
 export type RouterPath = 'DETERMINISTIC_FAST_PATH' | 'AGENTIC_LLM_PATH';
 
 export type FastPathAction = 
+  | 'DIRECT_SQL_EXECUTION'
+  | 'DETERMINISTIC_QUERY_TEMPLATE'
+  | 'DATABASE_EXPLAIN'
+  | 'DATABASE_FORMAT_SQL'
+  | 'DB_MANAGEMENT_SLOW_QUERIES'
+  | 'DB_MANAGEMENT_OPTIMIZE_QUERY'
   | 'LSP_RENAME' 
   | 'LSP_REFERENCES' 
   | 'FORMAT_CODE' 
@@ -36,17 +42,23 @@ export interface RouterConfig {
   enableFormatter: boolean;
   enableTestRunner: boolean;
   enableTreeSitterRefactor: boolean;
+  enableDeterministicSql?: boolean;
 }
 
 export interface CodeIntent {
   rawPrompt: string;
-  actionType: FastPathAction | 'COMPLEX_REASONING' | 'MULTI_FILE_FEATURE' | 'DEEP_BUG_FIX';
+  actionType: FastPathAction | 'COMPLEX_REASONING' | 'MULTI_FILE_FEATURE' | 'DEEP_BUG_FIX' | 'AGENTIC_QUERY_PLAN' | 'AGENTIC_DIAGNOSTIC' | 'GUARDRAIL_MUTATION_APPROVAL' | string;
+  compiledSql?: string;
+  targetTable?: string;
   targetSymbol?: string;
   newSymbolName?: string;
   targetFilePath?: string;
   confidenceScore: number; // 0 - 100
   scoreBreakdown?: ScoreBreakdown;
   explanation: string;
+  estimatedRows?: number;
+  riskLevel?: 'SAFE' | 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  suggestedSteps?: string[];
 }
 
 export interface ShadowDiffCheck {
@@ -73,6 +85,8 @@ export interface AgentExecutionPlan {
   generatedChanges: ShadowDiffCheck[];
   status: 'SUCCESS' | 'BLOCKED' | 'PENDING_VERIFICATION';
   modelProvider: LLMProvider;
+  executedSql?: string;
+  queryResult?: any;
 }
 
 export interface SystemMetrics {
