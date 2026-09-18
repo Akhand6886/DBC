@@ -129,11 +129,11 @@ export class QueryFirewallEngine {
       mutatesData = true;
       const hasWhere = /\bWHERE\b/i.test(cleanSql);
       if (!hasWhere) {
-        score = Math.max(score, 90);
+        score = Math.max(score, 95);
         category = 'UNCONSTRAINED_DML';
         estimatedRows = 'ALL';
-        violations.push('DELETE without a WHERE clause will delete EVERY row in the table.');
-        remediations.push('Add an explicit WHERE condition (e.g. WHERE id = ?).');
+        violations.push('⚠ BLOCKED: No WHERE clause detected. Potential impact: All rows in target table.');
+        remediations.push('Add an explicit filtering condition (e.g. WHERE status = "inactive" or WHERE id = ?).');
       } else {
         // Check for tautological where like WHERE 1=1 or WHERE 'a'='a'
         const whereClauseMatch = cleanSql.match(/\bWHERE\s+([\s\S]+?)(?:;|\s*$)/i);
@@ -145,7 +145,7 @@ export class QueryFirewallEngine {
           violations.push(`Tautological condition detected in WHERE clause ("${whereClause}"). Affects all rows.`);
           remediations.push('Remove tautological true statement and specify targeted criteria.');
         } else {
-          score = Math.max(score, 35);
+          score = Math.max(score, 75); // DELETE with WHERE is HIGH risk per vision
           category = 'INDEXED_MUTATION';
           estimatedRows = this.estimateAffectedRows(targetTables, tableRowCounts);
         }
@@ -156,7 +156,7 @@ export class QueryFirewallEngine {
       mutatesData = true;
       const hasWhere = /\bWHERE\b/i.test(cleanSql);
       if (!hasWhere) {
-        score = Math.max(score, 80);
+        score = Math.max(score, 85);
         category = 'UNCONSTRAINED_DML';
         estimatedRows = 'ALL';
         violations.push('UPDATE statement without a WHERE clause will overwrite EVERY row in the target table.');
@@ -171,7 +171,7 @@ export class QueryFirewallEngine {
           violations.push(`Tautological condition detected in UPDATE WHERE clause ("${whereClause}").`);
           remediations.push('Target specific records rather than applying blanket update.');
         } else {
-          score = Math.max(score, 25);
+          score = Math.max(score, 55); // UPDATE is MEDIUM/HIGH risk
           category = 'INDEXED_MUTATION';
           estimatedRows = this.estimateAffectedRows(targetTables, tableRowCounts);
         }
@@ -199,11 +199,14 @@ export class QueryFirewallEngine {
       const hasLimit = /\bLIMIT\s+\d+\b/i.test(cleanSql);
       const isCount = /SELECT\s+COUNT\s*\(/i.test(cleanSql);
 
-      if (!hasLimit && !isCount && this.config.enforceLimitOnSelect) {
-        score = Math.max(score, 30);
+      if (!hasLimit && !isCount) {
+        score = Math.max(score, 25);
         category = 'FULL_TABLE_SCAN';
-        warnings.push('Unbounded SELECT query without LIMIT clause may saturate client memory.');
-        remediations.push(`Append LIMIT ${this.config.maxDefaultLimit} to prevent uncontrolled data streaming.`);
+        warnings.push('Possible full-table scan detected. Query has no LIMIT or index partition filter.');
+        remediations.push('1. Add LIMIT (e.g. LIMIT 100)');
+        remediations.push('2. Add filtering condition (WHERE column = ?)');
+        remediations.push('3. Run EXPLAIN to inspect query plan cost');
+        remediations.push('4. Execute anyway');
       }
 
       // Check for Cartesian cross join
@@ -238,7 +241,8 @@ export class QueryFirewallEngine {
     // Determine Risk Level
     const level = this.getRiskLevel(score);
     const requiresApproval = this.isApprovalRequired(level);
-    const isBlocked = this.config.strictProductionMode && level === 'CRITICAL';
+    const isUnconstrainedDelete = /^DELETE\s+FROM\b/i.test(cleanSql) && !/\bWHERE\b/i.test(cleanSql);
+    const isBlocked = (this.config.strictProductionMode && level === 'CRITICAL') || isUnconstrainedDelete;
 
     return {
       query: cleanSql,
