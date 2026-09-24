@@ -1,13 +1,15 @@
 'use client';
 
 import React from 'react';
-import { GitBranch, Zap, CheckCircle2, AlertCircle, ShieldCheck, Database, Bell } from 'lucide-react';
+import { GitBranch, Zap, CheckCircle2, AlertCircle, ShieldCheck, Database, Bell, Cpu } from 'lucide-react';
 
 interface StatusBarProps {
   lastLatencyMs?: number;
   lastRoutePath?: string;
   onOpenSidecar: () => void;
   onOpenGit?: () => void;
+  onOpenRouterTrace?: () => void;
+  onOpenRouterConfig?: () => void;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
@@ -15,7 +17,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   lastRoutePath = 'DETERMINISTIC_FAST_PATH',
   onOpenSidecar,
   onOpenGit,
+  onOpenRouterTrace,
+  onOpenRouterConfig,
 }) => {
+  const isFast = lastRoutePath === 'DETERMINISTIC_FAST_PATH';
+
   return (
     <div className="h-6 bg-[#007acc] text-white px-3 flex items-center justify-between text-[11px] font-sans select-none border-t border-[#005a9e]">
       {/* Left Status Section */}
@@ -48,11 +54,24 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </span>
         </div>
 
-        {/* Router Mode */}
-        <div className="flex items-center space-x-1 font-mono text-[10px] bg-[#005a9e] px-2 py-0.5 rounded">
-          <Zap className="h-3 w-3 text-yellow-300 fill-current" />
-          <span>Fast-Path ({lastLatencyMs}ms)</span>
-        </div>
+        {/* Router Mode Indicator / Interactive Trigger */}
+        <button
+          onClick={onOpenRouterTrace || onOpenRouterConfig}
+          title="Click to inspect last Router Trace & Confidence score"
+          className="flex items-center space-x-1 font-mono text-[10px] bg-[#005a9e] hover:bg-[#004a80] px-2 py-0.5 rounded transition-colors"
+        >
+          {isFast ? (
+            <>
+              <Zap className="h-3 w-3 text-yellow-300 fill-current" />
+              <span>Fast-Path ({lastLatencyMs}ms)</span>
+            </>
+          ) : (
+            <>
+              <Cpu className="h-3 w-3 text-amber-300" />
+              <span>LLM ({lastLatencyMs}ms)</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* Right Status Section */}
