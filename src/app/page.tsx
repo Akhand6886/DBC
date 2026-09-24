@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { FileNode, ShadowDiffCheck } from '../lib/types';
+import { FileNode, ShadowDiffCheck, RouterConfig, AgentExecutionPlan, SystemMetrics } from '../lib/types';
 import { INITIAL_WORKSPACE } from '../lib/initialWorkspace';
+import { DEFAULT_ROUTER_CONFIG } from '../lib/router/intentClassifier';
 import { ActivityBar, ActivityView } from '../components/ActivityBar';
 import { FileExplorer } from '../components/FileExplorer';
 import { CodeEditor } from '../components/CodeEditor';
@@ -20,6 +21,8 @@ import { CommandPalette, PaletteAction } from '../components/CommandPalette';
 import { WelcomeTab } from '../components/WelcomeTab';
 import { TopMenuBar } from '../components/TopMenuBar';
 import { useToast } from '../components/ToastProvider';
+import { RouterConfigModal } from '../components/RouterConfigModal';
+import { RouterTraceModal } from '../components/RouterTraceModal';
 
 // DBMS Studio & Editor Imports
 import { DbConnectionPanel, DbConnection } from '../components/DbConnectionPanel';
@@ -29,7 +32,7 @@ import { TableInspectorModal } from '../components/TableInspectorModal';
 import { DbObjectExplorer } from '../components/DbObjectExplorer';
 import { TableDataEditor } from '../components/TableDataEditor';
 
-import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table } from 'lucide-react';
+import { FileCode, Search, Settings, GitBranch, Zap, Globe, ShieldCheck, BarChart2, Play, Command, Database, Table, Sliders } from 'lucide-react';
 
 export default function Home() {
   const [activeView, setActiveView] = useState<ActivityView>('database');
@@ -73,6 +76,62 @@ export default function Home() {
   const [fastPathCount, setFastPathCount] = useState(14);
   const [lastLatencyMs, setLastLatencyMs] = useState<number | undefined>(3);
   const [lastRoutePath, setLastRoutePath] = useState<string | undefined>('DETERMINISTIC_FAST_PATH');
+
+  // Router State
+  const [routerConfig, setRouterConfig] = useState<RouterConfig>(DEFAULT_ROUTER_CONFIG);
+  const [isRouterConfigOpen, setIsRouterConfigOpen] = useState(false);
+  const [isRouterTraceOpen, setIsRouterTraceOpen] = useState(false);
+
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetrics>({
+    totalQueries: 12480,
+    fastPathCount: 10508,
+    llmCount: 1972,
+    avgFastPathLatencyMs: 3,
+    avgLlmLatencyMs: 840,
+    totalCostSavedUSD: 432.80,
+    shadowVerificationsPassed: 1420
+  });
+
+  const [recentPlans, setRecentPlans] = useState<AgentExecutionPlan[]>([
+    {
+      id: 'plan-01',
+      prompt: 'rename table users to app_users',
+      routerPath: 'DETERMINISTIC_FAST_PATH',
+      confidenceScore: 97,
+      intent: {
+        rawPrompt: 'rename table users to app_users',
+        actionType: 'LSP_RENAME',
+        targetSymbol: 'users',
+        confidenceScore: 97,
+        scoreBreakdown: { patternScore: 98, lspAvailabilityScore: 95, ambiguityPenalty: 0, finalScore: 97 },
+        explanation: 'Matched rule: LSP textDocument/rename. High structural pattern match.'
+      },
+      executionTimeMs: 3,
+      tokenCostUSD: 0.0,
+      generatedChanges: [],
+      status: 'SUCCESS',
+      modelProvider: 'anthropic'
+    },
+    {
+      id: 'plan-02',
+      prompt: 'implement multi-table audit trigger for transactions',
+      routerPath: 'AGENTIC_LLM_PATH',
+      confidenceScore: 36,
+      intent: {
+        rawPrompt: 'implement multi-table audit trigger for transactions',
+        actionType: 'MULTI_FILE_FEATURE',
+        confidenceScore: 36,
+        scoreBreakdown: { patternScore: 30, lspAvailabilityScore: 95, ambiguityPenalty: 55, finalScore: 36 },
+        explanation: 'High ambiguity detected (multi-file logic, open-ended reasoning). Escalated to Agentic LLM.'
+      },
+      executionTimeMs: 812,
+      tokenCostUSD: 0.0035,
+      generatedChanges: [],
+      status: 'SUCCESS',
+      modelProvider: 'anthropic'
+    }
+  ]);
+  const [lastExecutionPlan, setLastExecutionPlan] = useState<AgentExecutionPlan | null>(recentPlans[0]);
 
   // ─── Global Keyboard Shortcuts ─────────────────────────────────────
   useEffect(() => {
@@ -133,6 +192,8 @@ export default function Home() {
     { id: 'verification', label: 'Shadow Verification & Rollback Hub', category: 'action', icon: <ShieldCheck className="h-4 w-4" />, handler: () => setIsVerificationOpen(true) },
     { id: 'sidecar', label: 'Rust Sidecar & LanceDB Inspector', category: 'action', icon: <Zap className="h-4 w-4" />, handler: () => setIsSidecarOpen(true) },
     { id: 'analytics', label: 'Router Analytics Dashboard', category: 'router', icon: <BarChart2 className="h-4 w-4" />, handler: () => setActiveView('analytics') },
+    { id: 'router-config', label: 'Router Thresholds & Fast-Path Rules', category: 'router', shortcut: '⌘⇧R', icon: <Sliders className="h-4 w-4 text-[#007acc]" />, handler: () => setIsRouterConfigOpen(true) },
+    { id: 'router-trace', label: 'Inspect Last Router Execution Trace', category: 'router', icon: <FileCode className="h-4 w-4 text-emerald-400" />, handler: () => setIsRouterTraceOpen(true) },
     { id: 'toggle-sidebar', label: 'Toggle Sidebar', category: 'navigation', shortcut: '⌘B', icon: <FileCode className="h-4 w-4" />, handler: () => setShowSidebar(prev => !prev) },
     { id: 'toggle-terminal', label: 'Toggle Terminal Panel', category: 'navigation', shortcut: '⌘J', icon: <FileCode className="h-4 w-4" />, handler: () => setShowTerminal(prev => !prev) },
     { id: 'run-tests', label: 'Run Test Suite', category: 'action', icon: <Play className="h-4 w-4" />, handler: handleRunTestSuite },
@@ -290,10 +351,30 @@ export default function Home() {
     handleContentChange(newContent);
     setActiveDiff(diffCheck);
     setShadowHistory((prev) => [...prev, diffCheck]);
-    setFastPathCount((prev) => prev + 1);
-    setLastLatencyMs(3);
-    setLastRoutePath('DETERMINISTIC_FAST_PATH');
     addToast('success', `Patch ${diffCheck.id} applied via Shadow Workspace.`);
+  };
+
+  const handleExecutePlan = (plan: AgentExecutionPlan) => {
+    setLastExecutionPlan(plan);
+    setRecentPlans((prev) => [plan, ...prev]);
+    setLastLatencyMs(plan.executionTimeMs);
+    setLastRoutePath(plan.routerPath);
+
+    setSystemMetrics((prev) => {
+      const isFast = plan.routerPath === 'DETERMINISTIC_FAST_PATH';
+      return {
+        ...prev,
+        totalQueries: prev.totalQueries + 1,
+        fastPathCount: isFast ? prev.fastPathCount + 1 : prev.fastPathCount,
+        llmCount: isFast ? prev.llmCount : prev.llmCount + 1,
+        totalCostSavedUSD: isFast ? prev.totalCostSavedUSD + 0.0035 : prev.totalCostSavedUSD,
+        shadowVerificationsPassed: prev.shadowVerificationsPassed + 1
+      };
+    });
+
+    if (plan.routerPath === 'DETERMINISTIC_FAST_PATH') {
+      setFastPathCount((prev) => prev + 1);
+    }
   };
 
   const handleRollbackSnapshot = (diffCheck: ShadowDiffCheck) => {
@@ -367,7 +448,15 @@ export default function Home() {
 
         {/* Main panels */}
         {activeView === 'analytics' ? (
-          <AnalyticsPanel />
+          <AnalyticsPanel
+            metrics={systemMetrics}
+            recentPlans={recentPlans}
+            onInspectPlan={(plan) => {
+              setLastExecutionPlan(plan);
+              setIsRouterTraceOpen(true);
+            }}
+            onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
+          />
         ) : (
           <div className="flex-1 flex flex-col overflow-hidden bg-[#1e1e1e]">
             {activeView === 'database' ? (
@@ -422,7 +511,12 @@ export default function Home() {
         <MissionControl
           activeFilePath={activeFile?.path}
           activeFileContent={activeFile?.content || ''}
+          routerConfig={routerConfig}
+          lastExecutionPlan={lastExecutionPlan}
           onApplyPatch={handleApplyPatch}
+          onExecutePlan={handleExecutePlan}
+          onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
+          onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
           onLogTerminal={handleLogTerminal}
         />
       </div>
@@ -432,6 +526,8 @@ export default function Home() {
         lastRoutePath={lastRoutePath}
         onOpenSidecar={() => setIsSidecarOpen(true)}
         onOpenGit={() => setIsGitOpen(true)}
+        onOpenRouterTrace={() => setIsRouterTraceOpen(true)}
+        onOpenRouterConfig={() => setIsRouterConfigOpen(true)}
       />
 
       {isSearchOpen && <SearchModal files={workspaceFiles} onSelectFile={handleSelectFile} onClose={() => setIsSearchOpen(false)} onReplaceAll={handleReplaceAll} />}
@@ -442,6 +538,23 @@ export default function Home() {
       {isGitOpen && <GitPanel onClose={() => setIsGitOpen(false)} onLogTerminal={handleLogTerminal} />}
       {isPaletteOpen && <CommandPalette actions={paletteActions} onClose={() => setIsPaletteOpen(false)} />}
       {inspectTable && <TableInspectorModal tableName={inspectTable} onClose={() => setInspectTable(null)} />}
+      {isRouterConfigOpen && (
+        <RouterConfigModal
+          config={routerConfig}
+          onSaveConfig={(newCfg) => {
+            setRouterConfig(newCfg);
+            addToast('success', `Router threshold updated to ${newCfg.confidenceThreshold}%`);
+            handleLogTerminal(`[Router Config]: Fast-Path confidence threshold set to ${newCfg.confidenceThreshold}%`);
+          }}
+          onClose={() => setIsRouterConfigOpen(false)}
+        />
+      )}
+      {isRouterTraceOpen && (
+        <RouterTraceModal
+          plan={lastExecutionPlan}
+          onClose={() => setIsRouterTraceOpen(false)}
+        />
+      )}
     </div>
   );
 }
