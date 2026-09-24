@@ -64,20 +64,22 @@ VS Code Dark UI   Confidence Router       Verification Engine   Rust Indexing   
 - **Dual-Path Execution Architecture (`routerEngine.ts` & `AnalyticsPanel.tsx`):**
   - **Deterministic Fast Path ($\ge 80\%$ confidence):** Resolves pattern-matched structural operations in $\sim 3\text{ms}$ with $\$0.00$ model token cost.
   - **Agentic LLM Path ($< 80\%$ confidence):** Escalates ambiguous, multi-file, or deep analytical prompts to Large Language Models.
+  - **Real-Time Confidence Preview Bar (`MissionControl.tsx`):** Dynamic gauge displaying instant confidence scores ($0-100\%$), rule explanations, latency estimates, and cost estimates in real-time as the developer types.
 - **Deterministic Fast-Path Action Rules:**
-  - `LSP_RENAME`: Fast symbol rename across files via LSP `textDocument/rename`.
-  - `LSP_REFERENCES`: Instant symbol caller lookups via LSP `textDocument/references`.
-  - `FORMAT_CODE`: Instant code formatting using Prettier/Biome.
+  - `LSP_RENAME`: Fast symbol, table, and column rename across files via LSP `textDocument/rename`.
+  - `LSP_REFERENCES`: Instant symbol and table caller lookups via LSP `textDocument/references`.
+  - `FORMAT_CODE`: Instant code and SQL query formatting using Prettier/Biome/SQL formatter.
   - `RUN_TESTS`: Automated test suite execution via CLI test runner.
-  - `TREE_SITTER_REFACTOR`: Structural AST function and class extraction.
-- **Router Analytics Dashboard (`AnalyticsPanel.tsx`):** Fast-path hit ratio tracker, average latency split, and real-time token dollar savings calculator.
-- **Router Configuration Modal (`RouterConfigModal.tsx`):** Adjust confidence thresholds and toggle deterministic rules.
-- **Router Trace Inspector (`RouterTraceModal.tsx`):** Step-by-step trace viewer breaking down pattern matching and score calculations.
+  - `TREE_SITTER_REFACTOR`: Structural AST function, class, and view extraction.
+- **Router Analytics Dashboard (`AnalyticsPanel.tsx`):** Live reactive KPI cards (Fast-Path hit ratio %, average latency split, and cumulative dollar token savings), plus an interactive recent router dispatches table with 1-click trace inspection.
+- **Router Configuration Modal (`RouterConfigModal.tsx`):** Interactive threshold slider ($50\% - 95\%$) and toggles for deterministic rules with live state updates.
+- **Router Trace Inspector (`RouterTraceModal.tsx`):** Step-by-step trace viewer breaking down pattern matching ($S_{pat}$), LSP index score ($S_{LSP}$), ambiguity penalties, execution plans, and formatted JSON traces.
+- **Status Bar Integration (`StatusBar.tsx`):** One-click trigger from the signature blue status bar (`Fast-Path (3ms)`) directly opening the Router Trace Inspector.
 
 ---
 
 ### 5. Mission Control AI Composer & BYOK Models (`/orchestrator`)
-- **Multi-Turn AI Composer Sidebar (`MissionControl.tsx`):** Natural language prompt input for complex feature building and bug fixing.
+- **Multi-Turn AI Composer Sidebar (`MissionControl.tsx`):** Dual-path natural language prompt input with live routing preview, quick intent triggers, direct access to Router Configuration and Trace modals, and seamless shadow workspace diff generation.
 - **BYOK (Bring Your Own Key) Provider Selector (`SettingsModal.tsx`):**
   - **OpenAI:** GPT-4o / GPT-4o-mini
   - **Anthropic:** Claude 3.5 Sonnet / Claude 3 Opus
