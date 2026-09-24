@@ -21,16 +21,40 @@ export function classifyDeveloperIntent(
   let lspAvailabilityScore = 95;
   let ambiguityPenalty = 0;
 
-  // Detect ambiguity terms
-  if (prompt.includes('why') || prompt.includes('fix bug') || prompt.includes('implement') || prompt.includes('refactor across') || prompt.includes('redesign')) {
+  // Detect high ambiguity terms that demand LLM reasoning
+  if (
+    prompt.includes('why') ||
+    prompt.includes('fix bug') ||
+    prompt.includes('implement') ||
+    prompt.includes('refactor across') ||
+    prompt.includes('redesign') ||
+    prompt.includes('architecture') ||
+    prompt.includes('optimize') ||
+    prompt.includes('generate') ||
+    prompt.includes('create migration') ||
+    prompt.includes('audit trigger')
+  ) {
     ambiguityPenalty = 55;
   }
 
-  // 1. Symbol Rename -> LSP Rename Rule
-  if (config.enableLspRename && (prompt.startsWith('rename') || prompt.includes('rename variable') || prompt.includes('rename function'))) {
+  // 1. Symbol / Table / Column Rename -> LSP Rename Rule
+  if (
+    config.enableLspRename &&
+    (prompt.startsWith('rename') ||
+      prompt.includes('rename variable') ||
+      prompt.includes('rename function') ||
+      prompt.includes('rename symbol') ||
+      prompt.includes('rename column') ||
+      prompt.includes('rename table'))
+  ) {
     patternScore = 98;
-    const symbolMatch = rawPrompt.match(/rename\s+(?:variable|function|class|symbol)?\s*['"]?([a-zA-Z0-9_]+)['"]?\s+to\s+['"]?([a-zA-Z0-9_]+)['"]?/i);
-    const finalScore = Math.max(0, Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty)));
+    const symbolMatch = rawPrompt.match(
+      /rename\s+(?:variable|function|class|symbol|table|column)?\s*['"]?([a-zA-Z0-9_]+)['"]?\s+to\s+['"]?([a-zA-Z0-9_]+)['"]?/i
+    );
+    const finalScore = Math.max(
+      0,
+      Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
+    );
 
     return {
       rawPrompt,
@@ -44,9 +68,19 @@ export function classifyDeveloperIntent(
   }
 
   // 2. Find Callers / References -> LSP References Rule
-  if (config.enableLspReferences && (prompt.startsWith('find callers') || prompt.includes('where is') || prompt.includes('find references'))) {
+  if (
+    config.enableLspReferences &&
+    (prompt.startsWith('find callers') ||
+      prompt.includes('where is') ||
+      prompt.includes('find references') ||
+      prompt.includes('list references') ||
+      prompt.includes('usage of'))
+  ) {
     patternScore = 99;
-    const finalScore = Math.max(0, Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty)));
+    const finalScore = Math.max(
+      0,
+      Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
+    );
 
     return {
       rawPrompt,
@@ -58,10 +92,21 @@ export function classifyDeveloperIntent(
     };
   }
 
-  // 3. Format Code -> Formatter Rule
-  if (config.enableFormatter && (prompt.startsWith('format') || prompt.includes('fix lint') || prompt.includes('prettier'))) {
+  // 3. Format Code & SQL Queries -> Formatter Rule
+  if (
+    config.enableFormatter &&
+    (prompt.startsWith('format') ||
+      prompt.includes('fix lint') ||
+      prompt.includes('prettier') ||
+      prompt.includes('format sql') ||
+      prompt.includes('format query') ||
+      prompt.includes('beautify'))
+  ) {
     patternScore = 96;
-    const finalScore = Math.max(0, Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty)));
+    const finalScore = Math.max(
+      0,
+      Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
+    );
 
     return {
       rawPrompt,
@@ -69,14 +114,24 @@ export function classifyDeveloperIntent(
       targetFilePath,
       confidenceScore: finalScore,
       scoreBreakdown: { patternScore, lspAvailabilityScore, ambiguityPenalty, finalScore },
-      explanation: 'Matched rule: Prettier/Biome Code Formatter.'
+      explanation: 'Matched rule: Prettier/Biome/SQL Formatter deterministic pipeline.'
     };
   }
 
   // 4. Test Runner Rule
-  if (config.enableTestRunner && (prompt.startsWith('run test') || prompt.includes('exec tests') || prompt.includes('test file'))) {
+  if (
+    config.enableTestRunner &&
+    (prompt.startsWith('run test') ||
+      prompt.includes('exec tests') ||
+      prompt.includes('test file') ||
+      prompt.includes('run suite') ||
+      prompt.includes('npm test'))
+  ) {
     patternScore = 95;
-    const finalScore = Math.max(0, Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty)));
+    const finalScore = Math.max(
+      0,
+      Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
+    );
 
     return {
       rawPrompt,
@@ -89,9 +144,18 @@ export function classifyDeveloperIntent(
   }
 
   // 5. Tree-Sitter AST Refactor Rule
-  if (config.enableTreeSitterRefactor && (prompt.startsWith('extract function') || prompt.includes('extract method'))) {
+  if (
+    config.enableTreeSitterRefactor &&
+    (prompt.startsWith('extract function') ||
+      prompt.includes('extract method') ||
+      prompt.includes('extract helper') ||
+      prompt.includes('extract component'))
+  ) {
     patternScore = 88;
-    const finalScore = Math.max(0, Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty)));
+    const finalScore = Math.max(
+      0,
+      Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
+    );
 
     return {
       rawPrompt,
@@ -99,13 +163,16 @@ export function classifyDeveloperIntent(
       targetFilePath,
       confidenceScore: finalScore,
       scoreBreakdown: { patternScore, lspAvailabilityScore, ambiguityPenalty, finalScore },
-      explanation: 'Matched rule: Tree-sitter AST structural refactor.'
+      explanation: 'Matched rule: Tree-sitter AST structural refactor engine.'
     };
   }
 
   // Complex Reasoning / Bug Fix -> LLM Escalation
-  patternScore = 30;
-  const finalScore = Math.max(0, Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty)));
+  patternScore = 32;
+  const finalScore = Math.max(
+    0,
+    Math.min(100, Math.round(0.6 * patternScore + 0.4 * lspAvailabilityScore - ambiguityPenalty))
+  );
 
   return {
     rawPrompt,
@@ -113,6 +180,9 @@ export function classifyDeveloperIntent(
     targetFilePath,
     confidenceScore: finalScore,
     scoreBreakdown: { patternScore, lspAvailabilityScore, ambiguityPenalty, finalScore },
-    explanation: 'Ambiguous or multi-step reasoning requested. Escalated to LLM Reasoning Engine.'
+    explanation:
+      ambiguityPenalty > 0
+        ? 'High ambiguity detected (multi-file logic, open-ended reasoning). Escalated to Agentic LLM.'
+        : 'General prompt with low structural rule confidence. Escalated to LLM Reasoning Engine.'
   };
 }
